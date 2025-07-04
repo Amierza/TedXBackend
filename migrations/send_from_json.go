@@ -8,7 +8,7 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/Amierza/go-boiler-plate/helpers"
+	"github.com/Amierza/TedXBackend/helpers"
 	"gorm.io/gorm"
 )
 

@@ -4,13 +4,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/Amierza/go-boiler-plate/cmd"
-	"github.com/Amierza/go-boiler-plate/config/database"
-	"github.com/Amierza/go-boiler-plate/handler"
-	"github.com/Amierza/go-boiler-plate/middleware"
-	"github.com/Amierza/go-boiler-plate/repository"
-	"github.com/Amierza/go-boiler-plate/routes"
-	"github.com/Amierza/go-boiler-plate/service"
+	"github.com/Amierza/TedXBackend/cmd"
+	"github.com/Amierza/TedXBackend/config/database"
+	"github.com/Amierza/TedXBackend/handler"
+	"github.com/Amierza/TedXBackend/middleware"
+	"github.com/Amierza/TedXBackend/repository"
+	"github.com/Amierza/TedXBackend/routes"
+	"github.com/Amierza/TedXBackend/service"
 	"github.com/gin-gonic/gin"
 )
 
