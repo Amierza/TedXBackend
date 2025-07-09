@@ -13,7 +13,7 @@ const (
 	// PARSE
 	MESSAGE_FAILED_PARSE_UUID = "failed parse string to uuid"
 	// Authentication
-
+	MESSAGE_FAILED_LOGIN_ADMIN = "failed login admin"
 	// Middleware
 	MESSAGE_FAILED_PROSES_REQUEST             = "failed proses request"
 	MESSAGE_FAILED_ACCESS_DENIED              = "failed access denied"
@@ -26,18 +26,41 @@ const (
 
 	// ====================================== Success ======================================
 	// Authentication
+	MESSAGE_SUCCESS_LOGIN_ADMIN = "success login admin"
 
 	// User
 
 )
 
 var (
-	ErrGenerateAccessToken     = errors.New("failed to generate access token")
-	ErrGenerateRefreshToken    = errors.New("failed to generate refresh token")
+	// Middleware
+	ErrDeniedAccess = errors.New("denied access")
+	// Token
+	ErrGenerateToken           = errors.New("failed to generate token")
 	ErrUnexpectedSigningMethod = errors.New("unexpected signing method")
 	ErrDecryptToken            = errors.New("failed to decrypt token")
 	ErrTokenInvalid            = errors.New("token invalid")
 	ErrValidateToken           = errors.New("failed to validate token")
+	// Parse
+	ErrParseUUID = errors.New("failed parse uuid")
+	// Input Validation
+	ErrInvalidEmail    = errors.New("failed invalid email")
+	ErrInvalidPassword = errors.New("failed invalid password")
+	// Email
+	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrEmailNotFound      = errors.New("email not found")
+	// Password
+	ErrPasswordNotMatch = errors.New("password not match")
 )
 
-type ()
+type (
+	// Authentication
+	LoginRequest struct {
+		Email    string `json:"email" form:"email"`
+		Password string `json:"password" form:"password"`
+	}
+
+	LoginResponse struct {
+		Token string `json:"token"`
+	}
+)
