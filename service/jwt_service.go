@@ -11,16 +11,15 @@ import (
 
 type (
 	IJWTService interface {
-		GenerateToken(userID string, role string, permissions []string) (string, string, error)
+		GenerateToken(userID string, role string) (string, error)
 		ValidateToken(token string) (*jwt.Token, error)
 		GetUserIDByToken(tokenString string) (string, error)
 		GetRoleIDByToken(tokenString string) (string, error)
 	}
 
 	jwtCustomClaim struct {
-		UserID      string   `json:"user_id"`
-		RoleID      string   `json:"role_id"`
-		Permissions []string `json:"endpoints"`
+		UserID string `json:"user_id"`
+		RoleID string `json:"role_id"`
 		jwt.RegisteredClaims
 	}
 
@@ -46,42 +45,24 @@ func getSecretKey() string {
 	return secretKey
 }
 
-func (j *JWTService) GenerateToken(userID string, roleID string, endpoints []string) (string, string, error) {
-	accessClaims := jwtCustomClaim{
+func (j *JWTService) GenerateToken(userID string, roleID string) (string, error) {
+	claims := jwtCustomClaim{
 		userID,
 		roleID,
-		endpoints,
 		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * 300)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * 3600)),
 			Issuer:    j.issuer,
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	accessTokenString, err := accessToken.SignedString([]byte(j.secretKey))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(j.secretKey))
 	if err != nil {
-		return "", "", dto.ErrGenerateAccessToken
+		return "", dto.ErrGenerateToken
 	}
 
-	refreshClaims := jwtCustomClaim{
-		userID,
-		roleID,
-		endpoints,
-		jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * 3600 * 24 * 7)),
-			Issuer:    j.issuer,
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
-	refreshTokenString, err := refreshToken.SignedString([]byte(j.secretKey))
-	if err != nil {
-		return "", "", dto.ErrGenerateRefreshToken
-	}
-
-	return accessTokenString, refreshTokenString, nil
+	return tokenString, nil
 }
 
 func (j *JWTService) parseToken(t_ *jwt.Token) (any, error) {
