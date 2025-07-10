@@ -21,6 +21,13 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 			routes.GET("/get-detail-sponsorship/:id", adminHandler.GetDetailSponsorship)
 			routes.PATCH("/update-sponsorship/:id", adminHandler.UpdateSponsorship)
 			routes.DELETE("/delete-sponsorship/:id", adminHandler.DeleteSponsorship)
+
+			// Speaker
+			routes.POST("/create-speaker", adminHandler.CreateSpeaker)
+			routes.GET("/get-all-speaker", adminHandler.GetAllSpeaker)
+			routes.GET("/get-detail-speaker/:id", adminHandler.GetDetailSpeaker)
+			routes.PATCH("/update-speaker/:id", adminHandler.UpdateSpeaker)
+			routes.DELETE("/delete-speaker/:id", adminHandler.DeleteSpeaker)
 		}
 	}
 }
