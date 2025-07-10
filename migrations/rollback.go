@@ -11,7 +11,6 @@ func Rollback(db *gorm.DB) error {
 		&entity.Ticket{},
 		&entity.Bundle{},
 
-		&entity.MerchCategory{},
 		&entity.Merch{},
 		&entity.MerchImage{},
 		&entity.MerchImageDetail{},

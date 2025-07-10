@@ -17,6 +17,7 @@ type (
 	Role                string
 	AudienceType        string
 	SponsorshipCategory string
+	MerchCategory       string
 	TransactionStatus   string
 	PaymentType         string
 	Acquire             string
@@ -32,6 +33,11 @@ const (
 	Sponsor      SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_SPONSOR
 	Partner      SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_PARTNER
 	MediaPartner SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_MEDIA_PARTNER
+
+	TShirt  MerchCategory = constants.ENUM_MERCH_CATEGORY_TSHIRT
+	Cap     MerchCategory = constants.ENUM_MERCH_CATEGORY_CAP
+	Sticker MerchCategory = constants.ENUM_MERCH_CATEGORY_STICKER
+	Other   MerchCategory = constants.ENUM_MERCH_CATEGORY_OTHER
 
 	StatusPending    TransactionStatus = constants.ENUM_MIDTRANS_STATUS_PENDING
 	StatusSettlement TransactionStatus = constants.ENUM_MIDTRANS_STATUS_SETTLEMENT
@@ -64,6 +70,10 @@ func IsValidAudienceType(at AudienceType) bool {
 
 func IsValidSponsorshipCategory(sc SponsorshipCategory) bool {
 	return sc == Sponsor || sc == Partner || sc == MediaPartner
+}
+
+func IsValidMerchCategory(mc MerchCategory) bool {
+	return mc == TShirt || mc == Cap || mc == Sticker || mc == Other
 }
 
 func IsValidTransactionStatus(ts TransactionStatus) bool {

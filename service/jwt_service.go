@@ -18,8 +18,8 @@ type (
 	}
 
 	jwtCustomClaim struct {
-		UserID string `json:"user_id"`
-		RoleID string `json:"role_id"`
+		UserID   string `json:"user_id"`
+		RoleName string `json:"role_name"`
 		jwt.RegisteredClaims
 	}
 
@@ -45,10 +45,10 @@ func getSecretKey() string {
 	return secretKey
 }
 
-func (j *JWTService) GenerateToken(userID string, roleID string) (string, error) {
+func (j *JWTService) GenerateToken(userID string, roleName string) (string, error) {
 	claims := jwtCustomClaim{
 		userID,
-		roleID,
+		roleName,
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Second * 3600)),
 			Issuer:    j.issuer,
