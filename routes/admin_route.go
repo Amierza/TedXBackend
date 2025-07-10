@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/Amierza/TedXBackend/handler"
+	"github.com/Amierza/TedXBackend/middleware"
 	"github.com/Amierza/TedXBackend/service"
 	"github.com/gin-gonic/gin"
 )
@@ -11,5 +12,15 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 	{
 		// Authentication
 		routes.POST("/login", adminHandler.Login)
+
+		routes.Use(middleware.Authentication(jwtService), middleware.RouteAccessControl(jwtService))
+		{
+			// Sponsorship
+			routes.POST("/create-sponsorship", adminHandler.CreateSponsorship)
+			routes.GET("/get-all-sponsorship", adminHandler.GetAllSponsorship)
+			routes.GET("/get-detail-sponsorship/:id", adminHandler.GetDetailSponsorship)
+			routes.PATCH("/update-sponsorship/:id", adminHandler.UpdateSponsorship)
+			routes.DELETE("/delete-sponsorship/:id", adminHandler.DeleteSponsorship)
+		}
 	}
 }

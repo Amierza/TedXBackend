@@ -11,7 +11,15 @@ import (
 
 type (
 	IAdminHandler interface {
+		// Authentication
 		Login(ctx *gin.Context)
+
+		// Sponsorship
+		CreateSponsorship(ctx *gin.Context)
+		GetAllSponsorship(ctx *gin.Context)
+		GetDetailSponsorship(ctx *gin.Context)
+		UpdateSponsorship(ctx *gin.Context)
+		DeleteSponsorship(ctx *gin.Context)
 	}
 
 	AdminHandler struct {
@@ -25,6 +33,7 @@ func NewAdminHandler(adminService service.IAdminService) *AdminHandler {
 	}
 }
 
+// Authentication
 func (ah *AdminHandler) Login(ctx *gin.Context) {
 	var payload dto.LoginRequest
 	if err := ctx.ShouldBind(&payload); err != nil {
@@ -41,5 +50,89 @@ func (ah *AdminHandler) Login(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_LOGIN_ADMIN, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Sponsorship
+func (ah *AdminHandler) CreateSponsorship(ctx *gin.Context) {
+	var payload dto.CreateSponsorshipRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.CreateSponsorship(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_SPONSORSHIP, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_SPONSORSHIP, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetAllSponsorship(ctx *gin.Context) {
+	result, err := ah.adminService.GetAllSponsorship(ctx.Request.Context())
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_SPONSORSHIP, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_SPONSORSHIP, result)
+	ctx.JSON(http.StatusOK, res)
+	return
+}
+func (ah *AdminHandler) GetDetailSponsorship(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := ah.adminService.GetDetailSponsorship(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_SPONSORSHIP, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_SPONSORSHIP, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) UpdateSponsorship(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.UpdateSponsorshipRequest
+	payload.ID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.UpdateSponsorship(ctx.Request.Context(), payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_SPONSORSHIP, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_UPDATE_SPONSORSHIP, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) DeleteSponsorship(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.DeleteSponsorshipRequest
+	payload.SponsorshipID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.DeleteSponsorship(ctx.Request.Context(), payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_DELETE_SPONSORSHIP, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_SPONSORSHIP, result)
 	ctx.JSON(http.StatusOK, res)
 }

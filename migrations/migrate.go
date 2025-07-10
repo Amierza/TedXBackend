@@ -22,7 +22,6 @@ func Migrate(db *gorm.DB) error {
 		&entity.MerchImageDetail{},
 		&entity.MerchImage{},
 		&entity.Merch{},
-		&entity.MerchCategory{},
 
 		&entity.Bundle{},
 		&entity.Ticket{},
