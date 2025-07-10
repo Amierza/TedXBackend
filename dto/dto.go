@@ -2,6 +2,7 @@ package dto
 
 import (
 	"errors"
+	"mime/multipart"
 
 	"github.com/Amierza/TedXBackend/entity"
 	"github.com/google/uuid"
@@ -32,6 +33,12 @@ const (
 	MESSAGE_FAILED_GET_DETAIL_SPONSORSHIP = "failed get detail sponsorship"
 	MESSAGE_FAILED_UPDATE_SPONSORSHIP     = "failed update sponsorship"
 	MESSAGE_FAILED_DELETE_SPONSORSHIP     = "failed delete sponsorship"
+	// Speaker
+	MESSAGE_FAILED_CREATE_SPEAKER     = "failed create speaker"
+	MESSAGE_FAILED_GET_LIST_SPEAKER   = "failed get list speaker"
+	MESSAGE_FAILED_GET_DETAIL_SPEAKER = "failed get detail speaker"
+	MESSAGE_FAILED_UPDATE_SPEAKER     = "failed update speaker"
+	MESSAGE_FAILED_DELETE_SPEAKER     = "failed delete speaker"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -42,11 +49,22 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_SPONSORSHIP = "success get detail sponsorship"
 	MESSAGE_SUCCESS_UPDATE_SPONSORSHIP     = "success update sponsorship"
 	MESSAGE_SUCCESS_DELETE_SPONSORSHIP     = "success delete sponsorship"
+	// Speaker
+	MESSAGE_SUCCESS_CREATE_SPEAKER     = "success create speaker"
+	MESSAGE_SUCCESS_GET_LIST_SPEAKER   = "success get list speaker"
+	MESSAGE_SUCCESS_GET_DETAIL_SPEAKER = "success get detail speaker"
+	MESSAGE_SUCCESS_UPDATE_SPEAKER     = "success update speaker"
+	MESSAGE_SUCCESS_DELETE_SPEAKER     = "success delete speaker"
 )
 
 var (
 	// Middleware
 	ErrDeniedAccess = errors.New("denied access")
+	// File
+	ErrInvalidExtensionPhoto = errors.New("only jpg/jpeg/png allowed")
+	ErrCreateFile            = errors.New("failed create file")
+	ErrSaveFile              = errors.New("failed save file")
+	ErrDeleteOldImage        = errors.New("failed delete old image")
 	// Token
 	ErrGenerateToken           = errors.New("failed to generate token")
 	ErrUnexpectedSigningMethod = errors.New("unexpected signing method")
@@ -61,17 +79,27 @@ var (
 	ErrInvalidPassword            = errors.New("failed invalid password")
 	ErrInvalidSponsorshipCategory = errors.New("failed invalid sponsroship category")
 	ErrSponsorshipNameTooShort    = errors.New("failed sponsorship name too short (min 3.)")
+	ErrSpeakerNameTooShort        = errors.New("failed sponsorship name too short (min 3.)")
 	// Email
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrEmailNotFound      = errors.New("email not found")
 	// Password
 	ErrPasswordNotMatch = errors.New("password not match")
 	// Sponsorship
-	ErrCreateSponsorship     = errors.New("failed create sponsorship")
-	ErrGetAllSponsorship     = errors.New("failed get all sponsorship")
-	ErrSponsorshipNotFound   = errors.New("failed sponsorship not found")
-	ErrUpdateSponsorship     = errors.New("failed update sponsorship")
-	ErrDeleteSponsorshipByID = errors.New("failed delete sponsorship by id")
+	ErrCreateSponsorship        = errors.New("failed create sponsorship")
+	ErrGetAllSponsorship        = errors.New("failed get all sponsorship")
+	ErrSponsorshipNotFound      = errors.New("failed sponsorship not found")
+	ErrUpdateSponsorship        = errors.New("failed update sponsorship")
+	ErrDeleteSponsorshipByID    = errors.New("failed delete sponsorship by id")
+	ErrSponsorshipAlreadyExists = errors.New("failed sponsorship already exists")
+	// Speaker
+	ErrCreateSpeaker               = errors.New("failed create speaker")
+	ErrGetAllSpeakerNoPagination   = errors.New("failed get all speaker no pagination")
+	ErrGetAllSpeakerWithPagination = errors.New("failed get all speaker with pagination")
+	ErrSpeakerNotFound             = errors.New("failed speaker not found")
+	ErrUpdateSpeaker               = errors.New("failed update speaker")
+	ErrDeleteSpeakerByID           = errors.New("failed delete speaker by id")
+	ErrSpeakerAlreadyExists        = errors.New("failed speaker already exists")
 )
 
 type (
@@ -86,9 +114,9 @@ type (
 
 	// Sponsorship
 	SponsorshipResponse struct {
-		ID                  uuid.UUID `json:"sponsorship_id"`
-		SponsorshipCategory string    `json:"sponsorship_cat"`
-		Name                string    `json:"sponsorship_name"`
+		ID       uuid.UUID `json:"sponsorship_id"`
+		Category string    `json:"sponsorship_cat"`
+		Name     string    `json:"sponsorship_name"`
 	}
 	SponsorshipPaginationResponse struct {
 		PaginationResponse
@@ -99,15 +127,46 @@ type (
 		Sponsorships []entity.Sponsorship
 	}
 	CreateSponsorshipRequest struct {
-		SponsorshipCategory string `json:"sponsorship_cat"`
-		Name                string `json:"sponsorship_name"`
+		Category string `json:"sponsorship_cat"`
+		Name     string `json:"sponsorship_name"`
 	}
 	UpdateSponsorshipRequest struct {
-		ID                  string `json:"-"`
-		SponsorshipCategory string `json:"sponsorship_cat"`
-		Name                string `json:"sponsorship_name"`
+		ID       string `json:"-"`
+		Category string `json:"sponsorship_cat,omitempty"`
+		Name     string `json:"sponsorship_name,omitempty"`
 	}
 	DeleteSponsorshipRequest struct {
 		SponsorshipID string `json:"-"`
+	}
+
+	// Speaker
+	SpeakerResponse struct {
+		ID    uuid.UUID `json:"speaker_id"`
+		Name  string    `json:"speaker_name"`
+		Image string    `json:"speaker_image"`
+	}
+	SpeakerPaginationResponse struct {
+		PaginationResponse
+		Data []SpeakerResponse `json:"data"`
+	}
+	SpeakerPaginationRepositoryResponse struct {
+		PaginationResponse
+		Speakers []entity.Speaker
+	}
+	CreateSpeakerRequest struct {
+		Name       string                `json:"speaker_name" form:"speaker_name"`
+		Image      string                `json:"speaker_image,omitempty" form:"speaker_image"`
+		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
+		FileReader multipart.File        `json:"filereader,omitempty"`
+	}
+	UpdateSpeakerRequest struct {
+		ID         string                `json:"-"`
+		Name       string                `json:"speaker_name,omitempty"`
+		Image      string                `json:"speaker_image,omitempty"`
+		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
+		FileReader multipart.File        `json:"filereader,omitempty"`
+	}
+	DeleteSpeakerRequest struct {
+		SpeakerID string `json:"-"`
 	}
 )

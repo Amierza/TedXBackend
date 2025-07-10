@@ -8,9 +8,9 @@ import (
 )
 
 type Sponsorship struct {
-	ID                  uuid.UUID           `gorm:"type:uuid;primaryKey" json:"sponsorship_id"`
-	SponsorshipCategory SponsorshipCategory `gorm:"not null" json:"sponsorship_cat"`
-	Name                string              `gorm:"not null" json:"sponsorship_name"`
+	ID       uuid.UUID           `gorm:"type:uuid;primaryKey" json:"sponsorship_id"`
+	Category SponsorshipCategory `gorm:"not null" json:"sponsorship_cat"`
+	Name     string              `gorm:"not null" json:"sponsorship_name"`
 
 	TimeStamp
 }
@@ -22,7 +22,7 @@ func (s *Sponsorship) BeforeCreate(tx *gorm.DB) error {
 		}
 	}()
 
-	if !IsValidSponsorshipCategory(s.SponsorshipCategory) {
+	if !IsValidSponsorshipCategory(s.Category) {
 		return errors.New("invalid sponsorship category")
 	}
 
