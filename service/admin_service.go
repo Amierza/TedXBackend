@@ -86,7 +86,7 @@ func (as *AdminService) Login(ctx context.Context, req dto.LoginRequest) (dto.Lo
 
 // Sponsorship
 func (as *AdminService) CreateSponsorship(ctx context.Context, req dto.CreateSponsorshipRequest) (dto.SponsorshipResponse, error) {
-	if req.Category == "" || req.Name == "" {
+	if req.FileHeader == nil || req.FileReader == nil || req.Category == "" || req.Name == "" {
 		return dto.SponsorshipResponse{}, dto.ErrEmptyFields
 	}
 
@@ -104,10 +104,38 @@ func (as *AdminService) CreateSponsorship(ctx context.Context, req dto.CreateSpo
 		return dto.SponsorshipResponse{}, dto.ErrSponsorshipNameTooShort
 	}
 
+	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
+	if ext != "jpg" && ext != "jpeg" && ext != "png" {
+		return dto.SponsorshipResponse{}, dto.ErrInvalidExtensionPhoto
+	}
+
+	sponsorshipName := strings.ToLower(req.Name)
+	sponsorshipName = strings.ReplaceAll(sponsorshipName, " ", "_")
+
+	fileName := fmt.Sprintf("sponsorship_%s_%s.%s", time.Now().Format("060102150405"), sponsorshipName, ext)
+
+	saveDir := "assets/sponsorship"
+	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+		return dto.SponsorshipResponse{}, dto.ErrCreateFile
+	}
+	savePath := filepath.Join(saveDir, fileName)
+
+	out, err := os.Create(savePath)
+	if err != nil {
+		return dto.SponsorshipResponse{}, dto.ErrCreateFile
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, req.FileReader); err != nil {
+		return dto.SponsorshipResponse{}, dto.ErrSaveFile
+	}
+	req.Image = fileName
+
 	spon := entity.Sponsorship{
 		ID:       uuid.New(),
 		Category: sponCat,
 		Name:     req.Name,
+		Image:    req.Image,
 	}
 
 	err = as.adminRepo.CreateSponsorship(ctx, nil, spon)
@@ -119,6 +147,7 @@ func (as *AdminService) CreateSponsorship(ctx context.Context, req dto.CreateSpo
 		ID:       spon.ID,
 		Category: string(spon.Category),
 		Name:     spon.Name,
+		Image:    req.Image,
 	}, nil
 }
 func (as *AdminService) GetAllSponsorship(ctx context.Context) ([]dto.SponsorshipResponse, error) {
@@ -133,6 +162,7 @@ func (as *AdminService) GetAllSponsorship(ctx context.Context) ([]dto.Sponsorshi
 			ID:       sponsorship.ID,
 			Category: string(sponsorship.Category),
 			Name:     sponsorship.Name,
+			Image:    sponsorship.Image,
 		}
 
 		datas = append(datas, data)
@@ -150,6 +180,7 @@ func (as *AdminService) GetDetailSponsorship(ctx context.Context, sponsorshipID 
 		ID:       sponsorship.ID,
 		Category: string(sponsorship.Category),
 		Name:     sponsorship.Name,
+		Image:    sponsorship.Image,
 	}, nil
 }
 func (as *AdminService) UpdateSponsorship(ctx context.Context, req dto.UpdateSponsorshipRequest) (dto.SponsorshipResponse, error) {
@@ -175,6 +206,46 @@ func (as *AdminService) UpdateSponsorship(ctx context.Context, req dto.UpdateSpo
 		sponsorship.Category = sponCat
 	}
 
+	if req.FileHeader != nil || req.FileReader != nil {
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
+		if ext != "jpg" && ext != "jpeg" && ext != "png" {
+			return dto.SponsorshipResponse{}, dto.ErrInvalidExtensionPhoto
+		}
+
+		if sponsorship.Image != "" {
+			oldPath := filepath.Join("assets/sponsorship", sponsorship.Image)
+			if err := os.Remove(oldPath); err != nil && !os.IsNotExist(err) {
+				return dto.SponsorshipResponse{}, dto.ErrDeleteOldImage
+			}
+		}
+
+		if req.Name == "" {
+			req.Name = sponsorship.Name
+		}
+
+		sponsorshipName := strings.ToLower(req.Name)
+		sponsorshipName = strings.ReplaceAll(sponsorshipName, " ", "_")
+
+		fileName := fmt.Sprintf("sponsorship_%s_%s.%s", time.Now().Format("060102150405"), sponsorshipName, ext)
+
+		saveDir := "assets/sponsorship"
+		if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+			return dto.SponsorshipResponse{}, dto.ErrCreateFile
+		}
+		savePath := filepath.Join(saveDir, fileName)
+
+		out, err := os.Create(savePath)
+		if err != nil {
+			return dto.SponsorshipResponse{}, dto.ErrCreateFile
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, req.FileReader); err != nil {
+			return dto.SponsorshipResponse{}, dto.ErrSaveFile
+		}
+		sponsorship.Image = fileName
+	}
+
 	err = as.adminRepo.UpdateSponsorship(ctx, nil, sponsorship)
 	if err != nil {
 		return dto.SponsorshipResponse{}, dto.ErrUpdateSponsorship
@@ -184,6 +255,7 @@ func (as *AdminService) UpdateSponsorship(ctx context.Context, req dto.UpdateSpo
 		ID:       sponsorship.ID,
 		Category: string(sponsorship.Category),
 		Name:     sponsorship.Name,
+		Image:    sponsorship.Image,
 	}
 
 	return res, nil
@@ -203,6 +275,7 @@ func (as *AdminService) DeleteSponsorship(ctx context.Context, req dto.DeleteSpo
 		ID:       deletedSponsorship.ID,
 		Category: string(deletedSponsorship.Category),
 		Name:     deletedSponsorship.Name,
+		Image:    deletedSponsorship.Image,
 	}
 
 	return res, nil
@@ -210,7 +283,7 @@ func (as *AdminService) DeleteSponsorship(ctx context.Context, req dto.DeleteSpo
 
 // Speaker
 func (as *AdminService) CreateSpeaker(ctx context.Context, req dto.CreateSpeakerRequest) (dto.SpeakerResponse, error) {
-	if req.FileHeader == nil || req.FileReader == nil || req.Name == "" {
+	if req.FileHeader == nil || req.FileReader == nil || req.Name == "" || req.Description == "" {
 		return dto.SpeakerResponse{}, dto.ErrEmptyFields
 	}
 
@@ -218,47 +291,46 @@ func (as *AdminService) CreateSpeaker(ctx context.Context, req dto.CreateSpeaker
 		return dto.SpeakerResponse{}, dto.ErrSpeakerNameTooShort
 	}
 
+	if len(req.Description) < 5 {
+		return dto.SpeakerResponse{}, dto.ErrSpeakerDescriptionTooShort
+	}
+
 	_, flag, err := as.adminRepo.GetSpeakerByName(ctx, nil, req.Name)
 	if err == nil || flag {
 		return dto.SpeakerResponse{}, dto.ErrSpeakerAlreadyExists
 	}
 
-	if req.FileReader != nil && req.FileHeader != nil {
-		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
-
-		if ext != "jpg" && ext != "jpeg" && ext != "png" {
-			return dto.SpeakerResponse{}, dto.ErrInvalidExtensionPhoto
-		}
-
-		speakerName := strings.ToLower(req.Name)
-		speakerName = strings.ReplaceAll(speakerName, " ", "_")
-
-		fileName := fmt.Sprintf("speaker_%d_%s.%s", time.Now().Unix(), speakerName, ext)
-
-		saveDir := "assets/speaker"
-		if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
-			return dto.SpeakerResponse{}, dto.ErrCreateFile
-		}
-
-		savePath := filepath.Join(saveDir, fileName)
-
-		out, err := os.Create(savePath)
-		if err != nil {
-			return dto.SpeakerResponse{}, dto.ErrCreateFile
-		}
-		defer out.Close()
-
-		if _, err := io.Copy(out, req.FileReader); err != nil {
-			return dto.SpeakerResponse{}, dto.ErrSaveFile
-		}
-
-		req.Image = fileName
+	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
+	if ext != "jpg" && ext != "jpeg" && ext != "png" {
+		return dto.SpeakerResponse{}, dto.ErrInvalidExtensionPhoto
 	}
 
+	speakerName := strings.ToLower(req.Name)
+	speakerName = strings.ReplaceAll(speakerName, " ", "_")
+
+	fileName := fmt.Sprintf("speaker_%d_%s.%s", time.Now().Unix(), speakerName, ext)
+	saveDir := "assets/speaker"
+	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+		return dto.SpeakerResponse{}, dto.ErrCreateFile
+	}
+	savePath := filepath.Join(saveDir, fileName)
+
+	out, err := os.Create(savePath)
+	if err != nil {
+		return dto.SpeakerResponse{}, dto.ErrCreateFile
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, req.FileReader); err != nil {
+		return dto.SpeakerResponse{}, dto.ErrSaveFile
+	}
+	req.Image = fileName
+
 	speaker := entity.Speaker{
-		ID:    uuid.New(),
-		Name:  req.Name,
-		Image: req.Image,
+		ID:          uuid.New(),
+		Name:        req.Name,
+		Image:       req.Image,
+		Description: req.Description,
 	}
 
 	err = as.adminRepo.CreateSpeaker(ctx, nil, speaker)
@@ -267,9 +339,10 @@ func (as *AdminService) CreateSpeaker(ctx context.Context, req dto.CreateSpeaker
 	}
 
 	return dto.SpeakerResponse{
-		ID:    speaker.ID,
-		Name:  speaker.Name,
-		Image: speaker.Image,
+		ID:          speaker.ID,
+		Name:        speaker.Name,
+		Image:       speaker.Image,
+		Description: speaker.Description,
 	}, nil
 }
 func (as *AdminService) GetAllSpeakerNoPagination(ctx context.Context) ([]dto.SpeakerResponse, error) {
@@ -281,9 +354,10 @@ func (as *AdminService) GetAllSpeakerNoPagination(ctx context.Context) ([]dto.Sp
 	var datas []dto.SpeakerResponse
 	for _, speaker := range speakers {
 		data := dto.SpeakerResponse{
-			ID:    speaker.ID,
-			Name:  speaker.Name,
-			Image: speaker.Image,
+			ID:          speaker.ID,
+			Name:        speaker.Name,
+			Image:       speaker.Image,
+			Description: speaker.Description,
 		}
 
 		datas = append(datas, data)
@@ -300,9 +374,10 @@ func (as *AdminService) GetAllSpeakerWithPagination(ctx context.Context, req dto
 	var datas []dto.SpeakerResponse
 	for _, speaker := range dataWithPaginate.Speakers {
 		data := dto.SpeakerResponse{
-			ID:    speaker.ID,
-			Name:  speaker.Name,
-			Image: speaker.Image,
+			ID:          speaker.ID,
+			Name:        speaker.Name,
+			Image:       speaker.Image,
+			Description: speaker.Description,
 		}
 
 		datas = append(datas, data)
@@ -325,9 +400,10 @@ func (as *AdminService) GetDetailSpeaker(ctx context.Context, speakerID string) 
 	}
 
 	return dto.SpeakerResponse{
-		ID:    speaker.ID,
-		Name:  speaker.Name,
-		Image: speaker.Image,
+		ID:          speaker.ID,
+		Name:        speaker.Name,
+		Image:       speaker.Image,
+		Description: speaker.Description,
 	}, nil
 }
 func (as *AdminService) UpdateSpeaker(ctx context.Context, req dto.UpdateSpeakerRequest) (dto.SpeakerResponse, error) {
@@ -342,6 +418,14 @@ func (as *AdminService) UpdateSpeaker(ctx context.Context, req dto.UpdateSpeaker
 		}
 
 		speaker.Name = req.Name
+	}
+
+	if req.Description != "" {
+		if len(req.Description) < 3 {
+			return dto.SpeakerResponse{}, dto.ErrSpeakerDescriptionTooShort
+		}
+
+		speaker.Description = req.Description
 	}
 
 	if req.FileReader != nil && req.FileHeader != nil {
@@ -393,9 +477,10 @@ func (as *AdminService) UpdateSpeaker(ctx context.Context, req dto.UpdateSpeaker
 	}
 
 	res := dto.SpeakerResponse{
-		ID:    speaker.ID,
-		Name:  speaker.Name,
-		Image: speaker.Image,
+		ID:          speaker.ID,
+		Name:        speaker.Name,
+		Image:       speaker.Image,
+		Description: speaker.Description,
 	}
 
 	return res, nil
@@ -412,9 +497,10 @@ func (as *AdminService) DeleteSpeaker(ctx context.Context, req dto.DeleteSpeaker
 	}
 
 	res := dto.SpeakerResponse{
-		ID:    deletedSpeaker.ID,
-		Name:  deletedSpeaker.Name,
-		Image: deletedSpeaker.Image,
+		ID:          deletedSpeaker.ID,
+		Name:        deletedSpeaker.Name,
+		Image:       deletedSpeaker.Image,
+		Description: deletedSpeaker.Description,
 	}
 
 	return res, nil

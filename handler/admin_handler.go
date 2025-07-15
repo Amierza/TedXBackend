@@ -63,11 +63,22 @@ func (ah *AdminHandler) Login(ctx *gin.Context) {
 // Sponsorship
 func (ah *AdminHandler) CreateSponsorship(ctx *gin.Context) {
 	var payload dto.CreateSponsorshipRequest
-	if err := ctx.ShouldBind(&payload); err != nil {
-		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-		return
+	fileHeader, err := ctx.FormFile("sponsorship_image")
+	if err == nil {
+		file, err := fileHeader.Open()
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_OPEN_PHOTO, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+			return
+		}
+		defer file.Close()
+
+		payload.FileHeader = fileHeader
+		payload.FileReader = file
 	}
+
+	payload.Category = ctx.PostForm("sponsorship_cat")
+	payload.Name = ctx.PostForm("sponsorship_name")
 
 	result, err := ah.adminService.CreateSponsorship(ctx, payload)
 	if err != nil {
@@ -80,7 +91,7 @@ func (ah *AdminHandler) CreateSponsorship(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 func (ah *AdminHandler) GetAllSponsorship(ctx *gin.Context) {
-	result, err := ah.adminService.GetAllSponsorship(ctx.Request.Context())
+	result, err := ah.adminService.GetAllSponsorship(ctx)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_SPONSORSHIP, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -107,13 +118,30 @@ func (ah *AdminHandler) UpdateSponsorship(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	var payload dto.UpdateSponsorshipRequest
 	payload.ID = idStr
+	fileHeader, err := ctx.FormFile("sponsorship_image")
+	if err == nil {
+		file, err := fileHeader.Open()
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_OPEN_PHOTO, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+			return
+		}
+		defer file.Close()
+
+		payload.FileHeader = fileHeader
+		payload.FileReader = file
+	}
+
+	payload.Category = ctx.PostForm("sponsorship_cat")
+	payload.Name = ctx.PostForm("sponsorship_name")
+
 	if err := ctx.ShouldBind(&payload); err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
 
-	result, err := ah.adminService.UpdateSponsorship(ctx.Request.Context(), payload)
+	result, err := ah.adminService.UpdateSponsorship(ctx, payload)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_SPONSORSHIP, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -133,7 +161,7 @@ func (ah *AdminHandler) DeleteSponsorship(ctx *gin.Context) {
 		return
 	}
 
-	result, err := ah.adminService.DeleteSponsorship(ctx.Request.Context(), payload)
+	result, err := ah.adminService.DeleteSponsorship(ctx, payload)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_DELETE_SPONSORSHIP, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -162,6 +190,7 @@ func (ah *AdminHandler) CreateSpeaker(ctx *gin.Context) {
 	}
 
 	payload.Name = ctx.PostForm("speaker_name")
+	payload.Description = ctx.PostForm("speaker_desc")
 
 	result, err := ah.adminService.CreateSpeaker(ctx, payload)
 	if err != nil {
@@ -179,7 +208,7 @@ func (ah *AdminHandler) GetAllSpeaker(ctx *gin.Context) {
 
 	if !usePagination {
 		// Tanpa pagination
-		result, err := ah.adminService.GetAllSpeakerNoPagination(ctx.Request.Context())
+		result, err := ah.adminService.GetAllSpeakerNoPagination(ctx)
 		if err != nil {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_SPEAKER, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -198,7 +227,7 @@ func (ah *AdminHandler) GetAllSpeaker(ctx *gin.Context) {
 		return
 	}
 
-	result, err := ah.adminService.GetAllSpeakerWithPagination(ctx.Request.Context(), payload)
+	result, err := ah.adminService.GetAllSpeakerWithPagination(ctx, payload)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_SPEAKER, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -229,6 +258,7 @@ func (ah *AdminHandler) GetDetailSpeaker(ctx *gin.Context) {
 func (ah *AdminHandler) UpdateSpeaker(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	var payload dto.UpdateSpeakerRequest
+	payload.ID = idStr
 	fileHeader, err := ctx.FormFile("speaker_image")
 	if err == nil {
 		file, err := fileHeader.Open()
@@ -244,9 +274,9 @@ func (ah *AdminHandler) UpdateSpeaker(ctx *gin.Context) {
 	}
 
 	payload.Name = ctx.PostForm("speaker_name")
-	payload.ID = idStr
+	payload.Description = ctx.PostForm("speaker_desc")
 
-	result, err := ah.adminService.UpdateSpeaker(ctx.Request.Context(), payload)
+	result, err := ah.adminService.UpdateSpeaker(ctx, payload)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_SPEAKER, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)

@@ -6,3 +6,5 @@ assets/**
 !assets/
 !assets/speaker/
 !assets/speaker/.gitkeep
+!assets/sponsorship/
+!assets/sponsorship/.gitkeep

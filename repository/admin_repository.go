@@ -149,7 +149,7 @@ func (ar *AdminRepository) GetAllSpeaker(ctx context.Context, tx *gorm.DB) ([]en
 		err      error
 	)
 
-	if err := tx.WithContext(ctx).Model(&entity.Sponsorship{}).Find(&speakers).Error; err != nil {
+	if err := tx.WithContext(ctx).Model(&entity.Speaker{}).Find(&speakers).Error; err != nil {
 		return []entity.Speaker{}, err
 	}
 

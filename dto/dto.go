@@ -79,7 +79,8 @@ var (
 	ErrInvalidPassword            = errors.New("failed invalid password")
 	ErrInvalidSponsorshipCategory = errors.New("failed invalid sponsroship category")
 	ErrSponsorshipNameTooShort    = errors.New("failed sponsorship name too short (min 3.)")
-	ErrSpeakerNameTooShort        = errors.New("failed sponsorship name too short (min 3.)")
+	ErrSpeakerNameTooShort        = errors.New("failed speaker name too short (min 3.)")
+	ErrSpeakerDescriptionTooShort = errors.New("failed speaker name too short (min 5.)")
 	// Email
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrEmailNotFound      = errors.New("email not found")
@@ -102,8 +103,8 @@ var (
 	ErrSpeakerAlreadyExists        = errors.New("failed speaker already exists")
 )
 
+// Authentication
 type (
-	// Authentication
 	LoginRequest struct {
 		Email    string `json:"email" form:"email"`
 		Password string `json:"password" form:"password"`
@@ -111,39 +112,58 @@ type (
 	LoginResponse struct {
 		Token string `json:"token"`
 	}
+)
 
-	// Sponsorship
+// Sponsorship
+type (
 	SponsorshipResponse struct {
 		ID       uuid.UUID `json:"sponsorship_id"`
 		Category string    `json:"sponsorship_cat"`
 		Name     string    `json:"sponsorship_name"`
-	}
-	SponsorshipPaginationResponse struct {
-		PaginationResponse
-		Data []SponsorshipResponse `json:"data"`
-	}
-	SponsorshipPaginationRepositoryResponse struct {
-		PaginationResponse
-		Sponsorships []entity.Sponsorship
+		Image    string    `json:"sponsorship_image"`
 	}
 	CreateSponsorshipRequest struct {
-		Category string `json:"sponsorship_cat"`
-		Name     string `json:"sponsorship_name"`
+		Category   string                `json:"sponsorship_cat" form:"sponsorship_cat"`
+		Name       string                `json:"sponsorship_name" form:"sponsorship_name"`
+		Image      string                `json:"sponsorship_image" form:"sponsorship_image"`
+		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
+		FileReader multipart.File        `json:"filereader,omitempty"`
 	}
 	UpdateSponsorshipRequest struct {
-		ID       string `json:"-"`
-		Category string `json:"sponsorship_cat,omitempty"`
-		Name     string `json:"sponsorship_name,omitempty"`
+		ID         string                `json:"-"`
+		Category   string                `json:"sponsorship_cat,omitempty"`
+		Name       string                `json:"sponsorship_name,omitempty"`
+		Image      string                `json:"sponsorship_image,omitempty"`
+		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
+		FileReader multipart.File        `json:"filereader,omitempty"`
 	}
 	DeleteSponsorshipRequest struct {
 		SponsorshipID string `json:"-"`
 	}
+)
 
-	// Speaker
+// Speaker
+type (
 	SpeakerResponse struct {
-		ID    uuid.UUID `json:"speaker_id"`
-		Name  string    `json:"speaker_name"`
-		Image string    `json:"speaker_image"`
+		ID          uuid.UUID `json:"speaker_id"`
+		Name        string    `json:"speaker_name"`
+		Image       string    `json:"speaker_image"`
+		Description string    `json:"speaker_desc"`
+	}
+	CreateSpeakerRequest struct {
+		Name        string                `json:"speaker_name" form:"speaker_name"`
+		Image       string                `json:"speaker_image" form:"speaker_image"`
+		Description string                `json:"speaker_desc"`
+		FileHeader  *multipart.FileHeader `json:"fileheader,omitempty"`
+		FileReader  multipart.File        `json:"filereader,omitempty"`
+	}
+	UpdateSpeakerRequest struct {
+		ID          string                `json:"-"`
+		Name        string                `json:"speaker_name,omitempty"`
+		Image       string                `json:"speaker_image,omitempty"`
+		Description string                `json:"speaker_desc,omitempty"`
+		FileHeader  *multipart.FileHeader `json:"fileheader,omitempty"`
+		FileReader  multipart.File        `json:"filereader,omitempty"`
 	}
 	SpeakerPaginationResponse struct {
 		PaginationResponse
@@ -152,19 +172,6 @@ type (
 	SpeakerPaginationRepositoryResponse struct {
 		PaginationResponse
 		Speakers []entity.Speaker
-	}
-	CreateSpeakerRequest struct {
-		Name       string                `json:"speaker_name" form:"speaker_name"`
-		Image      string                `json:"speaker_image,omitempty" form:"speaker_image"`
-		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
-		FileReader multipart.File        `json:"filereader,omitempty"`
-	}
-	UpdateSpeakerRequest struct {
-		ID         string                `json:"-"`
-		Name       string                `json:"speaker_name,omitempty"`
-		Image      string                `json:"speaker_image,omitempty"`
-		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
-		FileReader multipart.File        `json:"filereader,omitempty"`
 	}
 	DeleteSpeakerRequest struct {
 		SpeakerID string `json:"-"`
