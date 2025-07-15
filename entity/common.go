@@ -21,6 +21,8 @@ type (
 	TransactionStatus   string
 	PaymentType         string
 	Acquire             string
+	ItemType            string
+	BundleType          string
 )
 
 const (
@@ -58,6 +60,13 @@ const (
 	AcquireBCA     Acquire = constants.ENUM_MIDTRANS_ACQUIRE_BCA
 	AcquireBNI     Acquire = constants.ENUM_MIDTRANS_ACQUIRE_BNI
 	AcquireCIMB    Acquire = constants.ENUM_MIDTRANS_ACQUIRE_CIMB
+
+	TicketItemType ItemType = constants.ENUM_TICKET_ITEM_TYPE
+	MerchItemType  ItemType = constants.ENUM_MERCH_ITEM_TYPE
+	BundleItemType ItemType = constants.ENUM_BUNDLE_ITEM_TYPE
+
+	BundleMerchType       BundleType = constants.ENUM_BUNDLE_MERCH_TYPE
+	BundleMerchTicketType BundleType = constants.ENUM_BUNDLE_MERCH_TICKET_TYPE
 )
 
 func IsValidRole(r Role) bool {
@@ -86,4 +95,12 @@ func IsValidPaymentType(pt PaymentType) bool {
 
 func IsValidAcquire(a Acquire) bool {
 	return a == AcquireMandiri || a == AcquireBRI || a == AcquireBCA || a == AcquireBNI || a == AcquireCIMB
+}
+
+func IsValidItemType(it ItemType) bool {
+	return it == TicketItemType || it == MerchItemType || it == BundleItemType
+}
+
+func IsValidBundleType(bt BundleType) bool {
+	return bt == BundleMerchTicketType || bt == BundleMerchType
 }
