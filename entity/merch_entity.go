@@ -1,6 +1,11 @@
 package entity
 
-import "github.com/google/uuid"
+import (
+	"errors"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type Merch struct {
 	ID          uuid.UUID     `gorm:"type:uuid;primaryKey" json:"merch_id"`
@@ -15,4 +20,12 @@ type Merch struct {
 	MerchSizeDetails  []MerchSizeDetail  `gorm:"foreignKey:MerchID"`
 
 	TimeStamp
+}
+
+func (m *Merch) BeforeCreate(tx *gorm.DB) error {
+	if !IsValidMerchCategory(m.Category) {
+		return errors.New("invalid item type")
+	}
+
+	return nil
 }

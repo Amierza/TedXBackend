@@ -11,7 +11,8 @@ import (
 type Transaction struct {
 	ID             uuid.UUID         `gorm:"type:uuid;primaryKey" json:"transaction_id"`
 	OrderID        *uuid.UUID        `gorm:"type:uuid" json:"transaction_order_id"`
-	AudienceType   AudienceType      `gorm:"not null;default:'regular'" json:"transaction_audience_type"`
+	AudienceType   AudienceType      `gorm:"default:'regular'" json:"transaction_audience_type"`
+	ItemType       ItemType          `json:"transaction_item_type"`
 	Status         TransactionStatus `json:"transaction_status"`
 	PaymentType    PaymentType       `json:"transaction_payment_type"`
 	SignatureKey   string            `json:"transaction_signature_key"`
@@ -41,6 +42,10 @@ func (t *Transaction) BeforeCreate(tx *gorm.DB) error {
 
 	if !IsValidPaymentType(t.PaymentType) {
 		return errors.New("invalid payment type")
+	}
+
+	if !IsValidItemType(t.ItemType) {
+		return errors.New("invalid item type")
 	}
 
 	if t.Acquire != "" && !IsValidAcquire(t.Acquire) {

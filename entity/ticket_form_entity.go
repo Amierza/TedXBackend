@@ -23,12 +23,6 @@ type TicketForm struct {
 }
 
 func (tf *TicketForm) BeforeCreate(tx *gorm.DB) error {
-	defer func() {
-		if err := recover(); err != nil {
-			tx.Rollback()
-		}
-	}()
-
 	var err error
 
 	tf.PhoneNumber, err = helpers.StandardizePhoneNumber(tf.PhoneNumber)

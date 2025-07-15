@@ -17,12 +17,6 @@ type Sponsorship struct {
 }
 
 func (s *Sponsorship) BeforeCreate(tx *gorm.DB) error {
-	defer func() {
-		if err := recover(); err != nil {
-			_ = tx.Rollback()
-		}
-	}()
-
 	if !IsValidSponsorshipCategory(s.Category) {
 		return errors.New("invalid sponsorship category")
 	}

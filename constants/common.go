@@ -30,6 +30,13 @@ const (
 	ENUM_MIDTRANS_PAYMENT_TYPE_GOPAY         = "gopay"
 	ENUM_MIDTRANS_PAYMENT_TYPE_SHOPEE        = "shopeepay"
 
+	ENUM_TICKET_ITEM_TYPE = "ticket"
+	ENUM_MERCH_ITEM_TYPE  = "merch"
+	ENUM_BUNDLE_ITEM_TYPE = "bundle"
+
+	ENUM_BUNDLE_MERCH_TYPE        = "bundle merch"
+	ENUM_BUNDLE_MERCH_TICKET_TYPE = "bundle merch ticket"
+
 	ENUM_MIDTRANS_ACQUIRE_MANDIRI = "mandiri"
 	ENUM_MIDTRANS_ACQUIRE_BRI     = "bri"
 	ENUM_MIDTRANS_ACQUIRE_BCA     = "bca"
