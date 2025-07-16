@@ -15,11 +15,6 @@ func Migrate(db *gorm.DB) error {
 		&entity.TicketForm{},
 		&entity.GuestAttendance{},
 
-		&entity.MerchSizeDetail{},
-		&entity.MerchSize{},
-		&entity.MerchColorDetail{},
-		&entity.MerchColor{},
-		&entity.MerchImageDetail{},
 		&entity.MerchImage{},
 		&entity.Merch{},
 

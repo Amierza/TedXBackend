@@ -15,7 +15,8 @@ const (
 	MESSAGE_FAILED_READ_PHOTO = "failed read photo"
 	MESSAGE_FAILED_OPEN_PHOTO = "failed open photo"
 	// PARSE
-	MESSAGE_FAILED_PARSE_UUID = "failed parse string to uuid"
+	MESSAGE_FAILED_PARSE_UUID           = "failed parse string to uuid"
+	MESSAGE_FAILED_PARSE_MULTIPART_FORM = "failed to parse multipart form"
 	// Authentication
 	MESSAGE_FAILED_LOGIN_ADMIN = "failed login admin"
 	// Middleware
@@ -39,6 +40,12 @@ const (
 	MESSAGE_FAILED_GET_DETAIL_SPEAKER = "failed get detail speaker"
 	MESSAGE_FAILED_UPDATE_SPEAKER     = "failed update speaker"
 	MESSAGE_FAILED_DELETE_SPEAKER     = "failed delete speaker"
+	// Merch
+	MESSAGE_FAILED_CREATE_MERCH     = "failed create merch"
+	MESSAGE_FAILED_GET_LIST_MERCH   = "failed get list merch"
+	MESSAGE_FAILED_GET_DETAIL_MERCH = "failed get detail merch"
+	MESSAGE_FAILED_UPDATE_MERCH     = "failed update merch"
+	MESSAGE_FAILED_DELETE_MERCH     = "failed delete merch"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -55,6 +62,12 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_SPEAKER = "success get detail speaker"
 	MESSAGE_SUCCESS_UPDATE_SPEAKER     = "success update speaker"
 	MESSAGE_SUCCESS_DELETE_SPEAKER     = "success delete speaker"
+	// Merch
+	MESSAGE_SUCCESS_CREATE_MERCH     = "success create merch"
+	MESSAGE_SUCCESS_GET_LIST_MERCH   = "success get list merch"
+	MESSAGE_SUCCESS_GET_DETAIL_MERCH = "success get detail merch"
+	MESSAGE_SUCCESS_UPDATE_MERCH     = "success update merch"
+	MESSAGE_SUCCESS_DELETE_MERCH     = "success delete merch"
 )
 
 var (
@@ -77,22 +90,24 @@ var (
 	ErrEmptyFields                = errors.New("failed there are empty fields")
 	ErrInvalidEmail               = errors.New("failed invalid email")
 	ErrInvalidPassword            = errors.New("failed invalid password")
-	ErrInvalidSponsorshipCategory = errors.New("failed invalid sponsroship category")
 	ErrSponsorshipNameTooShort    = errors.New("failed sponsorship name too short (min 3.)")
 	ErrSpeakerNameTooShort        = errors.New("failed speaker name too short (min 3.)")
 	ErrSpeakerDescriptionTooShort = errors.New("failed speaker name too short (min 5.)")
+	ErrMerchNameTooShort          = errors.New("failed merch name too short (min 3.)")
+	ErrMerchDescriptionTooShort   = errors.New("failed merch name too short (min 5.)")
 	// Email
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrEmailNotFound      = errors.New("email not found")
 	// Password
 	ErrPasswordNotMatch = errors.New("password not match")
 	// Sponsorship
-	ErrCreateSponsorship        = errors.New("failed create sponsorship")
-	ErrGetAllSponsorship        = errors.New("failed get all sponsorship")
-	ErrSponsorshipNotFound      = errors.New("failed sponsorship not found")
-	ErrUpdateSponsorship        = errors.New("failed update sponsorship")
-	ErrDeleteSponsorshipByID    = errors.New("failed delete sponsorship by id")
-	ErrSponsorshipAlreadyExists = errors.New("failed sponsorship already exists")
+	ErrCreateSponsorship          = errors.New("failed create sponsorship")
+	ErrGetAllSponsorship          = errors.New("failed get all sponsorship")
+	ErrSponsorshipNotFound        = errors.New("failed sponsorship not found")
+	ErrUpdateSponsorship          = errors.New("failed update sponsorship")
+	ErrDeleteSponsorshipByID      = errors.New("failed delete sponsorship by id")
+	ErrSponsorshipAlreadyExists   = errors.New("failed sponsorship already exists")
+	ErrInvalidSponsorshipCategory = errors.New("failed invalid sponsorship category")
 	// Speaker
 	ErrCreateSpeaker               = errors.New("failed create speaker")
 	ErrGetAllSpeakerNoPagination   = errors.New("failed get all speaker no pagination")
@@ -101,6 +116,23 @@ var (
 	ErrUpdateSpeaker               = errors.New("failed update speaker")
 	ErrDeleteSpeakerByID           = errors.New("failed delete speaker by id")
 	ErrSpeakerAlreadyExists        = errors.New("failed speaker already exists")
+	// Merch
+	ErrCreateMerch                = errors.New("failed create merch")
+	ErrCreateMerchImage           = errors.New("failed create merch image")
+	ErrCreateMerchImageDetail     = errors.New("failed create merch image detail")
+	ErrGetAllMerchNoPagination    = errors.New("failed get all merch no pagination")
+	ErrGetAllMerchWithPagination  = errors.New("failed get all merch with pagination")
+	ErrGetMerchImages             = errors.New("failed get merch images")
+	ErrMerchNotFound              = errors.New("failed merch not found")
+	ErrMerchImageNotFound         = errors.New("failed merch image not found")
+	ErrUpdateMerch                = errors.New("failed update merch")
+	ErrDeleteMerchByID            = errors.New("failed delete merch by id")
+	ErrDeleteMerchImageByID       = errors.New("failed delete merch image detail by id")
+	ErrDeleteMerchImagesByMerchID = errors.New("failed delete merch images by merch id")
+	ErrMerchAlreadyExists         = errors.New("failed merch already exists")
+	ErrInvalidMerchCategory       = errors.New("failed invalid merch category")
+	ErrStockOutOfBound            = errors.New("failed stock out of bound")
+	ErrPriceOutOfBound            = errors.New("failed price out of bound")
 )
 
 // Authentication
@@ -175,5 +207,59 @@ type (
 	}
 	DeleteSpeakerRequest struct {
 		SpeakerID string `json:"-"`
+	}
+)
+
+// Merch
+type (
+	MerchResponse struct {
+		ID          uuid.UUID            `json:"merch_id"`
+		Name        string               `json:"merch_name"`
+		Stock       int                  `json:"merch_stock"`
+		Price       float64              `json:"merch_price"`
+		Description string               `json:"merch_desc"`
+		Category    entity.MerchCategory `json:"merch_cat"`
+		Images      []MerchImageResponse `json:"merch_images"`
+	}
+	MerchImageResponse struct {
+		ID   uuid.UUID `json:"merch_image_id"`
+		Name string    `json:"merch_image_name"`
+	}
+	ImageUpload struct {
+		FileHeader *multipart.FileHeader
+		FileReader multipart.File
+	}
+	CreateMerchRequest struct {
+		Name        string               `json:"merch_name" form:"merch_name"`
+		Stock       int                  `json:"merch_stock" form:"merch_stock"`
+		Price       float64              `json:"merch_price" form:"merch_price"`
+		Description string               `json:"merch_desc" form:"merch_desc"`
+		Category    entity.MerchCategory `json:"merch_cat" form:"merch_cat"`
+		Images      []ImageUpload        `json:"-" form:"-"`
+	}
+	ReplaceImageUpload struct {
+		TargetImageID uuid.UUID             `form:"target_image_id"`
+		FileHeader    *multipart.FileHeader `form:"-"`
+		FileReader    multipart.File        `form:"-"`
+	}
+	UpdateMerchRequest struct {
+		ID            string               `json:"-"`
+		Name          string               `json:"merch_name,omitempty" form:"merch_name"`
+		Stock         *int                 `json:"merch_stock,omitempty" form:"merch_stock"`
+		Price         *float64             `json:"merch_price,omitempty" form:"merch_price"`
+		Description   string               `json:"merch_desc,omitempty" form:"merch_desc"`
+		Category      entity.MerchCategory `json:"merch_cat,omitempty" form:"merch_cat"`
+		ReplaceImages []ReplaceImageUpload `json:"-" form:"-"`
+	}
+	MerchPaginationResponse struct {
+		PaginationResponse
+		Data []MerchResponse `json:"data"`
+	}
+	MerchPaginationRepositoryResponse struct {
+		PaginationResponse
+		Merchs []entity.Merch
+	}
+	DeleteMerchRequest struct {
+		MerchID string `json:"-"`
 	}
 )

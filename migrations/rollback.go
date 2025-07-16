@@ -13,11 +13,6 @@ func Rollback(db *gorm.DB) error {
 
 		&entity.Merch{},
 		&entity.MerchImage{},
-		&entity.MerchImageDetail{},
-		&entity.MerchColor{},
-		&entity.MerchColorDetail{},
-		&entity.MerchSize{},
-		&entity.MerchSizeDetail{},
 
 		&entity.GuestAttendance{},
 		&entity.TicketForm{},

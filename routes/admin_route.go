@@ -28,6 +28,13 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 			routes.GET("/get-detail-speaker/:id", adminHandler.GetDetailSpeaker)
 			routes.PATCH("/update-speaker/:id", adminHandler.UpdateSpeaker)
 			routes.DELETE("/delete-speaker/:id", adminHandler.DeleteSpeaker)
+
+			// Merch
+			routes.POST("/create-merch", adminHandler.CreateMerch)
+			routes.GET("/get-all-merch", adminHandler.GetAllMerch)
+			routes.GET("/get-detail-merch/:id", adminHandler.GetDetailMerch)
+			routes.PATCH("/update-merch/:id", adminHandler.UpdateMerch)
+			routes.DELETE("/delete-merch/:id", adminHandler.DeleteMerch)
 		}
 	}
 }
