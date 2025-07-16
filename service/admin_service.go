@@ -35,6 +35,14 @@ type (
 		GetDetailSpeaker(ctx context.Context, speakerID string) (dto.SpeakerResponse, error)
 		UpdateSpeaker(ctx context.Context, req dto.UpdateSpeakerRequest) (dto.SpeakerResponse, error)
 		DeleteSpeaker(ctx context.Context, req dto.DeleteSpeakerRequest) (dto.SpeakerResponse, error)
+
+		// Merch
+		CreateMerch(ctx context.Context, req dto.CreateMerchRequest) (dto.MerchResponse, error)
+		GetAllMerchNoPagination(ctx context.Context) ([]dto.MerchResponse, error)
+		GetAllMerchWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.MerchPaginationResponse, error)
+		GetDetailMerch(ctx context.Context, merchID string) (dto.MerchResponse, error)
+		UpdateMerch(ctx context.Context, req dto.UpdateMerchRequest) (dto.MerchResponse, error)
+		DeleteMerch(ctx context.Context, req dto.DeleteMerchRequest) (dto.MerchResponse, error)
 	}
 
 	AdminService struct {
@@ -308,7 +316,7 @@ func (as *AdminService) CreateSpeaker(ctx context.Context, req dto.CreateSpeaker
 	speakerName := strings.ToLower(req.Name)
 	speakerName = strings.ReplaceAll(speakerName, " ", "_")
 
-	fileName := fmt.Sprintf("speaker_%d_%s.%s", time.Now().Unix(), speakerName, ext)
+	fileName := fmt.Sprintf("speaker_%s_%s.%s", time.Now().Format("060102150405"), speakerName, ext)
 	saveDir := "assets/speaker"
 	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
 		return dto.SpeakerResponse{}, dto.ErrCreateFile
@@ -449,7 +457,7 @@ func (as *AdminService) UpdateSpeaker(ctx context.Context, req dto.UpdateSpeaker
 		speakerName := strings.ToLower(req.Name)
 		speakerName = strings.ReplaceAll(speakerName, " ", "_")
 
-		fileName := fmt.Sprintf("speaker_%d_%s.%s", time.Now().Unix(), speakerName, ext)
+		fileName := fmt.Sprintf("speaker_%s_%s.%s", time.Now().Format("060102150405"), speakerName, ext)
 
 		saveDir := "assets/speaker"
 		if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
@@ -501,6 +509,355 @@ func (as *AdminService) DeleteSpeaker(ctx context.Context, req dto.DeleteSpeaker
 		Name:        deletedSpeaker.Name,
 		Image:       deletedSpeaker.Image,
 		Description: deletedSpeaker.Description,
+	}
+
+	return res, nil
+}
+
+// Merch
+func (as *AdminService) CreateMerch(ctx context.Context, req dto.CreateMerchRequest) (dto.MerchResponse, error) {
+	if req.Name == "" || req.Description == "" || req.Category == "" || len(req.Images) == 0 {
+		return dto.MerchResponse{}, dto.ErrEmptyFields
+	}
+
+	if len(req.Name) < 3 {
+		return dto.MerchResponse{}, dto.ErrMerchNameTooShort
+	}
+
+	if len(req.Description) < 5 {
+		return dto.MerchResponse{}, dto.ErrMerchDescriptionTooShort
+	}
+
+	if !entity.IsValidMerchCategory(req.Category) {
+		return dto.MerchResponse{}, dto.ErrInvalidMerchCategory
+	}
+
+	if req.Stock < 0 {
+		return dto.MerchResponse{}, dto.ErrStockOutOfBound
+	}
+
+	if req.Price < 0 {
+		return dto.MerchResponse{}, dto.ErrPriceOutOfBound
+	}
+
+	merchID := uuid.New()
+	merch := entity.Merch{
+		ID:          merchID,
+		Name:        req.Name,
+		Stock:       req.Stock,
+		Price:       req.Price,
+		Description: req.Description,
+		Category:    req.Category,
+	}
+
+	err := as.adminRepo.CreateMerch(ctx, nil, merch)
+	if err != nil {
+		return dto.MerchResponse{}, dto.ErrCreateMerch
+	}
+
+	saveDir := "assets/merch"
+	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+		return dto.MerchResponse{}, dto.ErrCreateFile
+	}
+
+	var imageResponses []dto.MerchImageResponse
+	for _, img := range req.Images {
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(img.FileHeader.Filename), "."))
+		if ext != "jpg" && ext != "jpeg" && ext != "png" {
+			return dto.MerchResponse{}, dto.ErrInvalidExtensionPhoto
+		}
+
+		imageID := uuid.New()
+		fileName := fmt.Sprintf("merch_%s.%s", imageID, ext)
+		savePath := filepath.Join(saveDir, fileName)
+
+		out, err := os.Create(savePath)
+		if err != nil {
+			return dto.MerchResponse{}, dto.ErrCreateFile
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, img.FileReader); err != nil {
+			return dto.MerchResponse{}, dto.ErrSaveFile
+		}
+
+		image := entity.MerchImage{
+			ID:      imageID,
+			MerchID: &merchID,
+			Name:    fileName,
+		}
+
+		if err := as.adminRepo.CreateMerchImage(ctx, nil, image); err != nil {
+			return dto.MerchResponse{}, dto.ErrCreateMerchImage
+		}
+
+		imageResponses = append(imageResponses, dto.MerchImageResponse{
+			ID:   image.ID,
+			Name: image.Name,
+		})
+	}
+
+	return dto.MerchResponse{
+		ID:          merch.ID,
+		Name:        merch.Name,
+		Stock:       merch.Stock,
+		Price:       merch.Price,
+		Description: merch.Description,
+		Category:    merch.Category,
+		Images:      imageResponses,
+	}, nil
+}
+func (as *AdminService) GetAllMerchNoPagination(ctx context.Context) ([]dto.MerchResponse, error) {
+	merchs, err := as.adminRepo.GetAllMerch(ctx, nil)
+	if err != nil {
+		return nil, dto.ErrGetAllMerchNoPagination
+	}
+
+	var datas []dto.MerchResponse
+	for _, merch := range merchs {
+		var merchImages []dto.MerchImageResponse
+		for _, img := range merch.MerchImages {
+			merchImages = append(merchImages, dto.MerchImageResponse{
+				ID:   img.ID,
+				Name: img.Name,
+			})
+		}
+
+		data := dto.MerchResponse{
+			ID:          merch.ID,
+			Name:        merch.Name,
+			Stock:       merch.Stock,
+			Price:       merch.Price,
+			Description: merch.Description,
+			Category:    merch.Category,
+			Images:      merchImages,
+		}
+
+		datas = append(datas, data)
+	}
+
+	return datas, nil
+}
+func (as *AdminService) GetAllMerchWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.MerchPaginationResponse, error) {
+	dataWithPaginate, err := as.adminRepo.GetAllMerchWithPagination(ctx, nil, req)
+	if err != nil {
+		return dto.MerchPaginationResponse{}, dto.ErrGetAllMerchWithPagination
+	}
+
+	var datas []dto.MerchResponse
+	for _, merch := range dataWithPaginate.Merchs {
+		var merchImages []dto.MerchImageResponse
+		for _, img := range merch.MerchImages {
+			merchImages = append(merchImages, dto.MerchImageResponse{
+				ID:   img.ID,
+				Name: img.Name,
+			})
+		}
+
+		data := dto.MerchResponse{
+			ID:          merch.ID,
+			Name:        merch.Name,
+			Stock:       merch.Stock,
+			Price:       merch.Price,
+			Description: merch.Description,
+			Category:    merch.Category,
+			Images:      merchImages,
+		}
+
+		datas = append(datas, data)
+	}
+
+	return dto.MerchPaginationResponse{
+		Data: datas,
+		PaginationResponse: dto.PaginationResponse{
+			Page:    dataWithPaginate.Page,
+			PerPage: dataWithPaginate.PerPage,
+			MaxPage: dataWithPaginate.MaxPage,
+			Count:   dataWithPaginate.Count,
+		},
+	}, nil
+}
+func (as *AdminService) GetDetailMerch(ctx context.Context, merchID string) (dto.MerchResponse, error) {
+	merch, _, err := as.adminRepo.GetMerchByID(ctx, nil, merchID)
+	if err != nil {
+		return dto.MerchResponse{}, dto.ErrMerchNotFound
+	}
+
+	var merchImages []dto.MerchImageResponse
+	for _, img := range merch.MerchImages {
+		merchImages = append(merchImages, dto.MerchImageResponse{
+			ID:   img.ID,
+			Name: img.Name,
+		})
+	}
+
+	return dto.MerchResponse{
+		ID:          merch.ID,
+		Name:        merch.Name,
+		Stock:       merch.Stock,
+		Price:       merch.Price,
+		Description: merch.Description,
+		Category:    merch.Category,
+		Images:      merchImages,
+	}, nil
+}
+func (as *AdminService) UpdateMerch(ctx context.Context, req dto.UpdateMerchRequest) (dto.MerchResponse, error) {
+	merch, flag, err := as.adminRepo.GetMerchByID(ctx, nil, req.ID)
+	if err != nil || !flag {
+		return dto.MerchResponse{}, dto.ErrMerchNotFound
+	}
+
+	if req.Name != "" {
+		if len(req.Name) < 3 {
+			return dto.MerchResponse{}, dto.ErrMerchNameTooShort
+		}
+
+		merch.Name = req.Name
+	}
+
+	if req.Description != "" {
+		if len(req.Description) < 3 {
+			return dto.MerchResponse{}, dto.ErrMerchDescriptionTooShort
+		}
+
+		merch.Description = req.Description
+	}
+
+	if req.Stock != nil {
+		if *req.Stock < 0 {
+			return dto.MerchResponse{}, dto.ErrStockOutOfBound
+		}
+
+		merch.Stock = *req.Stock
+	}
+
+	if req.Price != nil {
+		if *req.Price < 0 {
+			return dto.MerchResponse{}, dto.ErrPriceOutOfBound
+		}
+
+		merch.Price = *req.Price
+	}
+
+	if req.Category != "" {
+		merchCat := entity.MerchCategory(req.Category)
+		if !entity.IsValidMerchCategory(merchCat) {
+			return dto.MerchResponse{}, dto.ErrInvalidMerchCategory
+		}
+
+		merch.Category = merchCat
+	}
+
+	if err = as.adminRepo.UpdateMerch(ctx, nil, merch); err != nil {
+		return dto.MerchResponse{}, dto.ErrUpdateMerch
+	}
+
+	saveDir := "assets/merch"
+	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+		return dto.MerchResponse{}, dto.ErrCreateFile
+	}
+
+	var imageResponses []dto.MerchImageResponse
+	if len(req.ReplaceImages) != 0 {
+		for _, img := range req.ReplaceImages {
+			oldImage, flag, err := as.adminRepo.GetMerchImageByID(ctx, nil, img.TargetImageID.String())
+			if err != nil || !flag {
+				return dto.MerchResponse{}, dto.ErrMerchImageNotFound
+			}
+
+			oldImagePath := filepath.Join("assets/merch", oldImage.Name)
+			if err := os.Remove(oldImagePath); err != nil {
+				return dto.MerchResponse{}, dto.ErrDeleteOldImage
+			}
+
+			if err := as.adminRepo.DeleteMerchImageByID(ctx, nil, img.TargetImageID.String()); err != nil {
+				return dto.MerchResponse{}, dto.ErrDeleteMerchImageByID
+			}
+
+			ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(img.FileHeader.Filename), "."))
+			if ext != "jpg" && ext != "jpeg" && ext != "png" {
+				return dto.MerchResponse{}, dto.ErrInvalidExtensionPhoto
+			}
+
+			newImageID := uuid.New()
+			newFileName := fmt.Sprintf("merch_%s.%s", newImageID, ext)
+			savePath := filepath.Join("assets/merch", newFileName)
+
+			out, err := os.Create(savePath)
+			if err != nil {
+				return dto.MerchResponse{}, dto.ErrCreateFile
+			}
+			defer out.Close()
+			if _, err := io.Copy(out, img.FileReader); err != nil {
+				return dto.MerchResponse{}, dto.ErrSaveFile
+			}
+
+			newImage := entity.MerchImage{
+				ID:      newImageID,
+				MerchID: &merch.ID,
+				Name:    newFileName,
+			}
+
+			if err := as.adminRepo.CreateMerchImage(ctx, nil, newImage); err != nil {
+				return dto.MerchResponse{}, dto.ErrCreateMerchImage
+			}
+		}
+	}
+
+	if len(imageResponses) == 0 {
+		images, err := as.adminRepo.GetMerchImagesByMerchID(ctx, nil, merch.ID.String())
+		if err != nil {
+			return dto.MerchResponse{}, dto.ErrGetMerchImages
+		}
+
+		for _, img := range images {
+			imageResponses = append(imageResponses, dto.MerchImageResponse{
+				ID:   img.ID,
+				Name: img.Name,
+			})
+		}
+	}
+
+	return dto.MerchResponse{
+		ID:          merch.ID,
+		Name:        merch.Name,
+		Stock:       merch.Stock,
+		Price:       merch.Price,
+		Description: merch.Description,
+		Category:    merch.Category,
+		Images:      imageResponses,
+	}, nil
+}
+func (as *AdminService) DeleteMerch(ctx context.Context, req dto.DeleteMerchRequest) (dto.MerchResponse, error) {
+	deletedMerch, flag, err := as.adminRepo.GetMerchByID(ctx, nil, req.MerchID)
+	if err != nil || !flag {
+		return dto.MerchResponse{}, dto.ErrMerchNotFound
+	}
+
+	var merchImages []dto.MerchImageResponse
+	for _, img := range deletedMerch.MerchImages {
+		merchImages = append(merchImages, dto.MerchImageResponse{
+			ID:   img.ID,
+			Name: img.Name,
+		})
+	}
+
+	if err = as.adminRepo.DeleteMerchImagesByMerchID(ctx, nil, req.MerchID); err != nil {
+		return dto.MerchResponse{}, dto.ErrDeleteMerchImagesByMerchID
+	}
+
+	if err = as.adminRepo.DeleteMerchByID(ctx, nil, req.MerchID); err != nil {
+		return dto.MerchResponse{}, dto.ErrDeleteMerchByID
+	}
+
+	res := dto.MerchResponse{
+		ID:          deletedMerch.ID,
+		Name:        deletedMerch.Name,
+		Stock:       deletedMerch.Stock,
+		Price:       deletedMerch.Price,
+		Description: deletedMerch.Description,
+		Category:    deletedMerch.Category,
+		Images:      merchImages,
 	}
 
 	return res, nil

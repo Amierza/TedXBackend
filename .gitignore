@@ -8,3 +8,5 @@ assets/**
 !assets/speaker/.gitkeep
 !assets/sponsorship/
 !assets/sponsorship/.gitkeep
+!assets/merch/
+!assets/merch/.gitkeep
