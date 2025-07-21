@@ -9,11 +9,14 @@ import (
 
 type Bundle struct {
 	ID    uuid.UUID  `gorm:"type:uuid;primaryKey" json:"bundle_id"`
-	Type  BundleType `gorm:"not null" json:"bundle_type"`
 	Name  string     `gorm:"not null" json:"bundle_name"`
-	Price float64    `gorm:"not null" json:"bundle_price"`
+	Image string     `gorm:"not null" json:"bundle_image"`
+	Type  BundleType `gorm:"not null" json:"bundle_type"`
+	Price float64    `gorm:"not null;default:0" json:"bundle_price"`
+	Quota int        `gorm:"not null;default:0" json:"bundle_quota"`
 
-	BundleItems []BundleItem `gorm:"foreignKey:TicketID"`
+	BundleItems  []BundleItem  `gorm:"foreignKey:BundleID"`
+	Transactions []Transaction `gorm:"foreignKey:BundleID"`
 
 	TimeStamp
 }

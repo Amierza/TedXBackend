@@ -3,6 +3,7 @@ package dto
 import (
 	"errors"
 	"mime/multipart"
+	"time"
 
 	"github.com/Amierza/TedXBackend/entity"
 	"github.com/google/uuid"
@@ -17,6 +18,8 @@ const (
 	// PARSE
 	MESSAGE_FAILED_PARSE_UUID           = "failed parse string to uuid"
 	MESSAGE_FAILED_PARSE_MULTIPART_FORM = "failed to parse multipart form"
+	MESSAGE_FAILED_PARSE_PRICE          = "failed to parse price"
+	MESSAGE_FAILED_PARSE_QUOTA          = "failed to parse quota"
 	// Authentication
 	MESSAGE_FAILED_LOGIN_ADMIN = "failed login admin"
 	// Middleware
@@ -28,6 +31,18 @@ const (
 	MESSAGE_FAILED_GET_CUSTOM_CLAIMS          = "failed get custom claims"
 	MESSAGE_FAILED_GET_ROLE_USER              = "failed get role user"
 	MESSAGE_FAILED_INAVLID_ROUTE_FORMAT_TOKEN = "failed invalid route format in token"
+	// User
+	MESSAGE_FAILED_CREATE_USER     = "failed create user"
+	MESSAGE_FAILED_GET_LIST_USER   = "failed get list user"
+	MESSAGE_FAILED_GET_DETAIL_USER = "failed get detail user"
+	MESSAGE_FAILED_UPDATE_USER     = "failed update user"
+	MESSAGE_FAILED_DELETE_USER     = "failed delete user"
+	// Ticket
+	MESSAGE_FAILED_CREATE_TICKET     = "failed create ticket"
+	MESSAGE_FAILED_GET_LIST_TICKET   = "failed get list ticket"
+	MESSAGE_FAILED_GET_DETAIL_TICKET = "failed get detail ticket"
+	MESSAGE_FAILED_UPDATE_TICKET     = "failed update ticket"
+	MESSAGE_FAILED_DELETE_TICKET     = "failed delete ticket"
 	// Sponsorship
 	MESSAGE_FAILED_CREATE_SPONSORSHIP     = "failed create sponsorship"
 	MESSAGE_FAILED_GET_LIST_SPONSORSHIP   = "failed get list sponsorship"
@@ -46,10 +61,29 @@ const (
 	MESSAGE_FAILED_GET_DETAIL_MERCH = "failed get detail merch"
 	MESSAGE_FAILED_UPDATE_MERCH     = "failed update merch"
 	MESSAGE_FAILED_DELETE_MERCH     = "failed delete merch"
+	// Bundle
+	MESSAGE_FAILED_INVALID_BUNDLE_ITEM_ID = "failed invalid bundle item id"
+	MESSAGE_FAILED_CREATE_BUNDLE          = "failed create bundle"
+	MESSAGE_FAILED_GET_LIST_BUNDLE        = "failed get list bundle"
+	MESSAGE_FAILED_GET_DETAIL_BUNDLE      = "failed get detail bundle"
+	MESSAGE_FAILED_UPDATE_BUNDLE          = "failed update bundle"
+	MESSAGE_FAILED_DELETE_BUNDLE          = "failed delete bundle"
 
 	// ====================================== Success ======================================
 	// Authentication
 	MESSAGE_SUCCESS_LOGIN_ADMIN = "success login admin"
+	// User
+	MESSAGE_SUCCESS_CREATE_USER     = "success create user"
+	MESSAGE_SUCCESS_GET_LIST_USER   = "success get list user"
+	MESSAGE_SUCCESS_GET_DETAIL_USER = "success get detail user"
+	MESSAGE_SUCCESS_UPDATE_USER     = "success update user"
+	MESSAGE_SUCCESS_DELETE_USER     = "success delete user"
+	// Ticket
+	MESSAGE_SUCCESS_CREATE_TICKET     = "success create ticket"
+	MESSAGE_SUCCESS_GET_LIST_TICKET   = "success get list ticket"
+	MESSAGE_SUCCESS_GET_DETAIL_TICKET = "success get detail ticket"
+	MESSAGE_SUCCESS_UPDATE_TICKET     = "success update ticket"
+	MESSAGE_SUCCESS_DELETE_TICKET     = "success delete ticket"
 	// Sponsorship
 	MESSAGE_SUCCESS_CREATE_SPONSORSHIP     = "success create sponsorship"
 	MESSAGE_SUCCESS_GET_LIST_SPONSORSHIP   = "success get list sponsorship"
@@ -68,6 +102,12 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_MERCH = "success get detail merch"
 	MESSAGE_SUCCESS_UPDATE_MERCH     = "success update merch"
 	MESSAGE_SUCCESS_DELETE_MERCH     = "success delete merch"
+	// Bundle
+	MESSAGE_SUCCESS_CREATE_BUNDLE     = "success create bundle"
+	MESSAGE_SUCCESS_GET_LIST_BUNDLE   = "success get list bundle"
+	MESSAGE_SUCCESS_GET_DETAIL_BUNDLE = "success get detail bundle"
+	MESSAGE_SUCCESS_UPDATE_BUNDLE     = "success update bundle"
+	MESSAGE_SUCCESS_DELETE_BUNDLE     = "success delete bundle"
 )
 
 var (
@@ -90,24 +130,48 @@ var (
 	ErrEmptyFields                = errors.New("failed there are empty fields")
 	ErrInvalidEmail               = errors.New("failed invalid email")
 	ErrInvalidPassword            = errors.New("failed invalid password")
+	ErrInvalidPhoneNumber         = errors.New("failed invalid phone number")
+	ErrInvalidUserRole            = errors.New("failed invalid user role")
+	ErrUserNameTooShort           = errors.New("failed user name too short (min 3.)")
+	ErrPasswordTooShort           = errors.New("failed password too short (min 8.)")
+	ErrTicketNameTooShort         = errors.New("failed ticket name too short (min 3.)")
+	ErrBundleNameTooShort         = errors.New("failed bundle name too short (min 3.)")
 	ErrSponsorshipNameTooShort    = errors.New("failed sponsorship name too short (min 3.)")
 	ErrSpeakerNameTooShort        = errors.New("failed speaker name too short (min 3.)")
-	ErrSpeakerDescriptionTooShort = errors.New("failed speaker name too short (min 5.)")
+	ErrSpeakerDescriptionTooShort = errors.New("failed speaker description too short (min 5.)")
 	ErrMerchNameTooShort          = errors.New("failed merch name too short (min 3.)")
-	ErrMerchDescriptionTooShort   = errors.New("failed merch name too short (min 5.)")
+	ErrMerchDescriptionTooShort   = errors.New("failed merch description too short (min 5.)")
 	// Email
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrEmailNotFound      = errors.New("email not found")
 	// Password
 	ErrPasswordNotMatch = errors.New("password not match")
+	// User
+	ErrCreateUser               = errors.New("failed create user")
+	ErrGetAllUserNoPagination   = errors.New("failed get all user no pagination")
+	ErrGetAllUserWithPagination = errors.New("failed get all user with pagination")
+	ErrUserNotFound             = errors.New("failed user not found")
+	ErrUpdateUser               = errors.New("failed update user")
+	ErrDeleteUserByID           = errors.New("failed delete user by id")
+	ErrUserAlreadyExists        = errors.New("failed user already exists")
+	// Ticket
+	ErrCreateTicket               = errors.New("failed create ticket")
+	ErrGetAllTicketNoPagination   = errors.New("failed get all ticket no pagination")
+	ErrGetAllTicketWithPagination = errors.New("failed get all ticket with pagination")
+	ErrTicketNotFound             = errors.New("failed ticket not found")
+	ErrUpdateTicket               = errors.New("failed update ticket")
+	ErrDeleteTicketByID           = errors.New("failed delete ticket by id")
+	ErrTicketAlreadyExists        = errors.New("failed ticket already exists")
+	ErrQuotaOutOfBound            = errors.New("failed quota out of bound")
 	// Sponsorship
-	ErrCreateSponsorship          = errors.New("failed create sponsorship")
-	ErrGetAllSponsorship          = errors.New("failed get all sponsorship")
-	ErrSponsorshipNotFound        = errors.New("failed sponsorship not found")
-	ErrUpdateSponsorship          = errors.New("failed update sponsorship")
-	ErrDeleteSponsorshipByID      = errors.New("failed delete sponsorship by id")
-	ErrSponsorshipAlreadyExists   = errors.New("failed sponsorship already exists")
-	ErrInvalidSponsorshipCategory = errors.New("failed invalid sponsorship category")
+	ErrCreateSponsorship               = errors.New("failed create sponsorship")
+	ErrGetAllSponsorship               = errors.New("failed get all sponsorship")
+	ErrGetAllSponsorshipWithPagination = errors.New("failed get all sponsorship with pagination")
+	ErrSponsorshipNotFound             = errors.New("failed sponsorship not found")
+	ErrUpdateSponsorship               = errors.New("failed update sponsorship")
+	ErrDeleteSponsorshipByID           = errors.New("failed delete sponsorship by id")
+	ErrSponsorshipAlreadyExists        = errors.New("failed sponsorship already exists")
+	ErrInvalidSponsorshipCategory      = errors.New("failed invalid sponsorship category")
 	// Speaker
 	ErrCreateSpeaker               = errors.New("failed create speaker")
 	ErrGetAllSpeakerNoPagination   = errors.New("failed get all speaker no pagination")
@@ -133,7 +197,27 @@ var (
 	ErrInvalidMerchCategory       = errors.New("failed invalid merch category")
 	ErrStockOutOfBound            = errors.New("failed stock out of bound")
 	ErrPriceOutOfBound            = errors.New("failed price out of bound")
+	// Bundle
+	ErrCreateBundle                 = errors.New("failed create bundle")
+	ErrGetAllBundleNoPagination     = errors.New("failed get all bundle no pagination")
+	ErrGetAllBundleWithPagination   = errors.New("failed get all bundle with pagination")
+	ErrBundleNotFound               = errors.New("failed bundle not found")
+	ErrInvalidBundleItemID          = errors.New("failed bundle item id")
+	ErrInvalidBundleType            = errors.New("failed invalid bundle type")
+	ErrUpdateBundle                 = errors.New("failed update bundle")
+	ErrDeleteBundleByID             = errors.New("failed delete bundle by id")
+	ErrBundleAlreadyExists          = errors.New("failed bundle already exists")
+	ErrCreateBundleItem             = errors.New("failed create bundle item")
+	ErrGetBundleItems               = errors.New("failed get bundle items")
+	ErrInvalidTicketIDInBundleMerch = errors.New("bundle type 'bundle merch' cannot contain ticket")
+	ErrDeleteBundleItemsByBundleID  = errors.New("failed delete bundle items by bundle id")
 )
+
+// All About Image Request
+type ImageUpload struct {
+	FileHeader *multipart.FileHeader
+	FileReader multipart.File
+}
 
 // Authentication
 type (
@@ -143,6 +227,82 @@ type (
 	}
 	LoginResponse struct {
 		Token string `json:"token"`
+	}
+)
+
+// User
+type (
+	UserResponse struct {
+		ID          uuid.UUID   `json:"user_id"`
+		Name        string      `json:"user_name"`
+		Email       string      `json:"user_email"`
+		VerifiedAt  *time.Time  `json:"verified_at"`
+		Password    string      `json:"user_password"`
+		PhoneNumber string      `json:"user_phone_number"`
+		Role        entity.Role `json:"user_role"`
+	}
+	CreateUserRequest struct {
+		Name        string     `json:"user_name" form:"user_name"`
+		Email       string     `json:"user_email" form:"user_email"`
+		VerifiedAt  *time.Time `json:"verified_at" form:"user_verified_at"`
+		Password    string     `json:"user_password" form:"user_password"`
+		PhoneNumber string     `json:"user_phone_number" form:"user_phone_number"`
+	}
+	UpdateUserRequest struct {
+		ID          string     `json:"-"`
+		Name        string     `json:"user_name,omitempty" form:"user_name"`
+		Email       string     `json:"user_email,omitempty" form:"user_email"`
+		VerifiedAt  *time.Time `json:"verified_at,omitempty" form:"user_verified_at"`
+		Password    string     `json:"user_password,omitempty" form:"user_password"`
+		PhoneNumber string     `json:"user_phone_number,omitempty" form:"user_phone_number"`
+	}
+	UserPaginationResponse struct {
+		PaginationResponse
+		Data []UserResponse `json:"data"`
+	}
+	UserPaginationRepositoryResponse struct {
+		PaginationResponse
+		Users []entity.User
+	}
+	DeleteUserRequest struct {
+		UserID string `json:"-"`
+	}
+)
+
+// Ticket
+type (
+	TicketResponse struct {
+		ID    uuid.UUID `json:"ticket_id"`
+		Name  string    `json:"ticket_name"`
+		Price float64   `json:"ticket_price"`
+		Image string    `json:"ticket_image"`
+		Quota int       `json:"ticket_quota"`
+	}
+	CreateTicketRequest struct {
+		Name  string  `json:"ticket_name" form:"ticket_name"`
+		Price float64 `json:"ticket_price" form:"ticket_price"`
+		Image string  `json:"ticket_image" form:"ticket_image"`
+		Quota int     `json:"ticket_quota" form:"ticket_quota"`
+		ImageUpload
+	}
+	UpdateTicketRequest struct {
+		ID    string   `json:"-"`
+		Name  string   `json:"ticket_name,omitempty" form:"ticket_name"`
+		Price *float64 `json:"ticket_price,omitempty" form:"ticket_price"`
+		Image string   `json:"ticket_image,omitempty" form:"ticket_image"`
+		Quota *int     `json:"ticket_quota,omitempty" form:"ticket_quota"`
+		ImageUpload
+	}
+	TicketPaginationResponse struct {
+		PaginationResponse
+		Data []TicketResponse `json:"data"`
+	}
+	TicketPaginationRepositoryResponse struct {
+		PaginationResponse
+		Tickets []entity.Ticket
+	}
+	DeleteTicketRequest struct {
+		TicketID string `json:"-"`
 	}
 )
 
@@ -160,6 +320,14 @@ type (
 		Image      string                `json:"sponsorship_image" form:"sponsorship_image"`
 		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
 		FileReader multipart.File        `json:"filereader,omitempty"`
+	}
+	SponsorshipPaginationResponse struct {
+		PaginationResponse
+		Data []SponsorshipResponse `json:"data"`
+	}
+	SponsorshipPaginationRepositoryResponse struct {
+		PaginationResponse
+		Sponsorships []entity.Sponsorship
 	}
 	UpdateSponsorshipRequest struct {
 		ID         string                `json:"-"`
@@ -225,10 +393,6 @@ type (
 		ID   uuid.UUID `json:"merch_image_id"`
 		Name string    `json:"merch_image_name"`
 	}
-	ImageUpload struct {
-		FileHeader *multipart.FileHeader
-		FileReader multipart.File
-	}
 	CreateMerchRequest struct {
 		Name        string               `json:"merch_name" form:"merch_name"`
 		Stock       int                  `json:"merch_stock" form:"merch_stock"`
@@ -261,5 +425,55 @@ type (
 	}
 	DeleteMerchRequest struct {
 		MerchID string `json:"-"`
+	}
+)
+
+// Bundle
+type (
+	BundleResponse struct {
+		ID          uuid.UUID            `json:"bundle_id"`
+		Name        string               `json:"bundle_name"`
+		Image       string               `json:"bundle_image"`
+		Type        entity.BundleType    `json:"bundle_type"`
+		Price       float64              `json:"bundle_price"`
+		Quota       int                  `json:"bundle_quota"`
+		BundleItems []BundleItemResponse `json:"bundle_items"`
+	}
+	BundleItemResponse struct {
+		ID         uuid.UUID  `json:"bundle_item_id"`
+		MerchID    *uuid.UUID `json:"merch_id,omitempty"`
+		MerchName  string     `json:"merch_name,omitempty"`
+		TicketID   *uuid.UUID `json:"ticket_id,omitempty"`
+		TicketName string     `json:"ticket_name,omitempty"`
+	}
+	CreateBundleRequest struct {
+		Name        string            `json:"bundle_name" form:"bundle_name"`
+		Image       string            `json:"bundle_image" form:"bundle_image"`
+		Type        entity.BundleType `json:"bundle_type" form:"bundle_type"`
+		Price       float64           `json:"bundle_price" form:"bundle_price"`
+		Quota       int               `json:"bundle_quota" form:"bundle_quota"`
+		BundleItems []*uuid.UUID      `json:"bundle_items"`
+		ImageUpload
+	}
+	UpdateBundleRequest struct {
+		ID          string            `json:"-"`
+		Name        string            `json:"bundle_name,omitempty" form:"bundle_name"`
+		Image       string            `json:"bundle_image,omitempty" form:"bundle_image"`
+		Type        entity.BundleType `json:"bundle_type,omitempty" form:"bundle_type"`
+		Price       *float64          `json:"bundle_price,omitempty" form:"bundle_price"`
+		Quota       *int              `json:"bundle_quota,omitempty" form:"bundle_quota"`
+		BundleItems []*uuid.UUID      `json:"bundle_items,omitempty" form:"bundle_items"`
+		ImageUpload
+	}
+	BundlePaginationResponse struct {
+		PaginationResponse
+		Data []BundleResponse `json:"data"`
+	}
+	BundlePaginationRepositoryResponse struct {
+		PaginationResponse
+		Bundles []entity.Bundle
+	}
+	DeleteBundleRequest struct {
+		BundleID string `json:"-"`
 	}
 )

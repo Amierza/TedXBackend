@@ -2,8 +2,10 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/Amierza/TedXBackend/dto"
+	"github.com/Amierza/TedXBackend/entity"
 	"github.com/Amierza/TedXBackend/service"
 	"github.com/Amierza/TedXBackend/utils"
 	"github.com/gin-gonic/gin"
@@ -14,6 +16,20 @@ type (
 	IAdminHandler interface {
 		// Authentication
 		Login(ctx *gin.Context)
+
+		// User
+		CreateUser(ctx *gin.Context)
+		GetAllUser(ctx *gin.Context)
+		GetDetailUser(ctx *gin.Context)
+		UpdateUser(ctx *gin.Context)
+		DeleteUser(ctx *gin.Context)
+
+		// Ticket
+		CreateTicket(ctx *gin.Context)
+		GetAllTicket(ctx *gin.Context)
+		GetDetailTicket(ctx *gin.Context)
+		UpdateTicket(ctx *gin.Context)
+		DeleteTicket(ctx *gin.Context)
 
 		// Sponsorship
 		CreateSponsorship(ctx *gin.Context)
@@ -35,6 +51,13 @@ type (
 		GetDetailMerch(ctx *gin.Context)
 		UpdateMerch(ctx *gin.Context)
 		DeleteMerch(ctx *gin.Context)
+
+		// Bundle
+		CreateBundle(ctx *gin.Context)
+		GetAllBundle(ctx *gin.Context)
+		GetDetailBundle(ctx *gin.Context)
+		UpdateBundle(ctx *gin.Context)
+		DeleteBundle(ctx *gin.Context)
 	}
 
 	AdminHandler struct {
@@ -65,6 +88,303 @@ func (ah *AdminHandler) Login(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_LOGIN_ADMIN, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// User
+func (ah *AdminHandler) CreateUser(ctx *gin.Context) {
+	var payload dto.CreateUserRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.CreateUser(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_USER, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_USER, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetAllUser(ctx *gin.Context) {
+	paginationParam := ctx.DefaultQuery("pagination", "true")
+	usePagination := paginationParam != "false"
+	roleName := ctx.Query("role")
+
+	if !usePagination {
+		// Tanpa pagination
+		result, err := ah.adminService.GetAllUser(ctx, roleName)
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_USER, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_USER, result)
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
+
+	var payload dto.PaginationRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllUserWithPagination(ctx, payload, roleName)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_USER, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.Response{
+		Status:   true,
+		Messsage: dto.MESSAGE_SUCCESS_GET_LIST_USER,
+		Data:     result.Data,
+		Meta:     result.PaginationResponse,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetDetailUser(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := ah.adminService.GetDetailUser(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_USER, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_USER, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) UpdateUser(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.UpdateUserRequest
+	payload.ID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.UpdateUser(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_USER, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_UPDATE_USER, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) DeleteUser(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.DeleteUserRequest
+	payload.UserID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.DeleteUser(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_DELETE_USER, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_USER, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Ticket
+func (ah *AdminHandler) CreateTicket(ctx *gin.Context) {
+	var payload dto.CreateTicketRequest
+	if err := ctx.Request.ParseMultipartForm(32 << 20); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_MULTIPART_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+	payload.Name = ctx.PostForm("ticket_name")
+
+	if priceStr := ctx.PostForm("ticket_price"); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+			payload.Price = price
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	if quotaStr := ctx.PostForm("ticket_quota"); quotaStr != "" {
+		if quota, err := strconv.Atoi(quotaStr); err == nil {
+			payload.Quota = quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	fileHeader, err := ctx.FormFile("ticket_image")
+	if err == nil {
+		file, err := fileHeader.Open()
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_OPEN_PHOTO, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+			return
+		}
+		defer file.Close()
+
+		payload.ImageUpload.FileHeader = fileHeader
+		payload.ImageUpload.FileReader = file
+	}
+
+	result, err := ah.adminService.CreateTicket(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetAllTicket(ctx *gin.Context) {
+	paginationParam := ctx.DefaultQuery("pagination", "true")
+	usePagination := paginationParam != "false"
+
+	if !usePagination {
+		// Tanpa pagination
+		result, err := ah.adminService.GetAllTicket(ctx)
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_TICKET, result)
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
+
+	var payload dto.PaginationRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllTicketWithPagination(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.Response{
+		Status:   true,
+		Messsage: dto.MESSAGE_SUCCESS_GET_LIST_TICKET,
+		Data:     result.Data,
+		Meta:     result.PaginationResponse,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetDetailTicket(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := ah.adminService.GetDetailTicket(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) UpdateTicket(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.UpdateTicketRequest
+	payload.ID = idStr
+	if err := ctx.Request.ParseMultipartForm(32 << 20); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_MULTIPART_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+	payload.Name = ctx.PostForm("ticket_name")
+
+	if priceStr := ctx.PostForm("ticket_price"); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+			payload.Price = &price
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	if quotaStr := ctx.PostForm("ticket_quota"); quotaStr != "" {
+		if quota, err := strconv.Atoi(quotaStr); err == nil {
+			payload.Quota = &quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	fileHeader, err := ctx.FormFile("ticket_image")
+	if err == nil {
+		file, err := fileHeader.Open()
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_OPEN_PHOTO, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+			return
+		}
+		defer file.Close()
+
+		payload.ImageUpload.FileHeader = fileHeader
+		payload.ImageUpload.FileReader = file
+	}
+
+	result, err := ah.adminService.UpdateTicket(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_UPDATE_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) DeleteTicket(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.DeleteTicketRequest
+	payload.TicketID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.DeleteTicket(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_DELETE_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_TICKET, result)
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -99,14 +419,44 @@ func (ah *AdminHandler) CreateSponsorship(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 func (ah *AdminHandler) GetAllSponsorship(ctx *gin.Context) {
-	result, err := ah.adminService.GetAllSponsorship(ctx)
+	paginationParam := ctx.DefaultQuery("pagination", "true")
+	usePagination := paginationParam != "false"
+
+	if !usePagination {
+		// Tanpa pagination
+		result, err := ah.adminService.GetAllSponsorship(ctx)
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_SPONSORSHIP, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_SPONSORSHIP, result)
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
+
+	var payload dto.PaginationRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllSponsorshipWithPagination(ctx, payload)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_SPONSORSHIP, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
 
-	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_SPONSORSHIP, result)
+	res := utils.Response{
+		Status:   true,
+		Messsage: dto.MESSAGE_SUCCESS_GET_LIST_SPONSORSHIP,
+		Data:     result.Data,
+		Meta:     result.PaginationResponse,
+	}
+
 	ctx.JSON(http.StatusOK, res)
 }
 func (ah *AdminHandler) GetDetailSponsorship(ctx *gin.Context) {
@@ -215,7 +565,7 @@ func (ah *AdminHandler) GetAllSpeaker(ctx *gin.Context) {
 
 	if !usePagination {
 		// Tanpa pagination
-		result, err := ah.adminService.GetAllSpeakerNoPagination(ctx)
+		result, err := ah.adminService.GetAllSpeaker(ctx)
 		if err != nil {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_SPEAKER, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -362,7 +712,7 @@ func (ah *AdminHandler) GetAllMerch(ctx *gin.Context) {
 
 	if !usePagination {
 		// Tanpa pagination
-		result, err := ah.adminService.GetAllMerchNoPagination(ctx)
+		result, err := ah.adminService.GetAllMerch(ctx)
 		if err != nil {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_MERCH, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -482,5 +832,214 @@ func (ah *AdminHandler) DeleteMerch(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_MERCH, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Bundle
+func (ah *AdminHandler) CreateBundle(ctx *gin.Context) {
+	var payload dto.CreateBundleRequest
+	if err := ctx.Request.ParseMultipartForm(32 << 20); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_MULTIPART_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	payload.Name = ctx.PostForm("bundle_name")
+	payload.Type = entity.BundleType(ctx.PostForm("bundle_type"))
+
+	if priceStr := ctx.PostForm("bundle_price"); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+			payload.Price = price
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	if quotaStr := ctx.PostForm("bundle_quota"); quotaStr != "" {
+		if quota, err := strconv.Atoi(quotaStr); err == nil {
+			payload.Quota = quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	itemIDs := ctx.Request.PostForm["bundle_items"]
+	for _, idStr := range itemIDs {
+		if id, err := uuid.Parse(idStr); err == nil {
+			payload.BundleItems = append(payload.BundleItems, &id)
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_INVALID_BUNDLE_ITEM_ID, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	fileHeader, err := ctx.FormFile("bundle_image")
+	if err == nil {
+		file, err := fileHeader.Open()
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_OPEN_PHOTO, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+			return
+		}
+		defer file.Close()
+
+		payload.ImageUpload.FileHeader = fileHeader
+		payload.ImageUpload.FileReader = file
+	}
+
+	result, err := ah.adminService.CreateBundle(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_BUNDLE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetAllBundle(ctx *gin.Context) {
+	paginationParam := ctx.DefaultQuery("pagination", "true")
+	usePagination := paginationParam != "false"
+
+	if !usePagination {
+		// Tanpa pagination
+		result, err := ah.adminService.GetAllBundle(ctx)
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_BUNDLE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_BUNDLE, result)
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
+
+	var payload dto.PaginationRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllBundleWithPagination(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_BUNDLE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.Response{
+		Status:   true,
+		Messsage: dto.MESSAGE_SUCCESS_GET_LIST_BUNDLE,
+		Data:     result.Data,
+		Meta:     result.PaginationResponse,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetDetailBundle(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := ah.adminService.GetDetailBundle(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_BUNDLE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) UpdateBundle(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.UpdateBundleRequest
+	payload.ID = idStr
+	if err := ctx.Request.ParseMultipartForm(32 << 20); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_MULTIPART_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	payload.Name = ctx.PostForm("bundle_name")
+	payload.Type = entity.BundleType(ctx.PostForm("bundle_type"))
+
+	if priceStr := ctx.PostForm("bundle_price"); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+			payload.Price = &price
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	if quotaStr := ctx.PostForm("bundle_quota"); quotaStr != "" {
+		if quota, err := strconv.Atoi(quotaStr); err == nil {
+			payload.Quota = &quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	itemIDs := ctx.Request.PostForm["bundle_items"]
+	for _, idStr := range itemIDs {
+		if id, err := uuid.Parse(idStr); err == nil {
+			payload.BundleItems = append(payload.BundleItems, &id)
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_INVALID_BUNDLE_ITEM_ID, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	fileHeader, err := ctx.FormFile("bundle_image")
+	if err == nil {
+		file, err := fileHeader.Open()
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_OPEN_PHOTO, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
+			return
+		}
+		defer file.Close()
+
+		payload.ImageUpload.FileHeader = fileHeader
+		payload.ImageUpload.FileReader = file
+	}
+
+	result, err := ah.adminService.UpdateBundle(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_BUNDLE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_UPDATE_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) DeleteBundle(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.DeleteBundleRequest
+	payload.BundleID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.DeleteBundle(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_DELETE_BUNDLE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_BUNDLE, result)
 	ctx.JSON(http.StatusOK, res)
 }
