@@ -613,7 +613,7 @@ func (ar *AdminRepository) GetAllBundle(ctx context.Context, tx *gorm.DB) ([]ent
 		err     error
 	)
 
-	if err := tx.WithContext(ctx).Preload("BundleItems.Merch").Preload("BundleItems.Ticket").Model(&entity.Bundle{}).Find(&bundles).Error; err != nil {
+	if err := tx.WithContext(ctx).Preload("BundleItems.Merch").Model(&entity.Bundle{}).Find(&bundles).Error; err != nil {
 		return []entity.Bundle{}, err
 	}
 
@@ -636,7 +636,7 @@ func (ar *AdminRepository) GetAllBundleWithPagination(ctx context.Context, tx *g
 		req.Page = 1
 	}
 
-	query := tx.WithContext(ctx).Model(&entity.Bundle{}).Preload("BundleItems.Merch").Preload("BundleItems.Ticket")
+	query := tx.WithContext(ctx).Model(&entity.Bundle{}).Preload("BundleItems.Merch")
 
 	if req.Search != "" {
 		searchValue := "%" + strings.ToLower(req.Search) + "%"
@@ -669,7 +669,7 @@ func (ar *AdminRepository) GetBundleByID(ctx context.Context, tx *gorm.DB, bundl
 	}
 
 	var bundle entity.Bundle
-	if err := tx.WithContext(ctx).Preload("BundleItems.Merch").Preload("BundleItems.Ticket").Where("id = ?", bundleID).Take(&bundle).Error; err != nil {
+	if err := tx.WithContext(ctx).Preload("BundleItems.Merch").Where("id = ?", bundleID).Take(&bundle).Error; err != nil {
 		return entity.Bundle{}, false, err
 	}
 
@@ -685,7 +685,7 @@ func (ar *AdminRepository) GetBundleItemsByBundleID(ctx context.Context, tx *gor
 		err   error
 	)
 
-	if err := tx.WithContext(ctx).Preload("Bundle").Preload("Ticket").Preload("Merch").Model(&entity.BundleItem{}).Where("bundle_id = ?", bundleID).Find(&items).Error; err != nil {
+	if err := tx.WithContext(ctx).Preload("Bundle").Preload("Merch").Model(&entity.BundleItem{}).Where("bundle_id = ?", bundleID).Find(&items).Error; err != nil {
 		return []entity.BundleItem{}, err
 	}
 

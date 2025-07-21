@@ -9,7 +9,6 @@ type Ticket struct {
 	Image string    `gorm:"not null" json:"ticket_image"`
 	Quota int       `gorm:"not null;default:0" json:"ticket_quota"`
 
-	BundleItems  []BundleItem  `gorm:"foreignKey:TicketID"`
 	Transactions []Transaction `gorm:"foreignKey:TicketID"`
 
 	TimeStamp
