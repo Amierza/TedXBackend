@@ -440,11 +440,9 @@ type (
 		BundleItems []BundleItemResponse `json:"bundle_items"`
 	}
 	BundleItemResponse struct {
-		ID         uuid.UUID  `json:"bundle_item_id"`
-		MerchID    *uuid.UUID `json:"merch_id,omitempty"`
-		MerchName  string     `json:"merch_name,omitempty"`
-		TicketID   *uuid.UUID `json:"ticket_id,omitempty"`
-		TicketName string     `json:"ticket_name,omitempty"`
+		ID        uuid.UUID  `json:"bundle_item_id"`
+		MerchID   *uuid.UUID `json:"merch_id,omitempty"`
+		MerchName string     `json:"merch_name,omitempty"`
 	}
 	CreateBundleRequest struct {
 		Name        string            `json:"bundle_name" form:"bundle_name"`

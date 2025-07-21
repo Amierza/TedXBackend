@@ -1421,17 +1421,6 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		if flag || err == nil {
 			item.MerchID = &merch.ID
 			item.MerchName = merch.Name
-		} else {
-			ticket, flag, err := as.adminRepo.GetTicketByID(ctx, nil, biID.String())
-			if flag || err == nil {
-				if req.Type == "bundle merch" {
-					return dto.BundleResponse{}, dto.ErrInvalidTicketIDInBundleMerch
-				}
-				item.TicketID = &ticket.ID
-				item.TicketName = ticket.Name
-			} else {
-				return dto.BundleResponse{}, dto.ErrInvalidBundleItemID
-			}
 		}
 
 		bundleItems = append(bundleItems, item)
@@ -1459,9 +1448,6 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 
 		if bi.MerchID != nil {
 			bundleItem.MerchID = bi.MerchID
-		}
-		if bi.TicketID != nil {
-			bundleItem.TicketID = bi.TicketID
 		}
 
 		if err := as.adminRepo.CreateBundleItem(ctx, nil, bundleItem); err != nil {
@@ -1498,11 +1484,9 @@ func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse,
 
 		for _, bi := range bundle.BundleItems {
 			bundleItem := dto.BundleItemResponse{
-				ID:         bi.ID,
-				MerchID:    bi.MerchID,
-				MerchName:  bi.Merch.Name,
-				TicketID:   bi.TicketID,
-				TicketName: bi.Ticket.Name,
+				ID:        bi.ID,
+				MerchID:   bi.MerchID,
+				MerchName: bi.Merch.Name,
 			}
 
 			data.BundleItems = append(data.BundleItems, bundleItem)
@@ -1532,11 +1516,9 @@ func (as *AdminService) GetAllBundleWithPagination(ctx context.Context, req dto.
 
 		for _, bi := range bundle.BundleItems {
 			bundleItem := dto.BundleItemResponse{
-				ID:         bi.ID,
-				MerchID:    bi.MerchID,
-				MerchName:  bi.Merch.Name,
-				TicketID:   bi.TicketID,
-				TicketName: bi.Ticket.Name,
+				ID:        bi.ID,
+				MerchID:   bi.MerchID,
+				MerchName: bi.Merch.Name,
 			}
 
 			data.BundleItems = append(data.BundleItems, bundleItem)
@@ -1572,11 +1554,9 @@ func (as *AdminService) GetDetailBundle(ctx context.Context, bundleID string) (d
 
 	for _, bi := range bundle.BundleItems {
 		bundleItem := dto.BundleItemResponse{
-			ID:         bi.ID,
-			MerchID:    bi.MerchID,
-			MerchName:  bi.Merch.Name,
-			TicketID:   bi.TicketID,
-			TicketName: bi.Ticket.Name,
+			ID:        bi.ID,
+			MerchID:   bi.MerchID,
+			MerchName: bi.Merch.Name,
 		}
 
 		b.BundleItems = append(b.BundleItems, bundleItem)
@@ -1670,15 +1650,6 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 			if flag || err == nil {
 				item.MerchID = &merch.ID
 				item.MerchName = merch.Name
-			} else {
-				ticket, flag, err := as.adminRepo.GetTicketByID(ctx, nil, biID.String())
-				if flag || err == nil {
-
-					item.TicketID = &ticket.ID
-					item.TicketName = ticket.Name
-				} else {
-					return dto.BundleResponse{}, dto.ErrInvalidBundleItemID
-				}
 			}
 
 			newItems = append(newItems, item)
@@ -1703,9 +1674,6 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 
 				if bi.MerchID != nil {
 					bundleItem.MerchID = bi.MerchID
-				}
-				if bi.TicketID != nil {
-					bundleItem.TicketID = bi.TicketID
 				}
 
 				if err := txRepo.CreateBundleItem(ctx, nil, bundleItem); err != nil {
@@ -1735,10 +1703,7 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 				biResp.MerchID = e.MerchID
 				biResp.MerchName = e.Merch.Name
 			}
-			if e.TicketID != nil {
-				biResp.TicketID = e.TicketID
-				biResp.TicketName = e.Ticket.Name
-			}
+
 			respItems = append(respItems, biResp)
 		}
 	}
@@ -1783,11 +1748,9 @@ func (as *AdminService) DeleteBundle(ctx context.Context, req dto.DeleteBundleRe
 
 	for _, bi := range deletedBundle.BundleItems {
 		bundleItem := dto.BundleItemResponse{
-			ID:         bi.ID,
-			MerchID:    bi.MerchID,
-			MerchName:  bi.Merch.Name,
-			TicketID:   bi.TicketID,
-			TicketName: bi.Ticket.Name,
+			ID:        bi.ID,
+			MerchID:   bi.MerchID,
+			MerchName: bi.Merch.Name,
 		}
 
 		b.BundleItems = append(b.BundleItems, bundleItem)
