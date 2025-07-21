@@ -9,9 +9,9 @@ import (
 
 type (
 	TimeStamp struct {
-		CreatedAt time.Time      `json:"created_at"`
-		UpdatedAt time.Time      `json:"updated_at"`
-		DeletedAt gorm.DeletedAt `json:"deleted_at"`
+		CreatedAt time.Time      `gorm:"column:createdAt" json:"created_at"`
+		UpdatedAt time.Time      `gorm:"column:updatedAt" json:"updated_at"`
+		DeletedAt gorm.DeletedAt `gorm:"column:deletedAt" json:"deleted_at"`
 	}
 
 	Role                string
