@@ -119,7 +119,7 @@ func (as *AdminService) Login(ctx context.Context, req dto.LoginRequest) (dto.Lo
 
 // User
 func (as *AdminService) CreateUser(ctx context.Context, req dto.CreateUserRequest) (dto.UserResponse, error) {
-	if req.Email == "" || req.Name == "" || req.Password == "" || req.PhoneNumber == "" {
+	if req.Email == "" || req.Name == "" || req.Password == "" {
 		return dto.UserResponse{}, dto.ErrEmptyFields
 	}
 
@@ -142,19 +142,13 @@ func (as *AdminService) CreateUser(ctx context.Context, req dto.CreateUserReques
 
 	role := "admin"
 
-	formatedPhoneNumber, err := helpers.StandardizePhoneNumber(req.PhoneNumber)
-	if err != nil {
-		return dto.UserResponse{}, dto.ErrInvalidPhoneNumber
-	}
-
 	user := entity.User{
-		ID:          uuid.New(),
-		Name:        req.Name,
-		Email:       req.Email,
-		VerifiedAt:  req.VerifiedAt,
-		Password:    req.Password,
-		PhoneNumber: formatedPhoneNumber,
-		Role:        entity.Role(role),
+		ID:            uuid.New(),
+		Name:          req.Name,
+		Email:         req.Email,
+		EmailVerified: req.EmailVerified,
+		Password:      req.Password,
+		Role:          entity.Role(role),
 	}
 
 	err = as.adminRepo.CreateUser(ctx, nil, user)
@@ -163,13 +157,12 @@ func (as *AdminService) CreateUser(ctx context.Context, req dto.CreateUserReques
 	}
 
 	return dto.UserResponse{
-		ID:          user.ID,
-		Name:        user.Name,
-		Email:       user.Email,
-		VerifiedAt:  user.VerifiedAt,
-		Password:    user.Password,
-		PhoneNumber: user.PhoneNumber,
-		Role:        user.Role,
+		ID:            user.ID,
+		Name:          user.Name,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		Password:      user.Password,
+		Role:          user.Role,
 	}, nil
 }
 func (as *AdminService) GetAllUser(ctx context.Context, roleName string) ([]dto.UserResponse, error) {
@@ -181,13 +174,12 @@ func (as *AdminService) GetAllUser(ctx context.Context, roleName string) ([]dto.
 	var datas []dto.UserResponse
 	for _, user := range users {
 		data := dto.UserResponse{
-			ID:          user.ID,
-			Name:        user.Name,
-			Email:       user.Email,
-			VerifiedAt:  user.VerifiedAt,
-			Password:    user.Password,
-			PhoneNumber: user.PhoneNumber,
-			Role:        user.Role,
+			ID:            user.ID,
+			Name:          user.Name,
+			Email:         user.Email,
+			EmailVerified: user.EmailVerified,
+			Password:      user.Password,
+			Role:          user.Role,
 		}
 
 		datas = append(datas, data)
@@ -204,13 +196,12 @@ func (as *AdminService) GetAllUserWithPagination(ctx context.Context, req dto.Pa
 	var datas []dto.UserResponse
 	for _, user := range dataWithPaginate.Users {
 		data := dto.UserResponse{
-			ID:          user.ID,
-			Name:        user.Name,
-			Email:       user.Email,
-			VerifiedAt:  user.VerifiedAt,
-			Password:    user.Password,
-			PhoneNumber: user.PhoneNumber,
-			Role:        user.Role,
+			ID:            user.ID,
+			Name:          user.Name,
+			Email:         user.Email,
+			EmailVerified: user.EmailVerified,
+			Password:      user.Password,
+			Role:          user.Role,
 		}
 
 		datas = append(datas, data)
@@ -233,13 +224,12 @@ func (as *AdminService) GetDetailUser(ctx context.Context, userID string) (dto.U
 	}
 
 	return dto.UserResponse{
-		ID:          user.ID,
-		Name:        user.Name,
-		Email:       user.Email,
-		VerifiedAt:  user.VerifiedAt,
-		Password:    user.Password,
-		PhoneNumber: user.PhoneNumber,
-		Role:        user.Role,
+		ID:            user.ID,
+		Name:          user.Name,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		Password:      user.Password,
+		Role:          user.Role,
 	}, nil
 }
 func (as *AdminService) UpdateUser(ctx context.Context, req dto.UpdateUserRequest) (dto.UserResponse, error) {
@@ -277,28 +267,18 @@ func (as *AdminService) UpdateUser(ctx context.Context, req dto.UpdateUserReques
 		user.Password = req.Password
 	}
 
-	if req.PhoneNumber != "" {
-		formatedPhoneNumber, err := helpers.StandardizePhoneNumber(req.PhoneNumber)
-		if err != nil {
-			return dto.UserResponse{}, dto.ErrInvalidPhoneNumber
-		}
-
-		user.PhoneNumber = formatedPhoneNumber
-	}
-
 	err = as.adminRepo.UpdateUser(ctx, nil, user)
 	if err != nil {
 		return dto.UserResponse{}, dto.ErrUpdateUser
 	}
 
 	res := dto.UserResponse{
-		ID:          user.ID,
-		Name:        user.Name,
-		Email:       user.Email,
-		VerifiedAt:  user.VerifiedAt,
-		Password:    user.Password,
-		PhoneNumber: user.PhoneNumber,
-		Role:        user.Role,
+		ID:            user.ID,
+		Name:          user.Name,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		Password:      user.Password,
+		Role:          user.Role,
 	}
 
 	return res, nil
@@ -315,13 +295,12 @@ func (as *AdminService) DeleteUser(ctx context.Context, req dto.DeleteUserReques
 	}
 
 	res := dto.UserResponse{
-		ID:          deletedUser.ID,
-		Name:        deletedUser.Name,
-		Email:       deletedUser.Email,
-		VerifiedAt:  deletedUser.VerifiedAt,
-		Password:    deletedUser.Password,
-		PhoneNumber: deletedUser.PhoneNumber,
-		Role:        deletedUser.Role,
+		ID:            deletedUser.ID,
+		Name:          deletedUser.Name,
+		Email:         deletedUser.Email,
+		EmailVerified: deletedUser.EmailVerified,
+		Password:      deletedUser.Password,
+		Role:          deletedUser.Role,
 	}
 
 	return res, nil

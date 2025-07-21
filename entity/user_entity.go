@@ -10,14 +10,13 @@ import (
 )
 
 type User struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primaryKey" json:"user_id"`
-	Name        string     `gorm:"not null" json:"user_name"`
-	Email       string     `gorm:"unique;not null" json:"user_email"`
-	VerifiedAt  *time.Time `json:"verified_at"`
-	Password    string     `gorm:"not null" json:"user_password"`
-	Image       string     `json:"user_image"`
-	PhoneNumber string     `gorm:"not null" json:"user_phone_number"`
-	Role        Role       `gorm:"not null;default:'guest'" json:"user_role"`
+	ID            uuid.UUID  `gorm:"type:uuid;primaryKey" json:"user_id"`
+	Name          string     `gorm:"not null" json:"user_name"`
+	Email         string     `gorm:"unique;not null" json:"user_email"`
+	EmailVerified *time.Time `json:"email_verified"`
+	Image         string     `json:"user_image"`
+	Password      string     `gorm:"not null" json:"user_password"`
+	Role          Role       `gorm:"not null;default:'guest'" json:"user_role"`
 
 	GuestAttendances []GuestAttendance `gorm:"foreignKey:CheckedBy"`
 	Accounts         []Account         `gorm:"foreignKey:UserID"`
@@ -31,11 +30,6 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	var err error
 
 	u.Password, err = helpers.HashPassword(u.Password)
-	if err != nil {
-		return err
-	}
-
-	u.PhoneNumber, err = helpers.StandardizePhoneNumber(u.PhoneNumber)
 	if err != nil {
 		return err
 	}
