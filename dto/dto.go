@@ -233,28 +233,25 @@ type (
 // User
 type (
 	UserResponse struct {
-		ID          uuid.UUID   `json:"user_id"`
-		Name        string      `json:"user_name"`
-		Email       string      `json:"user_email"`
-		VerifiedAt  *time.Time  `json:"verified_at"`
-		Password    string      `json:"user_password"`
-		PhoneNumber string      `json:"user_phone_number"`
-		Role        entity.Role `json:"user_role"`
+		ID            uuid.UUID   `json:"user_id"`
+		Name          string      `json:"user_name"`
+		Email         string      `json:"user_email"`
+		EmailVerified *time.Time  `json:"email_verified"`
+		Password      string      `json:"user_password"`
+		Role          entity.Role `json:"user_role"`
 	}
 	CreateUserRequest struct {
-		Name        string     `json:"user_name" form:"user_name"`
-		Email       string     `json:"user_email" form:"user_email"`
-		VerifiedAt  *time.Time `json:"verified_at" form:"user_verified_at"`
-		Password    string     `json:"user_password" form:"user_password"`
-		PhoneNumber string     `json:"user_phone_number" form:"user_phone_number"`
+		Name          string     `json:"user_name" form:"user_name"`
+		Email         string     `json:"user_email" form:"user_email"`
+		EmailVerified *time.Time `json:"email_verified" form:"email_verified"`
+		Password      string     `json:"user_password" form:"user_password"`
 	}
 	UpdateUserRequest struct {
-		ID          string     `json:"-"`
-		Name        string     `json:"user_name,omitempty" form:"user_name"`
-		Email       string     `json:"user_email,omitempty" form:"user_email"`
-		VerifiedAt  *time.Time `json:"verified_at,omitempty" form:"user_verified_at"`
-		Password    string     `json:"user_password,omitempty" form:"user_password"`
-		PhoneNumber string     `json:"user_phone_number,omitempty" form:"user_phone_number"`
+		ID            string     `json:"-"`
+		Name          string     `json:"user_name,omitempty" form:"user_name"`
+		Email         string     `json:"user_email,omitempty" form:"user_email"`
+		EmailVerified *time.Time `json:"email_verified" form:"email_verified"`
+		Password      string     `json:"user_password,omitempty" form:"user_password"`
 	}
 	UserPaginationResponse struct {
 		PaginationResponse
