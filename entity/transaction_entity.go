@@ -11,14 +11,24 @@ import (
 type Transaction struct {
 	ID             uuid.UUID         `gorm:"type:uuid;primaryKey" json:"transaction_id"`
 	OrderID        *uuid.UUID        `gorm:"type:uuid" json:"transaction_order_id"`
-	AudienceType   AudienceType      `gorm:"default:'regular'" json:"transaction_audience_type"`
 	ItemType       ItemType          `json:"transaction_item_type"`
+	AudienceType   AudienceType      `gorm:"default:'regular'" json:"transaction_audience_type"`
+	ReferalCode    string            `json:"transaction_referal_code"`
 	Status         TransactionStatus `json:"transaction_status"`
 	PaymentType    PaymentType       `json:"transaction_payment_type"`
 	SignatureKey   string            `json:"transaction_signature_key"`
 	Acquire        Acquire           `json:"transaction_acquire"`
 	SettlementTime *time.Time        `json:"transaction_settlement_time"`
 	GrossAmount    float64           `json:"transaction_gross_amount"`
+
+	UserID *uuid.UUID `gorm:"type:uuid" json:"user_id"`
+	User   User       `gorm:"foreignKey:UserID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
+	TicketID *uuid.UUID `gorm:"type:uuid" json:"ticket_id"`
+	Ticket   Ticket     `gorm:"foreignKey:TicketID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+
+	BundleID *uuid.UUID `gorm:"type:uuid" json:"bundle_id"`
+	Bundle   Bundle     `gorm:"foreignKey:BundleID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 
 	TicketForms []TicketForm `gorm:"foreignKey:TransactionID"`
 

@@ -10,3 +10,7 @@ assets/**
 !assets/sponsorship/.gitkeep
 !assets/merch/
 !assets/merch/.gitkeep
+!assets/ticket/
+!assets/ticket/.gitkeep
+!assets/bundle/
+!assets/bundle/.gitkeep
