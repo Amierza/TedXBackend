@@ -15,7 +15,7 @@ type User struct {
 	Email         string     `gorm:"unique;not null" json:"user_email"`
 	EmailVerified *time.Time `json:"email_verified"`
 	Image         string     `json:"user_image"`
-	Password      string     `gorm:"not null" json:"user_password"`
+	Password      string     `json:"user_password"`
 	Role          Role       `gorm:"not null;default:'guest'" json:"user_role"`
 
 	GuestAttendances []GuestAttendance `gorm:"foreignKey:CheckedBy"`
