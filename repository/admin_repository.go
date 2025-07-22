@@ -189,7 +189,7 @@ func (ar *AdminRepository) GetAllUser(ctx context.Context, tx *gorm.DB, roleName
 		query = query.Where("role = ?", roleName)
 	}
 
-	if err := query.Order("created_at DESC").Find(&users).Error; err != nil {
+	if err := query.Order(`"createdAt" DESC`).Find(&users).Error; err != nil {
 		return []entity.User{}, err
 	}
 
@@ -227,7 +227,7 @@ func (ar *AdminRepository) GetAllUserWithPagination(ctx context.Context, tx *gor
 		return dto.UserPaginationRepositoryResponse{}, err
 	}
 
-	if err := query.Order("created_at DESC").Scopes(Paginate(req.Page, req.PerPage)).Find(&users).Error; err != nil {
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&users).Error; err != nil {
 		return dto.UserPaginationRepositoryResponse{}, err
 	}
 
@@ -277,7 +277,9 @@ func (ar *AdminRepository) GetAllTicket(ctx context.Context, tx *gorm.DB) ([]ent
 		err     error
 	)
 
-	if err := tx.WithContext(ctx).Model(&entity.Ticket{}).Find(&tickets).Error; err != nil {
+	query := tx.WithContext(ctx).Model(&entity.Ticket{})
+
+	if err := query.Order(`"createdAt" DESC`).Find(&tickets).Error; err != nil {
 		return []entity.Ticket{}, err
 	}
 
@@ -311,7 +313,7 @@ func (ar *AdminRepository) GetAllTicketWithPagination(ctx context.Context, tx *g
 		return dto.TicketPaginationRepositoryResponse{}, err
 	}
 
-	if err := query.Order("created_at DESC").Scopes(Paginate(req.Page, req.PerPage)).Find(&tickets).Error; err != nil {
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&tickets).Error; err != nil {
 		return dto.TicketPaginationRepositoryResponse{}, err
 	}
 
@@ -337,7 +339,9 @@ func (ar *AdminRepository) GetAllSponsorship(ctx context.Context, tx *gorm.DB) (
 		err          error
 	)
 
-	if err := tx.WithContext(ctx).Model(&entity.Sponsorship{}).Find(&sponsorships).Error; err != nil {
+	query := tx.WithContext(ctx).Model(&entity.Sponsorship{})
+
+	if err := query.Order(`"createdAt" DESC`).Find(&sponsorships).Error; err != nil {
 		return []entity.Sponsorship{}, err
 	}
 
@@ -371,7 +375,7 @@ func (ar *AdminRepository) GetAllSponsorshipWithPagination(ctx context.Context, 
 		return dto.SponsorshipPaginationRepositoryResponse{}, err
 	}
 
-	if err := query.Order("created_at DESC").Scopes(Paginate(req.Page, req.PerPage)).Find(&sponsorships).Error; err != nil {
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&sponsorships).Error; err != nil {
 		return dto.SponsorshipPaginationRepositoryResponse{}, err
 	}
 
@@ -445,7 +449,9 @@ func (ar *AdminRepository) GetAllSpeaker(ctx context.Context, tx *gorm.DB) ([]en
 		err      error
 	)
 
-	if err := tx.WithContext(ctx).Model(&entity.Speaker{}).Find(&speakers).Error; err != nil {
+	query := tx.WithContext(ctx).Model(&entity.Speaker{})
+
+	if err := query.Order(`"createdAt" DESC`).Find(&speakers).Error; err != nil {
 		return []entity.Speaker{}, err
 	}
 
@@ -479,7 +485,7 @@ func (ar *AdminRepository) GetAllSpeakerWithPagination(ctx context.Context, tx *
 		return dto.SpeakerPaginationRepositoryResponse{}, err
 	}
 
-	if err := query.Order("created_at DESC").Scopes(Paginate(req.Page, req.PerPage)).Find(&speakers).Error; err != nil {
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&speakers).Error; err != nil {
 		return dto.SpeakerPaginationRepositoryResponse{}, err
 	}
 
@@ -505,7 +511,9 @@ func (ar *AdminRepository) GetAllMerch(ctx context.Context, tx *gorm.DB) ([]enti
 		err    error
 	)
 
-	if err := tx.WithContext(ctx).Model(&entity.Merch{}).Preload("MerchImages").Find(&merchs).Error; err != nil {
+	query := tx.WithContext(ctx).Model(&entity.Merch{}).Preload("MerchImages")
+
+	if err := query.Order(`"createdAt" DESC`).Find(&merchs).Error; err != nil {
 		return []entity.Merch{}, err
 	}
 
@@ -539,7 +547,7 @@ func (ar *AdminRepository) GetAllMerchWithPagination(ctx context.Context, tx *go
 		return dto.MerchPaginationRepositoryResponse{}, err
 	}
 
-	if err := query.Order("created_at DESC").Scopes(Paginate(req.Page, req.PerPage)).Find(&merchs).Error; err != nil {
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&merchs).Error; err != nil {
 		return dto.MerchPaginationRepositoryResponse{}, err
 	}
 
@@ -613,7 +621,9 @@ func (ar *AdminRepository) GetAllBundle(ctx context.Context, tx *gorm.DB) ([]ent
 		err     error
 	)
 
-	if err := tx.WithContext(ctx).Preload("BundleItems.Merch").Model(&entity.Bundle{}).Find(&bundles).Error; err != nil {
+	query := tx.WithContext(ctx).Model(&entity.Bundle{}).Preload("BundleItems.Merch")
+
+	if err := query.Order(`"createdAt" DESC`).Find(&bundles).Error; err != nil {
 		return []entity.Bundle{}, err
 	}
 
@@ -647,7 +657,7 @@ func (ar *AdminRepository) GetAllBundleWithPagination(ctx context.Context, tx *g
 		return dto.BundlePaginationRepositoryResponse{}, err
 	}
 
-	if err := query.Order("created_at DESC").Scopes(Paginate(req.Page, req.PerPage)).Find(&bundles).Error; err != nil {
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&bundles).Error; err != nil {
 		return dto.BundlePaginationRepositoryResponse{}, err
 	}
 
