@@ -1430,6 +1430,11 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 			return err
 		}
 		for _, item := range bundleItems {
+			_, _, err := txRepo.GetMerchByID(ctx, nil, item.Merch.ID.String())
+			if err != nil {
+				return dto.ErrMerchNotFound
+			}
+
 			if err := txRepo.CreateBundleItem(ctx, nil, item); err != nil {
 				return err
 			}

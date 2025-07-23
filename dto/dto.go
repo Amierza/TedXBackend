@@ -23,6 +23,7 @@ const (
 	MESSAGE_FAILED_PARSE_STOCK          = "failed to parse stock"
 	// Authentication
 	MESSAGE_FAILED_LOGIN_ADMIN = "failed login admin"
+	MESSAGE_FAILED_LOGIN_USER  = "failed login user"
 	// Middleware
 	MESSAGE_FAILED_PROSES_REQUEST             = "failed proses request"
 	MESSAGE_FAILED_ACCESS_DENIED              = "failed access denied"
@@ -79,6 +80,7 @@ const (
 	// ====================================== Success ======================================
 	// Authentication
 	MESSAGE_SUCCESS_LOGIN_ADMIN = "success login admin"
+	MESSAGE_SUCCESS_LOGIN_USER  = "success login user"
 	// User
 	MESSAGE_SUCCESS_CREATE_USER     = "success create user"
 	MESSAGE_SUCCESS_GET_LIST_USER   = "success get list user"
