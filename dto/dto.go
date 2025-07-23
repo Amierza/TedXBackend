@@ -20,6 +20,7 @@ const (
 	MESSAGE_FAILED_PARSE_MULTIPART_FORM = "failed to parse multipart form"
 	MESSAGE_FAILED_PARSE_PRICE          = "failed to parse price"
 	MESSAGE_FAILED_PARSE_QUOTA          = "failed to parse quota"
+	MESSAGE_FAILED_PARSE_STOCK          = "failed to parse stock"
 	// Authentication
 	MESSAGE_FAILED_LOGIN_ADMIN = "failed login admin"
 	// Middleware
@@ -398,19 +399,14 @@ type (
 		Category    entity.MerchCategory `json:"merch_cat" form:"merch_cat"`
 		Images      []ImageUpload        `json:"-" form:"-"`
 	}
-	ReplaceImageUpload struct {
-		TargetImageID uuid.UUID             `form:"target_image_id"`
-		FileHeader    *multipart.FileHeader `form:"-"`
-		FileReader    multipart.File        `form:"-"`
-	}
 	UpdateMerchRequest struct {
-		ID            string               `json:"-"`
-		Name          string               `json:"merch_name,omitempty" form:"merch_name"`
-		Stock         *int                 `json:"merch_stock,omitempty" form:"merch_stock"`
-		Price         *float64             `json:"merch_price,omitempty" form:"merch_price"`
-		Description   string               `json:"merch_desc,omitempty" form:"merch_desc"`
-		Category      entity.MerchCategory `json:"merch_cat,omitempty" form:"merch_cat"`
-		ReplaceImages []ReplaceImageUpload `json:"-" form:"-"`
+		ID          string               `json:"-"`
+		Name        string               `json:"merch_name,omitempty" form:"merch_name"`
+		Stock       *int                 `json:"merch_stock,omitempty" form:"merch_stock"`
+		Price       *float64             `json:"merch_price,omitempty" form:"merch_price"`
+		Description string               `json:"merch_desc,omitempty" form:"merch_desc"`
+		Category    entity.MerchCategory `json:"merch_cat,omitempty" form:"merch_cat"`
+		Images      []ImageUpload        `json:"merch_images,omitempty" form:"merch_images"`
 	}
 	MerchPaginationResponse struct {
 		PaginationResponse

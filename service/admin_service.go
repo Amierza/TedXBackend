@@ -1014,27 +1014,14 @@ func (as *AdminService) CreateMerch(ctx context.Context, req dto.CreateMerchRequ
 		return dto.MerchResponse{}, dto.ErrPriceOutOfBound
 	}
 
-	merchID := uuid.New()
-	merch := entity.Merch{
-		ID:          merchID,
-		Name:        req.Name,
-		Stock:       req.Stock,
-		Price:       req.Price,
-		Description: req.Description,
-		Category:    req.Category,
-	}
-
-	err := as.adminRepo.CreateMerch(ctx, nil, merch)
-	if err != nil {
-		return dto.MerchResponse{}, dto.ErrCreateMerch
-	}
-
 	saveDir := "assets/merch"
 	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
 		return dto.MerchResponse{}, dto.ErrCreateFile
 	}
 
+	var merchImages []entity.MerchImage
 	var imageResponses []dto.MerchImageResponse
+
 	for _, img := range req.Images {
 		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(img.FileHeader.Filename), "."))
 		if ext != "jpg" && ext != "jpeg" && ext != "png" {
@@ -1042,7 +1029,7 @@ func (as *AdminService) CreateMerch(ctx context.Context, req dto.CreateMerchRequ
 		}
 
 		imageID := uuid.New()
-		fileName := fmt.Sprintf("merch_%s.%s", imageID, ext)
+		fileName := fmt.Sprintf("merch_%s.%s", imageID.String(), ext)
 		savePath := filepath.Join(saveDir, fileName)
 
 		out, err := os.Create(savePath)
@@ -1055,20 +1042,44 @@ func (as *AdminService) CreateMerch(ctx context.Context, req dto.CreateMerchRequ
 			return dto.MerchResponse{}, dto.ErrSaveFile
 		}
 
-		image := entity.MerchImage{
+		merchImages = append(merchImages, entity.MerchImage{
 			ID:      imageID,
-			MerchID: &merchID,
 			Name:    fileName,
-		}
-
-		if err := as.adminRepo.CreateMerchImage(ctx, nil, image); err != nil {
-			return dto.MerchResponse{}, dto.ErrCreateMerchImage
-		}
+			MerchID: nil,
+		})
 
 		imageResponses = append(imageResponses, dto.MerchImageResponse{
-			ID:   image.ID,
-			Name: image.Name,
+			ID:   imageID,
+			Name: fileName,
 		})
+	}
+
+	merchID := uuid.New()
+	merch := entity.Merch{
+		ID:          merchID,
+		Name:        req.Name,
+		Stock:       req.Stock,
+		Price:       req.Price,
+		Description: req.Description,
+		Category:    req.Category,
+	}
+
+	err := as.adminRepo.RunInTransaction(ctx, func(txRepo repository.IAdminRepository) error {
+		if err := txRepo.CreateMerch(ctx, nil, merch); err != nil {
+			return dto.ErrCreateMerch
+		}
+
+		for _, img := range merchImages {
+			img.MerchID = &merchID
+			if err := txRepo.CreateMerchImage(ctx, nil, img); err != nil {
+				return dto.ErrCreateMerchImage
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return dto.MerchResponse{}, err
 	}
 
 	return dto.MerchResponse{
@@ -1176,8 +1187,8 @@ func (as *AdminService) GetDetailMerch(ctx context.Context, merchID string) (dto
 	}, nil
 }
 func (as *AdminService) UpdateMerch(ctx context.Context, req dto.UpdateMerchRequest) (dto.MerchResponse, error) {
-	merch, flag, err := as.adminRepo.GetMerchByID(ctx, nil, req.ID)
-	if err != nil || !flag {
+	merch, found, err := as.adminRepo.GetMerchByID(ctx, nil, req.ID)
+	if err != nil || !found {
 		return dto.MerchResponse{}, dto.ErrMerchNotFound
 	}
 
@@ -1185,15 +1196,13 @@ func (as *AdminService) UpdateMerch(ctx context.Context, req dto.UpdateMerchRequ
 		if len(req.Name) < 3 {
 			return dto.MerchResponse{}, dto.ErrMerchNameTooShort
 		}
-
 		merch.Name = req.Name
 	}
 
 	if req.Description != "" {
-		if len(req.Description) < 3 {
+		if len(req.Description) < 5 {
 			return dto.MerchResponse{}, dto.ErrMerchDescriptionTooShort
 		}
-
 		merch.Description = req.Description
 	}
 
@@ -1201,7 +1210,6 @@ func (as *AdminService) UpdateMerch(ctx context.Context, req dto.UpdateMerchRequ
 		if *req.Stock < 0 {
 			return dto.MerchResponse{}, dto.ErrStockOutOfBound
 		}
-
 		merch.Stock = *req.Stock
 	}
 
@@ -1209,87 +1217,91 @@ func (as *AdminService) UpdateMerch(ctx context.Context, req dto.UpdateMerchRequ
 		if *req.Price < 0 {
 			return dto.MerchResponse{}, dto.ErrPriceOutOfBound
 		}
-
 		merch.Price = *req.Price
 	}
 
 	if req.Category != "" {
-		merchCat := entity.MerchCategory(req.Category)
-		if !entity.IsValidMerchCategory(merchCat) {
+		category := entity.MerchCategory(req.Category)
+		if !entity.IsValidMerchCategory(category) {
 			return dto.MerchResponse{}, dto.ErrInvalidMerchCategory
 		}
-
-		merch.Category = merchCat
+		merch.Category = category
 	}
 
-	if err = as.adminRepo.UpdateMerch(ctx, nil, merch); err != nil {
-		return dto.MerchResponse{}, dto.ErrUpdateMerch
+	err = as.adminRepo.RunInTransaction(ctx, func(txRepo repository.IAdminRepository) error {
+		if err := txRepo.UpdateMerch(ctx, nil, merch); err != nil {
+			return dto.ErrUpdateMerch
+		}
+
+		if len(req.Images) > 0 {
+			oldImages, err := txRepo.GetMerchImagesByMerchID(ctx, nil, merch.ID.String())
+			if err != nil {
+				return dto.ErrGetMerchImages
+			}
+
+			for _, img := range oldImages {
+				path := filepath.Join("assets/merch", img.Name)
+				if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+					return dto.ErrDeleteOldImage
+				}
+				if err := txRepo.DeleteMerchImageByID(ctx, nil, img.ID.String()); err != nil {
+					return dto.ErrDeleteMerchImageByID
+				}
+			}
+
+			for _, img := range req.Images {
+				ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(img.FileHeader.Filename), "."))
+				if ext != "jpg" && ext != "jpeg" && ext != "png" {
+					return dto.ErrInvalidExtensionPhoto
+				}
+
+				newImageID := uuid.New()
+				newFileName := fmt.Sprintf("merch_%s.%s", newImageID, ext)
+
+				saveDir := "assets/merch"
+				if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+					return dto.ErrCreateFile
+				}
+				savePath := filepath.Join(saveDir, newFileName)
+
+				out, err := os.Create(savePath)
+				if err != nil {
+					return dto.ErrCreateFile
+				}
+				defer out.Close()
+
+				if _, err := io.Copy(out, img.FileReader); err != nil {
+					return dto.ErrSaveFile
+				}
+
+				newImage := entity.MerchImage{
+					ID:      newImageID,
+					MerchID: &merch.ID,
+					Name:    newFileName,
+				}
+				if err := txRepo.CreateMerchImage(ctx, nil, newImage); err != nil {
+					return dto.ErrCreateMerchImage
+				}
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return dto.MerchResponse{}, err
 	}
 
-	saveDir := "assets/merch"
-	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
-		return dto.MerchResponse{}, dto.ErrCreateFile
+	images, err := as.adminRepo.GetMerchImagesByMerchID(ctx, nil, merch.ID.String())
+	if err != nil {
+		return dto.MerchResponse{}, dto.ErrGetMerchImages
 	}
 
 	var imageResponses []dto.MerchImageResponse
-	if len(req.ReplaceImages) != 0 {
-		for _, img := range req.ReplaceImages {
-			oldImage, flag, err := as.adminRepo.GetMerchImageByID(ctx, nil, img.TargetImageID.String())
-			if err != nil || !flag {
-				return dto.MerchResponse{}, dto.ErrMerchImageNotFound
-			}
-
-			oldImagePath := filepath.Join("assets/merch", oldImage.Name)
-			if err := os.Remove(oldImagePath); err != nil {
-				return dto.MerchResponse{}, dto.ErrDeleteOldImage
-			}
-
-			if err := as.adminRepo.DeleteMerchImageByID(ctx, nil, img.TargetImageID.String()); err != nil {
-				return dto.MerchResponse{}, dto.ErrDeleteMerchImageByID
-			}
-
-			ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(img.FileHeader.Filename), "."))
-			if ext != "jpg" && ext != "jpeg" && ext != "png" {
-				return dto.MerchResponse{}, dto.ErrInvalidExtensionPhoto
-			}
-
-			newImageID := uuid.New()
-			newFileName := fmt.Sprintf("merch_%s.%s", newImageID, ext)
-			savePath := filepath.Join("assets/merch", newFileName)
-
-			out, err := os.Create(savePath)
-			if err != nil {
-				return dto.MerchResponse{}, dto.ErrCreateFile
-			}
-			defer out.Close()
-			if _, err := io.Copy(out, img.FileReader); err != nil {
-				return dto.MerchResponse{}, dto.ErrSaveFile
-			}
-
-			newImage := entity.MerchImage{
-				ID:      newImageID,
-				MerchID: &merch.ID,
-				Name:    newFileName,
-			}
-
-			if err := as.adminRepo.CreateMerchImage(ctx, nil, newImage); err != nil {
-				return dto.MerchResponse{}, dto.ErrCreateMerchImage
-			}
-		}
-	}
-
-	if len(imageResponses) == 0 {
-		images, err := as.adminRepo.GetMerchImagesByMerchID(ctx, nil, merch.ID.String())
-		if err != nil {
-			return dto.MerchResponse{}, dto.ErrGetMerchImages
-		}
-
-		for _, img := range images {
-			imageResponses = append(imageResponses, dto.MerchImageResponse{
-				ID:   img.ID,
-				Name: img.Name,
-			})
-		}
+	for _, img := range images {
+		imageResponses = append(imageResponses, dto.MerchImageResponse{
+			ID:   img.ID,
+			Name: img.Name,
+		})
 	}
 
 	return dto.MerchResponse{
@@ -1343,11 +1355,6 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		return dto.BundleResponse{}, dto.ErrEmptyFields
 	}
 
-	_, flag, err := as.adminRepo.GetBundleByName(ctx, nil, req.Name)
-	if err == nil || flag {
-		return dto.BundleResponse{}, dto.ErrBundleAlreadyExists
-	}
-
 	if len(req.Name) < 3 {
 		return dto.BundleResponse{}, dto.ErrBundleNameTooShort
 	}
@@ -1364,73 +1371,78 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		return dto.BundleResponse{}, dto.ErrQuotaOutOfBound
 	}
 
-	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
-	if ext != "jpg" && ext != "jpeg" && ext != "png" {
-		return dto.BundleResponse{}, dto.ErrInvalidExtensionPhoto
-	}
-
-	bundleName := strings.ToLower(req.Name)
-	bundleName = strings.ReplaceAll(bundleName, " ", "_")
-
-	fileName := fmt.Sprintf("bundle_%s_%s.%s", time.Now().Format("060102150405"), bundleName, ext)
-
-	saveDir := "assets/bundle"
-	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
-		return dto.BundleResponse{}, dto.ErrCreateFile
-	}
-	savePath := filepath.Join(saveDir, fileName)
-
-	out, err := os.Create(savePath)
-	if err != nil {
-		return dto.BundleResponse{}, dto.ErrCreateFile
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, req.FileReader); err != nil {
-		return dto.BundleResponse{}, dto.ErrSaveFile
-	}
-	req.Image = fileName
-
-	var bundleItems []dto.BundleItemResponse
-	for _, biID := range req.BundleItems {
-		var item dto.BundleItemResponse
-		item.ID = uuid.New()
-
-		merch, flag, err := as.adminRepo.GetMerchByID(ctx, nil, biID.String())
-		if flag || err == nil {
-			item.MerchID = &merch.ID
-			item.MerchName = merch.Name
+	var fileName string
+	if req.FileHeader != nil && req.FileReader != nil {
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
+		if ext != "jpg" && ext != "jpeg" && ext != "png" {
+			return dto.BundleResponse{}, dto.ErrInvalidExtensionPhoto
 		}
 
-		bundleItems = append(bundleItems, item)
+		bundleName := strings.ToLower(req.Name)
+		bundleName = strings.ReplaceAll(bundleName, " ", "_")
+
+		fileName = fmt.Sprintf("bundle_%s_%s.%s", time.Now().Format("060102150405"), bundleName, ext)
+
+		saveDir := "assets/bundle"
+		if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+			return dto.BundleResponse{}, dto.ErrCreateFile
+		}
+		savePath := filepath.Join(saveDir, fileName)
+
+		out, err := os.Create(savePath)
+		if err != nil {
+			return dto.BundleResponse{}, dto.ErrCreateFile
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, req.FileReader); err != nil {
+			return dto.BundleResponse{}, dto.ErrSaveFile
+		}
 	}
 
+	bundleID := uuid.New()
 	bundle := entity.Bundle{
-		ID:    uuid.New(),
+		ID:    bundleID,
 		Name:  req.Name,
 		Type:  req.Type,
 		Price: req.Price,
 		Quota: req.Quota,
-		Image: req.Image,
+		Image: fileName,
 	}
 
-	err = as.adminRepo.CreateBundle(ctx, nil, bundle)
+	var bundleItems []entity.BundleItem
+	for _, merchID := range req.BundleItems {
+		bundleItems = append(bundleItems, entity.BundleItem{
+			ID:       uuid.New(),
+			BundleID: &bundleID,
+			MerchID:  merchID,
+		})
+	}
+
+	err := as.adminRepo.RunInTransaction(ctx, func(txRepo repository.IAdminRepository) error {
+		if err := txRepo.CreateBundle(ctx, nil, bundle); err != nil {
+			return err
+		}
+		for _, item := range bundleItems {
+			if err := txRepo.CreateBundleItem(ctx, nil, item); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return dto.BundleResponse{}, dto.ErrCreateBundle
+		return dto.BundleResponse{}, err
 	}
 
-	for _, bi := range bundleItems {
-		bundleItem := entity.BundleItem{
-			ID:       bi.ID,
-			BundleID: &bundle.ID,
-		}
-
-		if bi.MerchID != nil {
-			bundleItem.MerchID = bi.MerchID
-		}
-
-		if err := as.adminRepo.CreateBundleItem(ctx, nil, bundleItem); err != nil {
-			return dto.BundleResponse{}, dto.ErrCreateBundleItem
+	var itemsResp []dto.BundleItemResponse
+	for _, item := range bundleItems {
+		merch, found, err := as.adminRepo.GetMerchByID(ctx, nil, item.MerchID.String())
+		if err == nil && found {
+			itemsResp = append(itemsResp, dto.BundleItemResponse{
+				ID:        item.ID,
+				MerchID:   item.MerchID,
+				MerchName: merch.Name,
+			})
 		}
 	}
 
@@ -1441,7 +1453,7 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		Type:        bundle.Type,
 		Price:       bundle.Price,
 		Quota:       bundle.Quota,
-		BundleItems: bundleItems,
+		BundleItems: itemsResp,
 	}, nil
 }
 func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error) {
