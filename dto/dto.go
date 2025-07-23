@@ -69,6 +69,12 @@ const (
 	MESSAGE_FAILED_GET_DETAIL_BUNDLE      = "failed get detail bundle"
 	MESSAGE_FAILED_UPDATE_BUNDLE          = "failed update bundle"
 	MESSAGE_FAILED_DELETE_BUNDLE          = "failed delete bundle"
+	// Transaction & Ticket Form
+	MESSAGE_FAILED_CREATE_TICKET_FORM     = "failed create ticket form"
+	MESSAGE_FAILED_GET_LIST_TICKET_FORM   = "failed get list ticket form"
+	MESSAGE_FAILED_GET_DETAIL_TICKET_FORM = "failed get detail ticket form"
+	MESSAGE_FAILED_UPDATE_TICKET_FORM     = "failed update ticket form"
+	MESSAGE_FAILED_DELETE_TICKET_FORM     = "failed delete ticket form"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -109,6 +115,12 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_BUNDLE = "success get detail bundle"
 	MESSAGE_SUCCESS_UPDATE_BUNDLE     = "success update bundle"
 	MESSAGE_SUCCESS_DELETE_BUNDLE     = "success delete bundle"
+	// Transaction & Ticket Form
+	MESSAGE_SUCCESS_CREATE_TRANSACTION_TICKET     = "success create transaction ticket"
+	MESSAGE_SUCCESS_GET_LIST_TRANSACTION_TICKET   = "success get list transaction ticket"
+	MESSAGE_SUCCESS_GET_DETAIL_TRANSACTION_TICKET = "success get detail transaction ticket"
+	MESSAGE_SUCCESS_UPDATE_TRANSACTION_TICKET     = "success update transaction ticket"
+	MESSAGE_SUCCESS_DELETE_TRANSACTION_TICKET     = "success delete transaction ticket"
 )
 
 var (
@@ -125,6 +137,7 @@ var (
 	ErrDecryptToken            = errors.New("failed to decrypt token")
 	ErrTokenInvalid            = errors.New("token invalid")
 	ErrValidateToken           = errors.New("failed to validate token")
+	ErrGetUserIDFromToken      = errors.New("failed to get user id from token")
 	// Parse
 	ErrParseUUID = errors.New("failed parse uuid")
 	// Input Validation
@@ -134,6 +147,7 @@ var (
 	ErrInvalidPhoneNumber         = errors.New("failed invalid phone number")
 	ErrInvalidUserRole            = errors.New("failed invalid user role")
 	ErrUserNameTooShort           = errors.New("failed user name too short (min 3.)")
+	ErrUserFullNameTooShort       = errors.New("failed user name too short (min 5.)")
 	ErrPasswordTooShort           = errors.New("failed password too short (min 8.)")
 	ErrTicketNameTooShort         = errors.New("failed ticket name too short (min 3.)")
 	ErrBundleNameTooShort         = errors.New("failed bundle name too short (min 3.)")
@@ -164,6 +178,7 @@ var (
 	ErrDeleteTicketByID           = errors.New("failed delete ticket by id")
 	ErrTicketAlreadyExists        = errors.New("failed ticket already exists")
 	ErrQuotaOutOfBound            = errors.New("failed quota out of bound")
+	ErrTicketSoldOut              = errors.New("failed ticket sold out")
 	// Sponsorship
 	ErrCreateSponsorship               = errors.New("failed create sponsorship")
 	ErrGetAllSponsorship               = errors.New("failed get all sponsorship")
@@ -212,6 +227,19 @@ var (
 	ErrGetBundleItems               = errors.New("failed get bundle items")
 	ErrInvalidTicketIDInBundleMerch = errors.New("bundle type 'bundle merch' cannot contain ticket")
 	ErrDeleteBundleItemsByBundleID  = errors.New("failed delete bundle items by bundle id")
+	// Transaction & Ticket Form
+	ErrEmptyTicketForms              = errors.New("failed empty ticket forms")
+	ErrInvalidAudienceType           = errors.New("failed invalid audience type")
+	ErrInvalidInstansi               = errors.New("failed invalid instansi")
+	ErrInvalidItemType               = errors.New("failed invalid item type")
+	ErrCreateTicketForm              = errors.New("failed create ticket form")
+	ErrCreateTransaction             = errors.New("failed create transaction")
+	ErrMustBeInvitedGuest            = errors.New("failed audience must be invited guest")
+	ErrItemTypeMustBeTicket          = errors.New("failed item type must be ticket")
+	ErrGetAllTransactionNoPagination = errors.New("failed get all transaction no pagination")
+	ErrTicketFormNotFound            = errors.New("failed ticket form not found")
+	ErrUpdateTicketForm              = errors.New("failed update ticket form")
+	ErrDeleteTicketFormByID          = errors.New("failed delete ticket form by id")
 )
 
 // All About Image Request
@@ -466,5 +494,55 @@ type (
 	}
 	DeleteBundleRequest struct {
 		BundleID string `json:"-"`
+	}
+)
+
+// Transaction & Ticket Form
+type (
+	TransactionResponse struct {
+		ID                uuid.UUID            `json:"transaction_id"`
+		OrderID           string               `json:"order_id"`
+		ItemType          entity.ItemType      `json:"item_type"`
+		ReferalCode       string               `json:"referal_code"`
+		TransactionStatus string               `json:"transaction_status"`
+		PaymentType       string               `json:"payment_type"`
+		SignatureKey      string               `json:"signature_key"`
+		Acquire           string               `json:"acquire"`
+		SettlementTime    *time.Time           `json:"settlement_time"`
+		GrossAmount       float64              `json:"gross_amount"`
+		UserID            *uuid.UUID           `json:"user_id"`
+		TicketID          *uuid.UUID           `json:"ticket_id"`
+		BundleID          *uuid.UUID           `json:"bundle_id"`
+		TicketForms       []TicketFormResponse `json:"ticket_forms"`
+	}
+	TicketFormResponse struct {
+		ID           uuid.UUID           `json:"ticket_form_id"`
+		AudienceType entity.AudienceType `json:"audience_type"`
+		Instansi     entity.Instansi     `json:"instansi"`
+		Email        string              `json:"email"`
+		FullName     string              `json:"full_name"`
+		PhoneNumber  string              `json:"phone_number"`
+		LineID       string              `json:"line_id"`
+	}
+	TicketFormRequest struct {
+		AudienceType entity.AudienceType `json:"audience_type" form:"audience_type"`
+		Instansi     entity.Instansi     `json:"instansi" form:"instansi"`
+		Email        string              `json:"email" form:"email"`
+		FullName     string              `json:"full_name" form:"full_name"`
+		PhoneNumber  string              `json:"phone_number" form:"phone_number"`
+		LineID       string              `json:"line_id" form:"line_id"`
+	}
+	CreateTransactionTicketRequest struct {
+		ItemType    entity.ItemType     `json:"item_type" form:"item_type"`
+		TicketID    *uuid.UUID          `json:"ticket_id" form:"ticket_id"`
+		TicketForms []TicketFormRequest `json:"ticket_forms"`
+	}
+	TransactionTicketPaginationResponse struct {
+		PaginationResponse
+		Data []TransactionResponse `json:"data"`
+	}
+	TransactionTicketPaginationRepositoryResponse struct {
+		PaginationResponse
+		Transactions []entity.Transaction
 	}
 )

@@ -68,6 +68,12 @@ type (
 		GetDetailBundle(ctx context.Context, bundleID string) (dto.BundleResponse, error)
 		UpdateBundle(ctx context.Context, req dto.UpdateBundleRequest) (dto.BundleResponse, error)
 		DeleteBundle(ctx context.Context, req dto.DeleteBundleRequest) (dto.BundleResponse, error)
+
+		// Ticket Form
+		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
+		GetAllTransactionTicket(ctx context.Context, transactionStatus, ticketCategory string) ([]dto.TransactionResponse, error)
+		GetAllTransactionTicketWithPagination(ctx context.Context, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationResponse, error)
+		GetDetailTransactionTicket(ctx context.Context, transactionTicketID string) (dto.TransactionResponse, error)
 	}
 
 	AdminService struct {
@@ -1748,4 +1754,249 @@ func (as *AdminService) DeleteBundle(ctx context.Context, req dto.DeleteBundleRe
 	}
 
 	return b, nil
+}
+
+// Transaction & Ticket Form
+func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error) {
+	if len(req.TicketForms) == 0 {
+		return dto.TransactionResponse{}, dto.ErrEmptyTicketForms
+	}
+
+	token := ctx.Value("Authorization").(string)
+
+	userIDStr, err := as.jwtService.GetUserIDByToken(token)
+	if err != nil {
+		return dto.TransactionResponse{}, dto.ErrGetUserIDFromToken
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return dto.TransactionResponse{}, dto.ErrParseUUID
+	}
+
+	var transactionResponse dto.TransactionResponse
+	err = as.adminRepo.RunInTransaction(ctx, func(txRepo repository.IAdminRepository) error {
+		if !entity.IsValidItemType(req.ItemType) || req.ItemType != "ticket" {
+			return dto.ErrItemTypeMustBeTicket
+		}
+
+		ticket, found, err := txRepo.GetTicketByID(ctx, nil, req.TicketID.String())
+		if err != nil || !found {
+			return dto.ErrTicketNotFound
+		}
+
+		if ticket.Quota <= 0 {
+			return dto.ErrTicketSoldOut
+		}
+
+		transactionID := uuid.New()
+		orderID := fmt.Sprintf("order_id_%s_%s", userID, time.Now().Format("060102150405"))
+
+		transaction := entity.Transaction{
+			ID:       transactionID,
+			OrderID:  orderID,
+			ItemType: req.ItemType,
+			UserID:   &userID,
+			TicketID: req.TicketID,
+		}
+
+		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
+			return dto.ErrCreateTransaction
+		}
+
+		transactionResponse.ID = transactionID
+		transactionResponse.OrderID = transaction.OrderID
+		transactionResponse.ItemType = transaction.ItemType
+		transactionResponse.UserID = transaction.UserID
+		transactionResponse.TicketID = transaction.TicketID
+
+		for _, form := range req.TicketForms {
+			if form.AudienceType == "" || form.Instansi == "" || form.Email == "" || form.FullName == "" || form.PhoneNumber == "" {
+				return dto.ErrEmptyFields
+			}
+
+			if !entity.IsValidAudienceType(form.AudienceType) || form.AudienceType != "invited" {
+				return dto.ErrMustBeInvitedGuest
+			}
+
+			if !entity.IsValidInstansi(form.Instansi) {
+				return dto.ErrInvalidInstansi
+			}
+
+			if !helpers.IsValidEmail(form.Email) {
+				return dto.ErrInvalidEmail
+			}
+
+			if len(form.FullName) < 5 {
+				return dto.ErrUserFullNameTooShort
+			}
+
+			formattedPhone, err := helpers.StandardizePhoneNumber(form.PhoneNumber)
+			if err != nil {
+				return dto.ErrInvalidPhoneNumber
+			}
+
+			ticketFormID := uuid.New()
+			ticketForm := entity.TicketForm{
+				ID:            ticketFormID,
+				AudienceType:  form.AudienceType,
+				Instansi:      form.Instansi,
+				Email:         form.Email,
+				FullName:      form.FullName,
+				PhoneNumber:   formattedPhone,
+				LineID:        form.LineID,
+				TransactionID: &transactionID,
+			}
+
+			if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-1); err != nil {
+				return dto.ErrUpdateTicket
+			}
+			if err := txRepo.CreateTicketForm(ctx, nil, ticketForm); err != nil {
+				return dto.ErrCreateTicketForm
+			}
+
+			transactionResponse.TicketForms = append(transactionResponse.TicketForms, dto.TicketFormResponse{
+				ID:           ticketFormID,
+				AudienceType: ticketForm.AudienceType,
+				Instansi:     ticketForm.Instansi,
+				Email:        ticketForm.Email,
+				FullName:     ticketForm.FullName,
+				PhoneNumber:  ticketForm.PhoneNumber,
+				LineID:       ticketForm.LineID,
+			})
+		}
+
+		return nil
+	})
+	if err != nil {
+		return dto.TransactionResponse{}, err
+	}
+
+	return transactionResponse, nil
+}
+func (as *AdminService) GetAllTransactionTicket(ctx context.Context, transactionStatus, ticketCategory string) ([]dto.TransactionResponse, error) {
+	transactions, err := as.adminRepo.GetAllTransaction(ctx, nil, transactionStatus, ticketCategory)
+	if err != nil {
+		return nil, dto.ErrGetAllTransactionNoPagination
+	}
+
+	var datas []dto.TransactionResponse
+	for _, transaction := range transactions {
+		data := dto.TransactionResponse{
+			ID:                transaction.ID,
+			OrderID:           transaction.OrderID,
+			ItemType:          transaction.ItemType,
+			ReferalCode:       transaction.ReferalCode,
+			TransactionStatus: transaction.TransactionStatus,
+			PaymentType:       transaction.PaymentType,
+			SignatureKey:      transaction.SignatureKey,
+			Acquire:           transaction.Acquire,
+			SettlementTime:    transaction.SettlementTime,
+			GrossAmount:       transaction.GrossAmount,
+			UserID:            transaction.UserID,
+			TicketID:          transaction.TicketID,
+			BundleID:          transaction.BundleID,
+		}
+
+		for _, ticketForm := range transaction.TicketForms {
+			data.TicketForms = append(data.TicketForms, dto.TicketFormResponse{
+				ID:           ticketForm.ID,
+				AudienceType: ticketForm.AudienceType,
+				Instansi:     ticketForm.Instansi,
+				Email:        ticketForm.Email,
+				FullName:     ticketForm.FullName,
+				PhoneNumber:  ticketForm.PhoneNumber,
+				LineID:       ticketForm.LineID,
+			})
+		}
+
+		datas = append(datas, data)
+	}
+
+	return datas, nil
+}
+func (as *AdminService) GetAllTransactionTicketWithPagination(ctx context.Context, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationResponse, error) {
+	dataWithPaginate, err := as.adminRepo.GetAllTransactionWithPagination(ctx, nil, req, transactionStatus, ticketCategory)
+	if err != nil {
+		return dto.TransactionTicketPaginationResponse{}, dto.ErrGetAllUserWithPagination
+	}
+
+	var datas []dto.TransactionResponse
+	for _, transaction := range dataWithPaginate.Transactions {
+		data := dto.TransactionResponse{
+			ID:                transaction.ID,
+			OrderID:           transaction.OrderID,
+			ItemType:          transaction.ItemType,
+			ReferalCode:       transaction.ReferalCode,
+			TransactionStatus: transaction.TransactionStatus,
+			PaymentType:       transaction.PaymentType,
+			SignatureKey:      transaction.SignatureKey,
+			Acquire:           transaction.Acquire,
+			SettlementTime:    transaction.SettlementTime,
+			GrossAmount:       transaction.GrossAmount,
+			UserID:            transaction.UserID,
+			TicketID:          transaction.TicketID,
+			BundleID:          transaction.BundleID,
+		}
+
+		for _, ticketForm := range transaction.TicketForms {
+			data.TicketForms = append(data.TicketForms, dto.TicketFormResponse{
+				ID:           ticketForm.ID,
+				AudienceType: ticketForm.AudienceType,
+				Instansi:     ticketForm.Instansi,
+				Email:        ticketForm.Email,
+				FullName:     ticketForm.FullName,
+				PhoneNumber:  ticketForm.PhoneNumber,
+				LineID:       ticketForm.LineID,
+			})
+		}
+
+		datas = append(datas, data)
+	}
+
+	return dto.TransactionTicketPaginationResponse{
+		Data: datas,
+		PaginationResponse: dto.PaginationResponse{
+			Page:    dataWithPaginate.Page,
+			PerPage: dataWithPaginate.PerPage,
+			MaxPage: dataWithPaginate.MaxPage,
+			Count:   dataWithPaginate.Count,
+		},
+	}, nil
+}
+func (as *AdminService) GetDetailTransactionTicket(ctx context.Context, transactionTicketID string) (dto.TransactionResponse, error) {
+	transaction, _, err := as.adminRepo.GetTransactionByID(ctx, nil, transactionTicketID)
+	if err != nil {
+		return dto.TransactionResponse{}, dto.ErrTicketFormNotFound
+	}
+
+	res := dto.TransactionResponse{
+		ID:                transaction.ID,
+		OrderID:           transaction.OrderID,
+		ItemType:          transaction.ItemType,
+		ReferalCode:       transaction.ReferalCode,
+		TransactionStatus: transaction.TransactionStatus,
+		PaymentType:       transaction.PaymentType,
+		SignatureKey:      transaction.SignatureKey,
+		Acquire:           transaction.Acquire,
+		SettlementTime:    transaction.SettlementTime,
+		GrossAmount:       transaction.GrossAmount,
+		UserID:            transaction.UserID,
+		TicketID:          transaction.TicketID,
+		BundleID:          transaction.BundleID,
+	}
+
+	for _, ticketForm := range transaction.TicketForms {
+		res.TicketForms = append(res.TicketForms, dto.TicketFormResponse{
+			ID:           ticketForm.ID,
+			AudienceType: ticketForm.AudienceType,
+			Instansi:     ticketForm.Instansi,
+			Email:        ticketForm.Email,
+			FullName:     ticketForm.FullName,
+			PhoneNumber:  ticketForm.PhoneNumber,
+			LineID:       ticketForm.LineID,
+		})
+	}
+
+	return res, nil
 }

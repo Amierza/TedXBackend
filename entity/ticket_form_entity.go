@@ -12,11 +12,10 @@ type TicketForm struct {
 	ID           uuid.UUID    `gorm:"type:uuid;primaryKey" json:"ticket_form_id"`
 	AudienceType AudienceType `gorm:"default:'regular'" json:"audience_type"`
 	Instansi     Instansi     `gorm:"default:'unair'" json:"instansi"`
-	Email        string       `gorm:"unique;not null" json:"ticket_form_email"`
-	EmailSent    bool         `gorm:"not null" json:"ticket_form_email_sent"` // 0 => failed, 1 => success
-	FullName     string       `gorm:"not null" json:"ticket_form_full_name"`
-	PhoneNumber  string       `gorm:"not null" json:"ticket_form_phone_number"`
-	LineID       string       `json:"ticket_form_line_id"`
+	Email        string       `gorm:"unique;not null" json:"email"`
+	FullName     string       `gorm:"not null" json:"full_name"`
+	PhoneNumber  string       `gorm:"not null" json:"phone_number"`
+	LineID       string       `json:"line_id"`
 
 	GuestAttendances []GuestAttendance `gorm:"foreignKey:TicketFormID"`
 
