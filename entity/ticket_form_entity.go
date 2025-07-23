@@ -1,18 +1,22 @@
 package entity
 
 import (
+	"errors"
+
 	"github.com/Amierza/TedXBackend/helpers"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type TicketForm struct {
-	ID          uuid.UUID `gorm:"type:uuid;primaryKey" json:"ticket_form_id"`
-	Email       string    `gorm:"unique;not null" json:"ticket_form_email"`
-	EmailSent   bool      `gorm:"not null" json:"ticket_form_email_sent"` // 0 => failed, 1 => success
-	FullName    string    `gorm:"not null" json:"ticket_form_full_name"`
-	PhoneNumber string    `gorm:"not null" json:"ticket_form_phone_number"`
-	LineID      string    `json:"ticket_form_line_id"`
+	ID           uuid.UUID    `gorm:"type:uuid;primaryKey" json:"ticket_form_id"`
+	AudienceType AudienceType `gorm:"default:'regular'" json:"audience_type"`
+	Instansi     Instansi     `gorm:"default:'unair'" json:"instansi"`
+	Email        string       `gorm:"unique;not null" json:"ticket_form_email"`
+	EmailSent    bool         `gorm:"not null" json:"ticket_form_email_sent"` // 0 => failed, 1 => success
+	FullName     string       `gorm:"not null" json:"ticket_form_full_name"`
+	PhoneNumber  string       `gorm:"not null" json:"ticket_form_phone_number"`
+	LineID       string       `json:"ticket_form_line_id"`
 
 	GuestAttendances []GuestAttendance `gorm:"foreignKey:TicketFormID"`
 
@@ -28,6 +32,10 @@ func (tf *TicketForm) BeforeCreate(tx *gorm.DB) error {
 	tf.PhoneNumber, err = helpers.StandardizePhoneNumber(tf.PhoneNumber)
 	if err != nil {
 		return err
+	}
+
+	if !IsValidAudienceType(tf.AudienceType) {
+		return errors.New("invalid audience type")
 	}
 
 	return nil

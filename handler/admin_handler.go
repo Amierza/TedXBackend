@@ -667,10 +667,34 @@ func (ah *AdminHandler) DeleteSpeaker(ctx *gin.Context) {
 // Merch
 func (ah *AdminHandler) CreateMerch(ctx *gin.Context) {
 	var payload dto.CreateMerchRequest
-	if err := ctx.ShouldBind(&payload); err != nil {
-		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+	if err := ctx.Request.ParseMultipartForm(32 << 20); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_MULTIPART_FORM, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
+	}
+
+	payload.Name = ctx.PostForm("merch_name")
+	payload.Description = ctx.PostForm("merch_desc")
+	payload.Category = entity.MerchCategory(ctx.PostForm("merch_cat"))
+
+	if priceStr := ctx.PostForm("merch_price"); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+			payload.Price = price
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	if stockStr := ctx.PostForm("merch_stock"); stockStr != "" {
+		if stock, err := strconv.Atoi(stockStr); err == nil {
+			payload.Stock = stock
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_STOCK, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
 	}
 
 	form, err := ctx.MultipartForm()
@@ -763,10 +787,34 @@ func (ah *AdminHandler) UpdateMerch(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	var payload dto.UpdateMerchRequest
 	payload.ID = idStr
-	if err := ctx.ShouldBind(&payload); err != nil {
-		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+	if err := ctx.Request.ParseMultipartForm(32 << 20); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_MULTIPART_FORM, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
+	}
+
+	payload.Name = ctx.PostForm("merch_name")
+	payload.Description = ctx.PostForm("merch_desc")
+	payload.Category = entity.MerchCategory(ctx.PostForm("merch_cat"))
+
+	if priceStr := ctx.PostForm("merch_price"); priceStr != "" {
+		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
+			payload.Price = &price
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
+	if stockStr := ctx.PostForm("merch_stock"); stockStr != "" {
+		if stock, err := strconv.Atoi(stockStr); err == nil {
+			payload.Stock = &stock
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_STOCK, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
 	}
 
 	form, err := ctx.MultipartForm()
@@ -777,30 +825,18 @@ func (ah *AdminHandler) UpdateMerch(ctx *gin.Context) {
 	}
 
 	files := form.File["merch_images"]
-	targetIDs := form.Value["target_image_id"]
-	for i, fileHeader := range files {
+	for _, fileHeader := range files {
 		file, err := fileHeader.Open()
 		if err != nil {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_OPEN_PHOTO, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, res)
 			return
 		}
+		defer file.Close()
 
-		var targetImageID uuid.UUID
-		if len(targetIDs) > i {
-			targetImageID, err = uuid.Parse(targetIDs[i])
-			if err != nil {
-				file.Close()
-				res := utils.BuildResponseFailed("Invalid target image ID", err.Error(), nil)
-				ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-				return
-			}
-		}
-
-		payload.ReplaceImages = append(payload.ReplaceImages, dto.ReplaceImageUpload{
-			TargetImageID: targetImageID,
-			FileHeader:    fileHeader,
-			FileReader:    file,
+		payload.Images = append(payload.Images, dto.ImageUpload{
+			FileHeader: fileHeader,
+			FileReader: file,
 		})
 	}
 
