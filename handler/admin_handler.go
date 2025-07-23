@@ -58,6 +58,11 @@ type (
 		GetDetailBundle(ctx *gin.Context)
 		UpdateBundle(ctx *gin.Context)
 		DeleteBundle(ctx *gin.Context)
+
+		// Transaction & Ticket Form
+		CreateTransactionTicket(ctx *gin.Context)
+		GetAllTransactionTicket(ctx *gin.Context)
+		GetDetailTransactionTicket(ctx *gin.Context)
 	}
 
 	AdminHandler struct {
@@ -1077,5 +1082,80 @@ func (ah *AdminHandler) DeleteBundle(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Transaction & Ticket Form
+func (ah *AdminHandler) CreateTransactionTicket(ctx *gin.Context) {
+	var payload dto.CreateTransactionTicketRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.CreateTransactionTicket(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_TICKET_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_TRANSACTION_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetAllTransactionTicket(ctx *gin.Context) {
+	paginationParam := ctx.DefaultQuery("pagination", "true")
+	usePagination := paginationParam != "false"
+	transactionStatus := ctx.Query("transaction_status")
+	ticketCategory := ctx.Query("ticket_category")
+
+	if !usePagination {
+		// Tanpa pagination
+		result, err := ah.adminService.GetAllTransactionTicket(ctx, transactionStatus, ticketCategory)
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_FORM, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_TRANSACTION_TICKET, result)
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
+
+	var payload dto.PaginationRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllTransactionTicketWithPagination(ctx, payload, transactionStatus, ticketCategory)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.Response{
+		Status:   true,
+		Messsage: dto.MESSAGE_SUCCESS_GET_LIST_TRANSACTION_TICKET,
+		Data:     result.Data,
+		Meta:     result.PaginationResponse,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetDetailTransactionTicket(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := ah.adminService.GetDetailTransactionTicket(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_TICKET_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_TRANSACTION_TICKET, result)
 	ctx.JSON(http.StatusOK, res)
 }

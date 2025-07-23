@@ -56,6 +56,11 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 			routes.GET("/get-detail-bundle/:id", adminHandler.GetDetailBundle)
 			routes.PATCH("/update-bundle/:id", adminHandler.UpdateBundle)
 			routes.DELETE("/delete-bundle/:id", adminHandler.DeleteBundle)
+
+			// Transaction & Ticket Form
+			routes.POST("/create-transaction-ticket", adminHandler.CreateTransactionTicket)
+			routes.GET("/get-all-transaction-ticket", adminHandler.GetAllTransactionTicket)
+			routes.GET("/get-detail-transaction-ticket/:id", adminHandler.GetDetailTransactionTicket)
 		}
 	}
 }

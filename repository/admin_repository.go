@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"math"
 	"strings"
 
@@ -23,6 +24,8 @@ type (
 		CreateMerchImage(ctx context.Context, tx *gorm.DB, image entity.MerchImage) error
 		CreateBundle(ctx context.Context, tx *gorm.DB, bundle entity.Bundle) error
 		CreateBundleItem(ctx context.Context, tx *gorm.DB, bundleItem entity.BundleItem) error
+		CreateTransaction(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
+		CreateTicketForm(ctx context.Context, tx *gorm.DB, ticketForm entity.TicketForm) error
 
 		// READ / GET
 		GetUserByID(ctx context.Context, tx *gorm.DB, userID string) (entity.User, bool, error)
@@ -51,6 +54,9 @@ type (
 		GetAllBundleWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.BundlePaginationRepositoryResponse, error)
 		GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error)
 		GetBundleItemsByBundleID(ctx context.Context, tx *gorm.DB, bundleID string) ([]entity.BundleItem, error)
+		GetAllTransaction(ctx context.Context, tx *gorm.DB, transactionStatus, ticketCategory string) ([]entity.Transaction, error)
+		GetAllTransactionWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationRepositoryResponse, error)
+		GetTransactionByID(ctx context.Context, tx *gorm.DB, transactionID string) (entity.Transaction, bool, error)
 
 		// UPDATE / PATCH
 		UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error
@@ -59,6 +65,7 @@ type (
 		UpdateSpeaker(ctx context.Context, tx *gorm.DB, speaker entity.Speaker) error
 		UpdateMerch(ctx context.Context, tx *gorm.DB, merch entity.Merch) error
 		UpdateBundle(ctx context.Context, tx *gorm.DB, bundle entity.Bundle) error
+		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
 
 		// DELETE / DELETE
 		DeleteUserByID(ctx context.Context, tx *gorm.DB, userID string) error
@@ -146,6 +153,20 @@ func (ar *AdminRepository) CreateBundleItem(ctx context.Context, tx *gorm.DB, bu
 	}
 
 	return tx.WithContext(ctx).Create(&bundleItem).Error
+}
+func (ar *AdminRepository) CreateTransaction(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	return tx.WithContext(ctx).Create(&transaction).Error
+}
+func (ar *AdminRepository) CreateTicketForm(ctx context.Context, tx *gorm.DB, ticketForm entity.TicketForm) error {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	return tx.WithContext(ctx).Create(&ticketForm).Error
 }
 
 // READ / GET
@@ -701,6 +722,98 @@ func (ar *AdminRepository) GetBundleItemsByBundleID(ctx context.Context, tx *gor
 
 	return items, err
 }
+func (ar *AdminRepository) GetAllTransaction(ctx context.Context, tx *gorm.DB, transactionStatus, ticketCategory string) ([]entity.Transaction, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var (
+		transactions []entity.Transaction
+		err          error
+	)
+
+	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms")
+
+	if transactionStatus != "" {
+		query = query.Where("transactions.transaction_status = ?", transactionStatus)
+	}
+
+	if ticketCategory != "" {
+		query = query.Where("ticket_forms.audience_type = ?", ticketCategory)
+	}
+
+	if err := query.Order(`"createdAt" DESC`).Find(&transactions).Error; err != nil {
+		return []entity.Transaction{}, err
+	}
+
+	return transactions, err
+}
+func (ar *AdminRepository) GetAllTransactionWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationRepositoryResponse, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var (
+		transactions []entity.Transaction
+		err          error
+		count        int64
+	)
+
+	if req.PerPage == 0 {
+		req.PerPage = 10
+	}
+
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms")
+
+	if transactionStatus != "" {
+		query = query.Where("transactions.transaction_status = ?", transactionStatus)
+	}
+
+	if ticketCategory != "" {
+		query = query.Where("ticket_forms.audience_type = ?", ticketCategory)
+	}
+
+	if req.Search != "" {
+		searchValue := "%" + strings.ToLower(req.Search) + "%"
+		query = query.Where("LOWER(ticket_forms.full_name) LIKE ? OR LOWER(ticket_forms.email) LIKE ? OR LOWER(ticket_forms.phone_number) LIKE ?", searchValue, searchValue, searchValue)
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		return dto.TransactionTicketPaginationRepositoryResponse{}, err
+	}
+
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&transactions).Error; err != nil {
+		return dto.TransactionTicketPaginationRepositoryResponse{}, err
+	}
+
+	totalPage := int64(math.Ceil(float64(count) / float64(req.PerPage)))
+
+	return dto.TransactionTicketPaginationRepositoryResponse{
+		Transactions: transactions,
+		PaginationResponse: dto.PaginationResponse{
+			Page:    req.Page,
+			PerPage: req.PerPage,
+			MaxPage: totalPage,
+			Count:   count,
+		},
+	}, err
+}
+func (ar *AdminRepository) GetTransactionByID(ctx context.Context, tx *gorm.DB, transactionID string) (entity.Transaction, bool, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var transaction entity.Transaction
+	if err := tx.WithContext(ctx).Preload("TicketForms").Where("id = ?", transactionID).Take(&transaction).Error; err != nil {
+		return entity.Transaction{}, false, err
+	}
+
+	return transaction, true, nil
+}
 
 // UPDATE / PATCH
 func (ar *AdminRepository) UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error {
@@ -744,6 +857,26 @@ func (ar *AdminRepository) UpdateBundle(ctx context.Context, tx *gorm.DB, bundle
 	}
 
 	return tx.WithContext(ctx).Where("id = ?", bundle.ID).Save(&bundle).Error
+}
+func (ar *AdminRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	result := tx.WithContext(ctx).
+		Model(&entity.Ticket{}).
+		Where("id = ?", ticketID).
+		Update("quota", newQuota)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("ticket not found or no change made")
+	}
+
+	return nil
 }
 
 // DELETE / DELETE
