@@ -26,10 +26,13 @@ type (
 		GetAllBundle(ctx context.Context, tx *gorm.DB, bundleType string) ([]entity.Bundle, error)
 		GetTicketByID(ctx context.Context, tx *gorm.DB, ticketID string) (entity.Ticket, bool, error)
 		GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error)
+		GetTransactionByOrderID(ctx context.Context, tx *gorm.DB, orderID string) (entity.Transaction, bool, error)
+		GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, referalCode string) (entity.StudentAmbassador, bool, error)
 
 		// UPDATE / PATCH
 		UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error
 		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
+		UpdateTransactionTicket(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
 
 		// DELETE / DELETE
 	}
@@ -211,6 +214,30 @@ func (ur *UserRepository) GetBundleByID(ctx context.Context, tx *gorm.DB, bundle
 
 	return bundle, true, nil
 }
+func (ur *UserRepository) GetTransactionByOrderID(ctx context.Context, tx *gorm.DB, orderID string) (entity.Transaction, bool, error) {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	var transaction entity.Transaction
+	if err := tx.WithContext(ctx).Where("order_id = ?", orderID).Take(&transaction).Error; err != nil {
+		return entity.Transaction{}, false, err
+	}
+
+	return transaction, true, nil
+}
+func (ur *UserRepository) GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, referalCode string) (entity.StudentAmbassador, bool, error) {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	var studentAmbassador entity.StudentAmbassador
+	if err := tx.WithContext(ctx).Where("referal_code = ?", referalCode).Take(&studentAmbassador).Error; err != nil {
+		return entity.StudentAmbassador{}, false, err
+	}
+
+	return studentAmbassador, true, nil
+}
 
 // UPDATE / PATCH
 func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error {
@@ -252,6 +279,13 @@ func (ur *UserRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ti
 	}
 
 	return nil
+}
+func (ur *UserRepository) UpdateTransactionTicket(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	return tx.WithContext(ctx).Where("id = ?", transaction.ID).Updates(&transaction).Error
 }
 
 // DELETE / DELETE

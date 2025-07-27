@@ -33,8 +33,11 @@ func User(route *gin.Engine, userHandler handler.IUserHandler, jwtService servic
 			// User
 			routes.GET("/get-detail-user", userHandler.GetDetailUser)
 
-			// Webhook for Midtrans (Transaction)
+			// Snap for trigger midtrans
 			routes.POST("/create-transaction-ticket", userHandler.CreateTransactionTicket)
+
+			// Webhook for Midtrans
+			routes.POST("/update-transaction-ticket", userHandler.UpdateTransactionTicket)
 		}
 	}
 }
