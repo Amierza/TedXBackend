@@ -298,7 +298,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			bundle entity.Bundle
 		)
 
-		if req.TicketID != &uuid.Nil {
+		if req.TicketID != nil && *req.TicketID != uuid.Nil {
 			t, found, err := txRepo.GetTicketByID(ctx, nil, req.TicketID.String())
 			if err != nil || !found {
 				return dto.ErrTicketNotFound
@@ -311,7 +311,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			ticket = t
 		}
 
-		if req.BundleID != &uuid.Nil {
+		if req.BundleID != nil && *req.BundleID != uuid.Nil {
 			b, found, err := txRepo.GetBundleByID(ctx, nil, req.BundleID.String())
 			if err != nil || !found {
 				return dto.ErrTicketNotFound
