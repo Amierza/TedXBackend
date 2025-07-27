@@ -326,7 +326,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		}
 
 		transactionID := uuid.New()
-		orderID := fmt.Sprintf("TEDX-%s-%s", userIDStr, time.Now().Format("060102150405"))
+		orderID := fmt.Sprintf("TEDX-%s", time.Now().Format("060102150405"))
 
 		transaction := entity.Transaction{
 			ID:          transactionID,
