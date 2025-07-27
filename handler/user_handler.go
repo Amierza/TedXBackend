@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/Amierza/TedXBackend/dto"
@@ -170,6 +173,12 @@ func (uh *UserHandler) CreateTransactionTicket(ctx *gin.Context) {
 
 // Webhook for Midtrans
 func (uh *UserHandler) UpdateTransactionTicket(ctx *gin.Context) {
+	// Tambahkan ini sebelum bind
+	body, _ := io.ReadAll(ctx.Request.Body)
+	fmt.Println("Webhook body from Midtrans:", string(body))
+
+	// lalu reset body agar bisa dibaca lagi oleh ShouldBind
+	ctx.Request.Body = io.NopCloser(bytes.NewBuffer(body))
 	var payload dto.UpdateMidtransTransactionTicketRequest
 	if err := ctx.ShouldBind(&payload); err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
