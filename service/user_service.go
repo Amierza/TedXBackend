@@ -346,7 +346,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrEmptyFields
 			}
 
-			if !entity.IsValidAudienceType(form.AudienceType) || form.AudienceType != "invited" {
+			if !entity.IsValidAudienceType(form.AudienceType) || form.AudienceType != "regular" {
 				return dto.ErrMustBeInvitedGuest
 			}
 
