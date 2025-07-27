@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -19,6 +20,8 @@ func main() {
 	db := database.SetUpPostgreSQLConnection()
 	defer database.ClosePostgreSQLConnection(db)
 
+	fmt.Println("MIDTRANS_SERVER_KEY:", os.Getenv("MIDTRANS_SERVER_KEY"))
+	fmt.Println("APP_ENV:", os.Getenv("APP_ENV"))
 	midtrans.InitMidtransClient(os.Getenv("MIDTRANS_SERVER_KEY"), os.Getenv("APP_ENV") == "production")
 
 	if len(os.Args) > 1 {
