@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/Amierza/TedXBackend/constants"
@@ -38,8 +39,11 @@ type (
 		// Bundle
 		GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error)
 
-		// Webhook for Midtrans (Transaction)
+		// Snap for trigger midtrans
 		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
+
+		// Webhook for Midtrans
+		UpdateTransactionTicket(ctx context.Context, req dto.UpdateMidtransTransactionTicketRequest) error
 	}
 
 	UserService struct {
@@ -249,7 +253,7 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 	return datas, nil
 }
 
-// Transaction & Ticket Form
+// Snap for trigger midtrans
 func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error) {
 	if len(req.TicketForms) == 0 {
 		return dto.TransactionResponse{}, dto.ErrEmptyTicketForms
@@ -274,8 +278,11 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 
 	var transactionResponse dto.TransactionResponse
 	err = us.userRepo.RunInTransaction(ctx, func(txRepo repository.IUserRepository) error {
-		if req.ReferalCode != constants.REFERAL_CODE {
-			return dto.ErrInvalidReferalCode
+		if req.ReferalCode != "" {
+			_, found, err := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
+			if err != nil || !found {
+				return dto.ErrInvalidReferalCode
+			}
 		}
 
 		if req.Total <= 0 {
@@ -321,12 +328,13 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		orderID := fmt.Sprintf("TEDX-%s-%s", userIDStr, time.Now().Format("060102150405"))
 
 		transaction := entity.Transaction{
-			ID:       transactionID,
-			OrderID:  orderID,
-			ItemType: req.ItemType,
-			UserID:   &userID,
-			TicketID: req.TicketID,
-			BundleID: req.BundleID,
+			ID:          transactionID,
+			OrderID:     orderID,
+			ItemType:    req.ItemType,
+			ReferalCode: req.ReferalCode,
+			UserID:      &userID,
+			TicketID:    req.TicketID,
+			BundleID:    req.BundleID,
 		}
 
 		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
@@ -431,4 +439,52 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 	}
 
 	return transactionResponse, nil
+}
+
+// Webhook for Midtrans
+func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.UpdateMidtransTransactionTicketRequest) error {
+	transaction, found, err := us.userRepo.GetTransactionByOrderID(ctx, nil, req.OrderID)
+	if err != nil || !found {
+		return dto.ErrTransactionNotFound
+	}
+
+	switch req.TransactionStatus {
+	case "settlement":
+		transaction.TransactionStatus = "settlement"
+		settlementTime, err := time.Parse("2006-01-02 15:04:05", req.SettlementTime)
+		if err != nil {
+			return dto.ErrParseTime
+		}
+		transaction.SettlementTime = &settlementTime
+		transaction.PaymentType = req.PaymentType
+		transaction.SignatureKey = req.SignatureKey
+		transaction.Acquire = req.Aquirer
+		grossAmount, err := strconv.ParseFloat(req.GrossAmount, 64)
+		if err != nil {
+			return fmt.Errorf("invalid gross amount: %w", err)
+		}
+		transaction.GrossAmount = grossAmount
+
+	case "pending":
+		transaction.TransactionStatus = "pending"
+
+	case "deny", "failure":
+		transaction.TransactionStatus = "failed"
+
+	case "cancel":
+		transaction.TransactionStatus = "cancelled"
+
+	case "expire":
+		transaction.TransactionStatus = "expired"
+
+	default:
+		return dto.ErrUnknownTransactionStatus
+	}
+
+	err = us.userRepo.UpdateTransactionTicket(ctx, nil, transaction)
+	if err != nil {
+		return dto.ErrUpdateTransactionTicket
+	}
+
+	return nil
 }

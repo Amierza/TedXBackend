@@ -71,12 +71,11 @@ const (
 	MESSAGE_FAILED_UPDATE_BUNDLE          = "failed update bundle"
 	MESSAGE_FAILED_DELETE_BUNDLE          = "failed delete bundle"
 	// Transaction & Ticket Form
-	MESSAGE_FAILED_CREATE_TICKET_FORM      = "failed create ticket form"
-	MESSAGE_FAILED_GET_LIST_TICKET_FORM    = "failed get list ticket form"
-	MESSAGE_FAILED_GET_DETAIL_TICKET_FORM  = "failed get detail ticket form"
-	MESSAGE_FAILED_UPDATE_TICKET_FORM      = "failed update ticket form"
-	MESSAGE_FAILED_DELETE_TICKET_FORM      = "failed delete ticket form"
-	MESSAGE_FAILED_CREATE_SNAP_TRANSACTION = "failed create snap transaction"
+	MESSAGE_FAILED_CREATE_TRANSACTION_TICKET     = "failed create transaction ticket"
+	MESSAGE_FAILED_GET_LIST_TRANSACTION_TICKET   = "failed get list transaction ticket"
+	MESSAGE_FAILED_GET_DETAIL_TRANSACTION_TICKET = "failed get detail transaction ticket"
+	MESSAGE_FAILED_UPDATE_TRANSACTION_TICKET     = "failed update transaction ticket"
+	MESSAGE_FAILED_DELETE_TRANSACTION_TICKET     = "failed delete transaction ticket"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -124,7 +123,6 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_TRANSACTION_TICKET = "success get detail transaction ticket"
 	MESSAGE_SUCCESS_UPDATE_TRANSACTION_TICKET     = "success update transaction ticket"
 	MESSAGE_SUCCESS_DELETE_TRANSACTION_TICKET     = "success delete transaction ticket"
-	MESSAGE_SUCCESS_CREATE_SNAP_TRANSACTION       = "success create snap transaction"
 )
 
 var (
@@ -144,6 +142,7 @@ var (
 	ErrGetUserIDFromToken      = errors.New("failed to get user id from token")
 	// Parse
 	ErrParseUUID = errors.New("failed parse uuid")
+	ErrParseTime = errors.New("failed parse time")
 	// Input Validation
 	ErrEmptyFields                = errors.New("failed there are empty fields")
 	ErrInvalidEmail               = errors.New("failed invalid email")
@@ -251,6 +250,9 @@ var (
 	ErrTotalOutOfBound               = errors.New("failed total out of bound")
 	ErrInvalidReferalCode            = errors.New("failed invalid referal code")
 	ErrCreateTransactionSnap         = errors.New("failed create transaction snap")
+	ErrTransactionNotFound           = errors.New("failed transaction not found")
+	ErrUpdateTransactionTicket       = errors.New("failed update transaction ticket")
+	ErrUnknownTransactionStatus      = errors.New("failed unknown transaction status")
 )
 
 // All About Image Request
@@ -553,7 +555,7 @@ type (
 		BundleID    *uuid.UUID          `json:"bundle_id" form:"bundle_id"`
 		TicketForms []TicketFormRequest `json:"ticket_forms" form:"ticket_forms"`
 	}
-	CreateMidtransTransactionTicketRequest struct {
+	UpdateMidtransTransactionTicketRequest struct {
 		TransactionType          string `json:"transaction_type"`
 		TransactionTime          string `json:"transaction_time"`
 		TransactionStatus        string `json:"transaction_status"`

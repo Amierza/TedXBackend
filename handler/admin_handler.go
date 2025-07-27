@@ -1096,7 +1096,7 @@ func (ah *AdminHandler) CreateTransactionTicket(ctx *gin.Context) {
 
 	result, err := ah.adminService.CreateTransactionTicket(ctx, payload)
 	if err != nil {
-		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_TICKET_FORM, err.Error(), nil)
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_TRANSACTION_TICKET, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
@@ -1114,7 +1114,7 @@ func (ah *AdminHandler) GetAllTransactionTicket(ctx *gin.Context) {
 		// Tanpa pagination
 		result, err := ah.adminService.GetAllTransactionTicket(ctx, transactionStatus, ticketCategory)
 		if err != nil {
-			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_FORM, err.Error(), nil)
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TRANSACTION_TICKET, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 			return
 		}
@@ -1133,7 +1133,7 @@ func (ah *AdminHandler) GetAllTransactionTicket(ctx *gin.Context) {
 
 	result, err := ah.adminService.GetAllTransactionTicketWithPagination(ctx, payload, transactionStatus, ticketCategory)
 	if err != nil {
-		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_FORM, err.Error(), nil)
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TRANSACTION_TICKET, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
@@ -1151,7 +1151,7 @@ func (ah *AdminHandler) GetDetailTransactionTicket(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	result, err := ah.adminService.GetDetailTransactionTicket(ctx, idStr)
 	if err != nil {
-		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_TICKET_FORM, err.Error(), nil)
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_TRANSACTION_TICKET, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}

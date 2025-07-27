@@ -32,8 +32,11 @@ type (
 		// Bundle
 		GetAllBundle(ctx *gin.Context)
 
-		// Webhook for Midtrans (Transaction)
+		// Snap for trigger midtrans
 		CreateTransactionTicket(ctx *gin.Context)
+
+		// Webhook for Midtrans
+		UpdateTransactionTicket(ctx *gin.Context)
 	}
 
 	UserHandler struct {
@@ -145,7 +148,7 @@ func (uh *UserHandler) GetAllBundle(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
-// Webhook for Midtrans (Transaction)
+// Snap for trigger midtrans
 func (uh *UserHandler) CreateTransactionTicket(ctx *gin.Context) {
 	var payload dto.CreateTransactionTicketRequest
 	if err := ctx.ShouldBind(&payload); err != nil {
@@ -156,11 +159,31 @@ func (uh *UserHandler) CreateTransactionTicket(ctx *gin.Context) {
 
 	result, err := uh.userService.CreateTransactionTicket(ctx, payload)
 	if err != nil {
-		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_TICKET_FORM, err.Error(), nil)
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_TRANSACTION_TICKET, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_TRANSACTION_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Webhook for Midtrans
+func (uh *UserHandler) UpdateTransactionTicket(ctx *gin.Context) {
+	var payload dto.UpdateMidtransTransactionTicketRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	err := uh.userService.UpdateTransactionTicket(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_TRANSACTION_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_UPDATE_TRANSACTION_TICKET, "")
 	ctx.JSON(http.StatusOK, res)
 }
