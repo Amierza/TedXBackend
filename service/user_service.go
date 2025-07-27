@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	m "github.com/Amierza/TedXBackend/config/midtrans"
 	"github.com/Amierza/TedXBackend/constants"
 	"github.com/Amierza/TedXBackend/dto"
 	"github.com/Amierza/TedXBackend/entity"
@@ -418,7 +419,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				},
 			}
 
-			snapResp, midtransErr := snap.CreateTransaction(r)
+			snapResp, midtransErr := m.SnapClient.CreateTransaction(r)
 			if midtransErr != nil {
 				return dto.ErrCreateTransactionSnap
 			}
