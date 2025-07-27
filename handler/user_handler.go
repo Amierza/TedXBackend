@@ -30,7 +30,10 @@ type (
 		GetAllMerch(ctx *gin.Context)
 
 		// Bundle
-		// GetAllBundle(ctx *gin.Context)
+		GetAllBundle(ctx *gin.Context)
+
+		// Webhook for Midtrans (Transaction)
+		CreateTransactionTicket(ctx *gin.Context)
 	}
 
 	UserHandler struct {
@@ -130,14 +133,34 @@ func (uh *UserHandler) GetAllMerch(ctx *gin.Context) {
 }
 
 // Bundle
-// func (uh *UserHandler) GetAllBundle(ctx *gin.Context) {
-// 	result, err := uh.userService.GetAllBundle(ctx)
-// 	if err != nil {
-// 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_BUNDLE, err.Error(), nil)
-// 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
-// 		return
-// 	}
+func (uh *UserHandler) GetAllBundle(ctx *gin.Context) {
+	result, err := uh.userService.GetAllBundle(ctx)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_BUNDLE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
 
-// 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_BUNDLE, result)
-// 	ctx.JSON(http.StatusOK, res)
-// }
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Webhook for Midtrans (Transaction)
+func (uh *UserHandler) CreateTransactionTicket(ctx *gin.Context) {
+	var payload dto.CreateTransactionTicketRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := uh.userService.CreateTransactionTicket(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_TICKET_FORM, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_TRANSACTION_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}

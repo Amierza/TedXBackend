@@ -7,6 +7,7 @@ import (
 
 func Migrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
+		&entity.StudentAmbassador{},
 		&entity.Sponsorship{},
 		&entity.Speaker{},
 
@@ -21,6 +22,10 @@ func Migrate(db *gorm.DB) error {
 		&entity.Bundle{},
 		&entity.Ticket{},
 		&entity.BundleItem{},
+
+		&entity.Account{},
+		&entity.Session{},
+		&entity.Session{},
 	); err != nil {
 		return err
 	}
