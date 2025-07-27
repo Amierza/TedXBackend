@@ -379,17 +379,18 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				TransactionID: &transactionID,
 			}
 
-			if req.BundleID != &uuid.Nil {
+			if req.BundleID != nil && *req.BundleID != uuid.Nil {
 				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.Quota-1); err != nil {
 					return dto.ErrUpdateBundleQuota
 				}
 			}
 
-			if req.TicketID != &uuid.Nil {
+			if req.TicketID != nil && *req.TicketID != uuid.Nil {
 				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-1); err != nil {
 					return dto.ErrUpdateTicketQuota
 				}
 			}
+
 			if err := txRepo.CreateTicketForm(ctx, nil, ticketForm); err != nil {
 				return dto.ErrCreateTicketForm
 			}
