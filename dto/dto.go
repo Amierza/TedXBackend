@@ -71,11 +71,12 @@ const (
 	MESSAGE_FAILED_UPDATE_BUNDLE          = "failed update bundle"
 	MESSAGE_FAILED_DELETE_BUNDLE          = "failed delete bundle"
 	// Transaction & Ticket Form
-	MESSAGE_FAILED_CREATE_TICKET_FORM     = "failed create ticket form"
-	MESSAGE_FAILED_GET_LIST_TICKET_FORM   = "failed get list ticket form"
-	MESSAGE_FAILED_GET_DETAIL_TICKET_FORM = "failed get detail ticket form"
-	MESSAGE_FAILED_UPDATE_TICKET_FORM     = "failed update ticket form"
-	MESSAGE_FAILED_DELETE_TICKET_FORM     = "failed delete ticket form"
+	MESSAGE_FAILED_CREATE_TICKET_FORM      = "failed create ticket form"
+	MESSAGE_FAILED_GET_LIST_TICKET_FORM    = "failed get list ticket form"
+	MESSAGE_FAILED_GET_DETAIL_TICKET_FORM  = "failed get detail ticket form"
+	MESSAGE_FAILED_UPDATE_TICKET_FORM      = "failed update ticket form"
+	MESSAGE_FAILED_DELETE_TICKET_FORM      = "failed delete ticket form"
+	MESSAGE_FAILED_CREATE_SNAP_TRANSACTION = "failed create snap transaction"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -123,6 +124,7 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_TRANSACTION_TICKET = "success get detail transaction ticket"
 	MESSAGE_SUCCESS_UPDATE_TRANSACTION_TICKET     = "success update transaction ticket"
 	MESSAGE_SUCCESS_DELETE_TRANSACTION_TICKET     = "success delete transaction ticket"
+	MESSAGE_SUCCESS_CREATE_SNAP_TRANSACTION       = "success create snap transaction"
 )
 
 var (
@@ -177,6 +179,7 @@ var (
 	ErrGetAllTicketWithPagination = errors.New("failed get all ticket with pagination")
 	ErrTicketNotFound             = errors.New("failed ticket not found")
 	ErrUpdateTicket               = errors.New("failed update ticket")
+	ErrUpdateTicketQuota          = errors.New("failed update ticket quota")
 	ErrDeleteTicketByID           = errors.New("failed delete ticket by id")
 	ErrTicketAlreadyExists        = errors.New("failed ticket already exists")
 	ErrQuotaOutOfBound            = errors.New("failed quota out of bound")
@@ -223,12 +226,14 @@ var (
 	ErrInvalidBundleItemID          = errors.New("failed bundle item id")
 	ErrInvalidBundleType            = errors.New("failed invalid bundle type")
 	ErrUpdateBundle                 = errors.New("failed update bundle")
+	ErrUpdateBundleQuota            = errors.New("failed update bundle quota")
 	ErrDeleteBundleByID             = errors.New("failed delete bundle by id")
 	ErrBundleAlreadyExists          = errors.New("failed bundle already exists")
 	ErrCreateBundleItem             = errors.New("failed create bundle item")
 	ErrGetBundleItems               = errors.New("failed get bundle items")
 	ErrInvalidTicketIDInBundleMerch = errors.New("bundle type 'bundle merch' cannot contain ticket")
 	ErrDeleteBundleItemsByBundleID  = errors.New("failed delete bundle items by bundle id")
+	ErrBundleSoldOut                = errors.New("failed bundle sold out")
 	// Transaction & Ticket Form
 	ErrEmptyTicketForms              = errors.New("failed empty ticket forms")
 	ErrInvalidAudienceType           = errors.New("failed invalid audience type")
@@ -238,10 +243,14 @@ var (
 	ErrCreateTransaction             = errors.New("failed create transaction")
 	ErrMustBeInvitedGuest            = errors.New("failed audience must be invited guest")
 	ErrItemTypeMustBeTicket          = errors.New("failed item type must be ticket")
+	ErrItemTypeMustBeTicketOrBundle  = errors.New("failed item type must be ticket or bundle")
 	ErrGetAllTransactionNoPagination = errors.New("failed get all transaction no pagination")
 	ErrTicketFormNotFound            = errors.New("failed ticket form not found")
 	ErrUpdateTicketForm              = errors.New("failed update ticket form")
 	ErrDeleteTicketFormByID          = errors.New("failed delete ticket form by id")
+	ErrTotalOutOfBound               = errors.New("failed total out of bound")
+	ErrInvalidReferalCode            = errors.New("failed invalid referal code")
+	ErrCreateTransactionSnap         = errors.New("failed create transaction snap")
 )
 
 // All About Image Request
@@ -516,6 +525,8 @@ type (
 		TicketID          *uuid.UUID           `json:"ticket_id"`
 		BundleID          *uuid.UUID           `json:"bundle_id"`
 		TicketForms       []TicketFormResponse `json:"ticket_forms"`
+		Token             string               `json:"token"`
+		RedirectURL       string               `json:"redirect_url"`
 	}
 	TicketFormResponse struct {
 		ID           uuid.UUID           `json:"ticket_form_id"`
@@ -535,9 +546,31 @@ type (
 		LineID       string              `json:"line_id" form:"line_id"`
 	}
 	CreateTransactionTicketRequest struct {
+		ReferalCode string              `json:"referal_code"`
+		Total       float64             `json:"total"`
 		ItemType    entity.ItemType     `json:"item_type" form:"item_type"`
 		TicketID    *uuid.UUID          `json:"ticket_id" form:"ticket_id"`
-		TicketForms []TicketFormRequest `json:"ticket_forms"`
+		BundleID    *uuid.UUID          `json:"bundle_id" form:"bundle_id"`
+		TicketForms []TicketFormRequest `json:"ticket_forms" form:"ticket_forms"`
+	}
+	CreateMidtransTransactionTicketRequest struct {
+		TransactionType          string `json:"transaction_type"`
+		TransactionTime          string `json:"transaction_time"`
+		TransactionStatus        string `json:"transaction_status"`
+		TransactionID            string `json:"transaction_id"`
+		StatusMessage            string `json:"status_message"`
+		StatusCode               string `json:"status_code"`
+		SignatureKey             string `json:"signature_key"`
+		SettlementTime           string `json:"settlement_time"`
+		PaymentType              string `json:"payment_type"`
+		OrderID                  string `json:"order_id"`
+		MerchantID               string `json:"merchant_id"`
+		MerchantCrossReferenceID string `json:"merchant_cross_reference_id"`
+		Issuer                   string `json:"issuer"`
+		GrossAmount              string `json:"gross_amount"`
+		FraudStatus              string `json:"fraud_status"`
+		Currency                 string `json:"currency"`
+		Aquirer                  string `json:"acquirer"`
 	}
 	TransactionTicketPaginationResponse struct {
 		PaginationResponse

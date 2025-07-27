@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Amierza/TedXBackend/entity"
 	"gorm.io/gorm"
@@ -12,6 +13,8 @@ type (
 		RunInTransaction(ctx context.Context, fn func(txRepo IUserRepository) error) error
 
 		// CREATE / POST
+		CreateTransaction(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
+		CreateTicketForm(ctx context.Context, tx *gorm.DB, ticketForm entity.TicketForm) error
 
 		// READ / GET
 		GetUserByID(ctx context.Context, tx *gorm.DB, userID string) (entity.User, bool, error)
@@ -20,9 +23,13 @@ type (
 		GetAllSponsorship(ctx context.Context, tx *gorm.DB) ([]entity.Sponsorship, error)
 		GetAllSpeaker(ctx context.Context, tx *gorm.DB) ([]entity.Speaker, error)
 		GetAllMerch(ctx context.Context, tx *gorm.DB) ([]entity.Merch, error)
-		// GetAllBundle(ctx context.Context, tx *gorm.DB, bundleType string) ([]entity.Bundle, error)
+		GetAllBundle(ctx context.Context, tx *gorm.DB, bundleType string) ([]entity.Bundle, error)
+		GetTicketByID(ctx context.Context, tx *gorm.DB, ticketID string) (entity.Ticket, bool, error)
+		GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error)
 
 		// UPDATE / PATCH
+		UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error
+		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
 
 		// DELETE / DELETE
 	}
@@ -46,6 +53,20 @@ func (ur *UserRepository) RunInTransaction(ctx context.Context, fn func(txRepo I
 }
 
 // CREATE / POST
+func (ur *UserRepository) CreateTransaction(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	return tx.WithContext(ctx).Create(&transaction).Error
+}
+func (ur *UserRepository) CreateTicketForm(ctx context.Context, tx *gorm.DB, ticketForm entity.TicketForm) error {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	return tx.WithContext(ctx).Create(&ticketForm).Error
+}
 
 // READ / GET
 func (ur *UserRepository) GetUserByID(ctx context.Context, tx *gorm.DB, userID string) (entity.User, bool, error) {
@@ -144,30 +165,93 @@ func (ur *UserRepository) GetAllMerch(ctx context.Context, tx *gorm.DB) ([]entit
 
 	return merchs, err
 }
+func (ur *UserRepository) GetAllBundle(ctx context.Context, tx *gorm.DB, bundleType string) ([]entity.Bundle, error) {
+	if tx == nil {
+		tx = ur.db
+	}
 
-// func (ur *UserRepository) GetAllBundle(ctx context.Context, tx *gorm.DB, bundleType string) ([]entity.Bundle, error) {
-// 	if tx == nil {
-// 		tx = ur.db
-// 	}
+	var (
+		bundles []entity.Bundle
+		err     error
+	)
 
-// 	var (
-// 		bundles []entity.Bundle
-// 		err     error
-// 	)
+	query := tx.WithContext(ctx).Model(&entity.Bundle{}).Preload("BundleItems.Merch")
 
-// 	query := tx.WithContext(ctx).Model(&entity.Bundle{}).Preload("BundleItems.Merch")
+	if bundleType != "" {
+		query = query.Where("type = ?", bundleType)
+	}
 
-// 	if bundleType != "" {
-// 		query = query.Where("type = ?", bundleType)
-// 	}
+	if err := query.Order(`"createdAt" DESC`).Find(&bundles).Error; err != nil {
+		return []entity.Bundle{}, err
+	}
 
-// 	if err := query.Order(`"createdAt" DESC`).Find(&bundles).Error; err != nil {
-// 		return []entity.Bundle{}, err
-// 	}
+	return bundles, err
+}
+func (ur *UserRepository) GetTicketByID(ctx context.Context, tx *gorm.DB, ticketID string) (entity.Ticket, bool, error) {
+	if tx == nil {
+		tx = ur.db
+	}
 
-// 	return bundles, err
-// }
+	var ticket entity.Ticket
+	if err := tx.WithContext(ctx).Where("id = ?", ticketID).Take(&ticket).Error; err != nil {
+		return entity.Ticket{}, false, err
+	}
+
+	return ticket, true, nil
+}
+func (ur *UserRepository) GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error) {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	var bundle entity.Bundle
+	if err := tx.WithContext(ctx).Preload("BundleItems.Merch").Where("id = ?", bundleID).Take(&bundle).Error; err != nil {
+		return entity.Bundle{}, false, err
+	}
+
+	return bundle, true, nil
+}
 
 // UPDATE / PATCH
+func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	result := tx.WithContext(ctx).
+		Model(&entity.Bundle{}).
+		Where("id = ?", bundleID).
+		Update("quota", newQuota)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("bundle not found or no change made")
+	}
+
+	return nil
+}
+func (ur *UserRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	result := tx.WithContext(ctx).
+		Model(&entity.Ticket{}).
+		Where("id = ?", ticketID).
+		Update("quota", newQuota)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("ticket not found or no change made")
+	}
+
+	return nil
+}
 
 // DELETE / DELETE

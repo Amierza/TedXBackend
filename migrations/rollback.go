@@ -7,6 +7,10 @@ import (
 
 func Rollback(db *gorm.DB) error {
 	tables := []interface{}{
+		&entity.Session{},
+		&entity.Session{},
+		&entity.Account{},
+
 		&entity.BundleItem{},
 		&entity.Ticket{},
 		&entity.Bundle{},
@@ -21,6 +25,7 @@ func Rollback(db *gorm.DB) error {
 
 		&entity.Speaker{},
 		&entity.Sponsorship{},
+		&entity.StudentAmbassador{},
 	}
 
 	for _, table := range tables {

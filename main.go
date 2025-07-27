@@ -6,6 +6,7 @@ import (
 
 	"github.com/Amierza/TedXBackend/cmd"
 	"github.com/Amierza/TedXBackend/config/database"
+	"github.com/Amierza/TedXBackend/config/midtrans"
 	"github.com/Amierza/TedXBackend/handler"
 	"github.com/Amierza/TedXBackend/middleware"
 	"github.com/Amierza/TedXBackend/repository"
@@ -17,6 +18,8 @@ import (
 func main() {
 	db := database.SetUpPostgreSQLConnection()
 	defer database.ClosePostgreSQLConnection(db)
+
+	midtrans.InitMidtransClient(os.Getenv("MIDTRANS_SERVER_KEY"), os.Getenv("APP_ENV") == "production")
 
 	if len(os.Args) > 1 {
 		cmd.Command(db)

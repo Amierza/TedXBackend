@@ -2,10 +2,17 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	"github.com/Amierza/TedXBackend/constants"
 	"github.com/Amierza/TedXBackend/dto"
+	"github.com/Amierza/TedXBackend/entity"
 	"github.com/Amierza/TedXBackend/helpers"
 	"github.com/Amierza/TedXBackend/repository"
+	"github.com/google/uuid"
+	"github.com/midtrans/midtrans-go"
+	"github.com/midtrans/midtrans-go/snap"
 )
 
 type (
@@ -29,7 +36,10 @@ type (
 		GetAllMerch(ctx context.Context) ([]dto.MerchResponse, error)
 
 		// Bundle
-		// GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error)
+		GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error)
+
+		// Webhook for Midtrans (Transaction)
+		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
 	}
 
 	UserService struct {
@@ -204,37 +214,221 @@ func (us *UserService) GetAllMerch(ctx context.Context) ([]dto.MerchResponse, er
 }
 
 // Bundle
-// func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error) {
-// 	bundleType := "bundle merch ticket"
+func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error) {
+	bundleType := "bundle merch ticket"
 
-// 	bundles, err := us.userRepo.GetAllBundle(ctx, nil, bundleType)
-// 	if err != nil {
-// 		return nil, dto.ErrGetAllBundleNoPagination
-// 	}
+	bundles, err := us.userRepo.GetAllBundle(ctx, nil, bundleType)
+	if err != nil {
+		return nil, dto.ErrGetAllBundleNoPagination
+	}
 
-// 	var datas []dto.BundleResponse
-// 	for _, bundle := range bundles {
-// 		data := dto.BundleResponse{
-// 			ID:    bundle.ID,
-// 			Name:  bundle.Name,
-// 			Image: bundle.Image,
-// 			Type:  bundle.Type,
-// 			Price: bundle.Price,
-// 			Quota: bundle.Quota,
-// 		}
+	var datas []dto.BundleResponse
+	for _, bundle := range bundles {
+		data := dto.BundleResponse{
+			ID:    bundle.ID,
+			Name:  bundle.Name,
+			Image: bundle.Image,
+			Type:  bundle.Type,
+			Price: bundle.Price,
+			Quota: bundle.Quota,
+		}
 
-// 		for _, bi := range bundle.BundleItems {
-// 			bundleItem := dto.BundleItemResponse{
-// 				ID:        bi.ID,
-// 				MerchID:   bi.MerchID,
-// 				MerchName: bi.Merch.Name,
-// 			}
+		for _, bi := range bundle.BundleItems {
+			bundleItem := dto.BundleItemResponse{
+				ID:        bi.ID,
+				MerchID:   bi.MerchID,
+				MerchName: bi.Merch.Name,
+			}
 
-// 			data.BundleItems = append(data.BundleItems, bundleItem)
-// 		}
+			data.BundleItems = append(data.BundleItems, bundleItem)
+		}
 
-// 		datas = append(datas, data)
-// 	}
+		datas = append(datas, data)
+	}
 
-// 	return datas, nil
-// }
+	return datas, nil
+}
+
+// Transaction & Ticket Form
+func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error) {
+	if len(req.TicketForms) == 0 {
+		return dto.TransactionResponse{}, dto.ErrEmptyTicketForms
+	}
+
+	token := ctx.Value("Authorization").(string)
+
+	userIDStr, err := us.jwtService.GetUserIDByToken(token)
+	if err != nil {
+		return dto.TransactionResponse{}, dto.ErrGetUserIDFromToken
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return dto.TransactionResponse{}, dto.ErrParseUUID
+	}
+
+	user, found, err := us.userRepo.GetUserByID(ctx, nil, userIDStr)
+	if err != nil || !found {
+		return dto.TransactionResponse{}, dto.ErrUserNotFound
+	}
+
+	var transactionResponse dto.TransactionResponse
+	err = us.userRepo.RunInTransaction(ctx, func(txRepo repository.IUserRepository) error {
+		if req.ReferalCode != constants.REFERAL_CODE {
+			return dto.ErrInvalidReferalCode
+		}
+
+		if req.Total <= 0 {
+			return dto.ErrTotalOutOfBound
+		}
+
+		if !entity.IsValidItemType(req.ItemType) || (req.ItemType != constants.ENUM_TICKET_ITEM_TYPE && req.ItemType != constants.ENUM_BUNDLE_ITEM_TYPE) {
+			return dto.ErrItemTypeMustBeTicketOrBundle
+		}
+
+		var (
+			ticket entity.Ticket
+			bundle entity.Bundle
+		)
+
+		if req.TicketID != &uuid.Nil {
+			t, found, err := txRepo.GetTicketByID(ctx, nil, req.TicketID.String())
+			if err != nil || !found {
+				return dto.ErrTicketNotFound
+			}
+
+			if t.Quota <= 0 {
+				return dto.ErrTicketSoldOut
+			}
+
+			ticket = t
+		}
+
+		if req.BundleID != &uuid.Nil {
+			b, found, err := txRepo.GetBundleByID(ctx, nil, req.BundleID.String())
+			if err != nil || !found {
+				return dto.ErrTicketNotFound
+			}
+
+			if b.Quota <= 0 {
+				return dto.ErrBundleSoldOut
+			}
+
+			bundle = b
+		}
+
+		transactionID := uuid.New()
+		orderID := fmt.Sprintf("TEDX-%s-%s", userIDStr, time.Now().Format("060102150405"))
+
+		transaction := entity.Transaction{
+			ID:       transactionID,
+			OrderID:  orderID,
+			ItemType: req.ItemType,
+			UserID:   &userID,
+			TicketID: req.TicketID,
+			BundleID: req.BundleID,
+		}
+
+		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
+			return dto.ErrCreateTransaction
+		}
+
+		for _, form := range req.TicketForms {
+			if form.AudienceType == "" || form.Instansi == "" || form.Email == "" || form.FullName == "" || form.PhoneNumber == "" {
+				return dto.ErrEmptyFields
+			}
+
+			if !entity.IsValidAudienceType(form.AudienceType) || form.AudienceType != "invited" {
+				return dto.ErrMustBeInvitedGuest
+			}
+
+			if !entity.IsValidInstansi(form.Instansi) {
+				return dto.ErrInvalidInstansi
+			}
+
+			if !helpers.IsValidEmail(form.Email) {
+				return dto.ErrInvalidEmail
+			}
+
+			if len(form.FullName) < 5 {
+				return dto.ErrUserFullNameTooShort
+			}
+
+			formattedPhone, err := helpers.StandardizePhoneNumber(form.PhoneNumber)
+			if err != nil {
+				return dto.ErrInvalidPhoneNumber
+			}
+
+			ticketFormID := uuid.New()
+			ticketForm := entity.TicketForm{
+				ID:            ticketFormID,
+				AudienceType:  form.AudienceType,
+				Instansi:      form.Instansi,
+				Email:         form.Email,
+				FullName:      form.FullName,
+				PhoneNumber:   formattedPhone,
+				LineID:        form.LineID,
+				TransactionID: &transactionID,
+			}
+
+			if req.BundleID != &uuid.Nil {
+				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.Quota-1); err != nil {
+					return dto.ErrUpdateBundleQuota
+				}
+			}
+
+			if req.TicketID != &uuid.Nil {
+				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-1); err != nil {
+					return dto.ErrUpdateTicketQuota
+				}
+			}
+			if err := txRepo.CreateTicketForm(ctx, nil, ticketForm); err != nil {
+				return dto.ErrCreateTicketForm
+			}
+
+			transactionResponse.TicketForms = append(transactionResponse.TicketForms, dto.TicketFormResponse{
+				ID:           ticketFormID,
+				AudienceType: ticketForm.AudienceType,
+				Instansi:     ticketForm.Instansi,
+				Email:        ticketForm.Email,
+				FullName:     ticketForm.FullName,
+				PhoneNumber:  ticketForm.PhoneNumber,
+				LineID:       ticketForm.LineID,
+			})
+
+			r := &snap.Request{
+				TransactionDetails: midtrans.TransactionDetails{
+					OrderID:  orderID,
+					GrossAmt: int64(req.Total),
+				},
+				CustomerDetail: &midtrans.CustomerDetails{
+					FName: user.Name,
+					LName: user.Name,
+					Email: user.Email,
+					Phone: "",
+				},
+			}
+
+			snapResp, midtransErr := snap.CreateTransaction(r)
+			if midtransErr != nil {
+				return dto.ErrCreateTransactionSnap
+			}
+
+			transactionResponse.ID = transactionID
+			transactionResponse.OrderID = transaction.OrderID
+			transactionResponse.ItemType = transaction.ItemType
+			transactionResponse.UserID = transaction.UserID
+			transactionResponse.TicketID = transaction.TicketID
+			transactionResponse.BundleID = transaction.BundleID
+			transactionResponse.Token = snapResp.Token
+			transactionResponse.RedirectURL = snapResp.RedirectURL
+		}
+
+		return nil
+	})
+	if err != nil {
+		return dto.TransactionResponse{}, err
+	}
+
+	return transactionResponse, nil
+}
