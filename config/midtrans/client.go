@@ -13,6 +13,6 @@ func InitMidtransClient(serverKey string, isProduction bool) {
 		env = midtrans.Production
 	}
 
-	SnapClient = snap.Client{}
+	// SnapClient = snap.Client{}
 	SnapClient.New(serverKey, env)
 }
