@@ -19,7 +19,8 @@ func main() {
 	db := database.SetUpPostgreSQLConnection()
 	defer database.ClosePostgreSQLConnection(db)
 
-	midtrans.InitMidtransClient(os.Getenv("MIDTRANS_SERVER_KEY"), os.Getenv("APP_ENV") == "production")
+	midtransEnv := os.Getenv("MIDTRANS_ENV") // bisa "sandbox" atau "production"
+	midtrans.InitMidtransClient(os.Getenv("MIDTRANS_SERVER_KEY"), midtransEnv)
 
 	if len(os.Args) > 1 {
 		cmd.Command(db)
