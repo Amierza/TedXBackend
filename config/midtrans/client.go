@@ -7,12 +7,11 @@ import (
 
 var SnapClient snap.Client
 
-func InitMidtransClient(serverKey string, isProduction bool) {
+func InitMidtransClient(serverKey string, envType string) {
 	env := midtrans.Sandbox
-	if isProduction {
+	if envType == "production" {
 		env = midtrans.Production
 	}
 
-	// SnapClient = snap.Client{}
 	SnapClient.New(serverKey, env)
 }
