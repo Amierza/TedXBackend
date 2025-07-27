@@ -421,7 +421,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 
 			snapResp, midtransErr := m.SnapClient.CreateTransaction(r)
 			if midtransErr != nil {
-				return dto.ErrCreateTransactionSnap
+				return midtransErr
 			}
 
 			transactionResponse.ID = transactionID
