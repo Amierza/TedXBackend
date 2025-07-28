@@ -7,8 +7,8 @@ assets/**
 !assets/header-e-ticket-mail.png
 !assets/speaker/
 !assets/speaker/.gitkeep
-!assets/qrcode/
-!assets/qrcode/.gitkeep
+!assets/qrcodes/
+!assets/qrcodes/.gitkeep
 !assets/sponsorship/
 !assets/sponsorship/.gitkeep
 !assets/merch/
