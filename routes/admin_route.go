@@ -68,6 +68,11 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 			routes.POST("/create-transaction-ticket", adminHandler.CreateTransactionTicket)
 			routes.GET("/get-all-transaction-ticket", adminHandler.GetAllTransactionTicket)
 			routes.GET("/get-detail-transaction-ticket/:id", adminHandler.GetDetailTransactionTicket)
+
+			// Check-in
+			routes.GET("/get-detail-ticket-check-in/:ticket-form-id", adminHandler.GetDetailTicketCheckIn)
+			routes.POST("/check-in/:ticket-form-id", adminHandler.CheckIn)
+			routes.GET("/get-all-ticket-check-in", adminHandler.GetAllTicketCheckIn)
 		}
 	}
 }

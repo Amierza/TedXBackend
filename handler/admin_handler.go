@@ -70,6 +70,11 @@ type (
 		CreateTransactionTicket(ctx *gin.Context)
 		GetAllTransactionTicket(ctx *gin.Context)
 		GetDetailTransactionTicket(ctx *gin.Context)
+
+		// Check-in
+		GetDetailTicketCheckIn(ctx *gin.Context)
+		CheckIn(ctx *gin.Context)
+		GetAllTicketCheckIn(ctx *gin.Context)
 	}
 
 	AdminHandler struct {
@@ -1277,5 +1282,72 @@ func (ah *AdminHandler) GetDetailTransactionTicket(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_TRANSACTION_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Check-in
+func (ah *AdminHandler) GetDetailTicketCheckIn(ctx *gin.Context) {
+	ticketFormIDStr := ctx.Param("ticket-form-id")
+	result, err := ah.adminService.GetDetailTicketCheckIn(ctx, ticketFormIDStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) CheckIn(ctx *gin.Context) {
+	ticketFormIDStr := ctx.Param("ticket-form-id")
+	err := ah.adminService.CheckIn(ctx, ticketFormIDStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CHECK_IN, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CHECK_IN, "")
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetAllTicketCheckIn(ctx *gin.Context) {
+	paginationParam := ctx.DefaultQuery("pagination", "true")
+	usePagination := paginationParam != "false"
+
+	if !usePagination {
+		// Tanpa pagination
+		result, err := ah.adminService.GetAllTicketCheckIn(ctx)
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_TICKET_CHECK_IN, result)
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
+
+	var payload dto.PaginationRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllTicketCheckInWithPagination(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.Response{
+		Status:   true,
+		Messsage: dto.MESSAGE_SUCCESS_GET_LIST_TICKET_CHECK_IN,
+		Data:     result.Data,
+		Meta:     result.PaginationResponse,
+	}
+
 	ctx.JSON(http.StatusOK, res)
 }

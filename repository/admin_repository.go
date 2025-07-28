@@ -27,6 +27,7 @@ type (
 		CreateTransaction(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
 		CreateTicketForm(ctx context.Context, tx *gorm.DB, ticketForm entity.TicketForm) error
 		CreateStudentAmbassador(ctx context.Context, tx *gorm.DB, studentAmbassador entity.StudentAmbassador) error
+		CreateGuestAttendance(ctx context.Context, tx *gorm.DB, guestAttendance entity.GuestAttendance) error
 
 		// READ / GET
 		GetUserByID(ctx context.Context, tx *gorm.DB, userID string) (entity.User, bool, error)
@@ -62,6 +63,9 @@ type (
 		GetAllStudentAmbassador(ctx context.Context, tx *gorm.DB) ([]entity.StudentAmbassador, error)
 		GetAllStudentAmbassadorWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.StudentAmbassadorPaginationRepositoryResponse, error)
 		GetStudentAmbassadorByID(ctx context.Context, tx *gorm.DB, studentAmbassadorID string) (entity.StudentAmbassador, bool, error)
+		GetTicketFormByID(ctx context.Context, tx *gorm.DB, ticketFormID string) (entity.TicketForm, bool, error)
+		GetAllTicketForm(ctx context.Context, tx *gorm.DB) ([]entity.TicketForm, error)
+		GetAllTicketFormWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.TicketFormPaginationRepositoryResponse, error)
 
 		// UPDATE / PATCH
 		UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error
@@ -181,6 +185,13 @@ func (ar *AdminRepository) CreateStudentAmbassador(ctx context.Context, tx *gorm
 	}
 
 	return tx.WithContext(ctx).Create(&studentAmbassador).Error
+}
+func (ar *AdminRepository) CreateGuestAttendance(ctx context.Context, tx *gorm.DB, guestAttendance entity.GuestAttendance) error {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	return tx.WithContext(ctx).Create(&guestAttendance).Error
 }
 
 // READ / GET
@@ -913,6 +924,97 @@ func (ar *AdminRepository) GetStudentAmbassadorByID(ctx context.Context, tx *gor
 	}
 
 	return studentAmbassador, true, nil
+}
+func (ar *AdminRepository) GetTicketFormByID(ctx context.Context, tx *gorm.DB, ticketFormID string) (entity.TicketForm, bool, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var ticketForm entity.TicketForm
+	if err := tx.WithContext(ctx).Preload("GuestAttendances").Preload("Transaction.Ticket").Where("id = ?", ticketFormID).Take(&ticketForm).Error; err != nil {
+		return entity.TicketForm{}, false, err
+	}
+
+	return ticketForm, true, nil
+}
+func (ar *AdminRepository) GetAllTicketForm(ctx context.Context, tx *gorm.DB) ([]entity.TicketForm, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var (
+		ticketForms []entity.TicketForm
+		err         error
+	)
+
+	if err := tx.WithContext(ctx).
+		Joins("JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Preload("GuestAttendances").
+		Preload("Transaction.Ticket").
+		Order(`ticket_forms."createdAt" DESC`).
+		Find(&ticketForms).Error; err != nil {
+		return []entity.TicketForm{}, err
+	}
+
+	return ticketForms, err
+}
+func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.TicketFormPaginationRepositoryResponse, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var (
+		ticketForms []entity.TicketForm
+		err         error
+		count       int64
+	)
+
+	if req.PerPage == 0 {
+		req.PerPage = 10
+	}
+
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	query := tx.WithContext(ctx).Model(&entity.TicketForm{}).
+		Joins("JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Joins("JOIN transactions ON transactions.id = ticket_forms.transaction_id").
+		Joins("JOIN tickets ON tickets.id = transactions.ticket_id").
+		Preload("GuestAttendances").
+		Preload("Transaction.Ticket")
+
+	if req.Search != "" {
+		searchValue := "%" + strings.ToLower(req.Search) + "%"
+		query = query.Where(`
+			LOWER(ticket_forms.full_name) LIKE ? OR 
+			LOWER(guest_attendances.email_checker) LIKE ? OR 
+			LOWER(tickets.name) LIKE ?`,
+			searchValue, searchValue, searchValue,
+		)
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		return dto.TicketFormPaginationRepositoryResponse{}, err
+	}
+
+	if err := query.Order(`ticket_forms."createdAt" DESC`).
+		Scopes(Paginate(req.Page, req.PerPage)).
+		Find(&ticketForms).Error; err != nil {
+		return dto.TicketFormPaginationRepositoryResponse{}, err
+	}
+
+	totalPage := int64(math.Ceil(float64(count) / float64(req.PerPage)))
+
+	return dto.TicketFormPaginationRepositoryResponse{
+		TicketForms: ticketForms,
+		PaginationResponse: dto.PaginationResponse{
+			Page:    req.Page,
+			PerPage: req.PerPage,
+			MaxPage: totalPage,
+			Count:   count,
+		},
+	}, err
 }
 
 // UPDATE / PATCH
