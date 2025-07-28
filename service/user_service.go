@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -624,8 +623,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		qrContent := fmt.Sprintf("TICKET_FORM_ID:%s", form.ID.String())
 		qrCodeBase64, err := helpers.GenerateBase64QRCode(qrContent)
 		if err != nil {
-			log.Printf("gagal generate QR code untuk %s: %v", form.ID, err)
-			continue
+			return dto.ErrGenerateQRCode
 		}
 
 		emailData := struct {
@@ -653,9 +651,9 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			return dto.ErrMakeETicketEmail
 		}
 
+		fmt.Printf("Sending email to %s...\n", emailData.Email)
 		if err := utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"]); err != nil {
-			log.Printf("gagal kirim email ke %s: %v", emailData.Email, err)
-			continue
+			return dto.ErrSendEmail
 		}
 	}
 
