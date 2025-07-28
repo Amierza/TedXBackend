@@ -291,6 +291,7 @@ var (
 	ErrUnknownTransactionStatus      = errors.New("failed unknown transaction status")
 	ErrUpdateMaxReferal              = errors.New("failed update max referal")
 	ErrReferalCodeSoldOut            = errors.New("failed referal code sold out")
+	ErrGenerateQRCode                = errors.New("failed generate qr code")
 	// Check-in
 	ErrAlreadyCheckedIn                  = errors.New("failed already check in")
 	ErrCreateGuestAttendance             = errors.New("failed create guest attendance")
