@@ -26,6 +26,7 @@ type (
 		CreateBundleItem(ctx context.Context, tx *gorm.DB, bundleItem entity.BundleItem) error
 		CreateTransaction(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
 		CreateTicketForm(ctx context.Context, tx *gorm.DB, ticketForm entity.TicketForm) error
+		CreateStudentAmbassador(ctx context.Context, tx *gorm.DB, studentAmbassador entity.StudentAmbassador) error
 
 		// READ / GET
 		GetUserByID(ctx context.Context, tx *gorm.DB, userID string) (entity.User, bool, error)
@@ -57,6 +58,10 @@ type (
 		GetAllTransaction(ctx context.Context, tx *gorm.DB, transactionStatus, ticketCategory string) ([]entity.Transaction, error)
 		GetAllTransactionWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationRepositoryResponse, error)
 		GetTransactionByID(ctx context.Context, tx *gorm.DB, transactionID string) (entity.Transaction, bool, error)
+		GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, studentAmbassadorReferalCode string) (entity.StudentAmbassador, bool, error)
+		GetAllStudentAmbassador(ctx context.Context, tx *gorm.DB) ([]entity.StudentAmbassador, error)
+		GetAllStudentAmbassadorWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.StudentAmbassadorPaginationRepositoryResponse, error)
+		GetStudentAmbassadorByID(ctx context.Context, tx *gorm.DB, studentAmbassadorID string) (entity.StudentAmbassador, bool, error)
 
 		// UPDATE / PATCH
 		UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error
@@ -66,6 +71,7 @@ type (
 		UpdateMerch(ctx context.Context, tx *gorm.DB, merch entity.Merch) error
 		UpdateBundle(ctx context.Context, tx *gorm.DB, bundle entity.Bundle) error
 		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
+		UpdateStudentAmbassador(ctx context.Context, tx *gorm.DB, studentAmbassador entity.StudentAmbassador) error
 
 		// DELETE / DELETE
 		DeleteUserByID(ctx context.Context, tx *gorm.DB, userID string) error
@@ -77,6 +83,7 @@ type (
 		DeleteMerchImagesByMerchID(ctx context.Context, tx *gorm.DB, merchID string) error
 		DeleteBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) error
 		DeleteBundleItemsByBundleID(ctx context.Context, tx *gorm.DB, bundleID string) error
+		DeleteStudentAmbassadorByID(ctx context.Context, tx *gorm.DB, studentAmbassadorID string) error
 	}
 
 	AdminRepository struct {
@@ -167,6 +174,13 @@ func (ar *AdminRepository) CreateTicketForm(ctx context.Context, tx *gorm.DB, ti
 	}
 
 	return tx.WithContext(ctx).Create(&ticketForm).Error
+}
+func (ar *AdminRepository) CreateStudentAmbassador(ctx context.Context, tx *gorm.DB, studentAmbassador entity.StudentAmbassador) error {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	return tx.WithContext(ctx).Create(&studentAmbassador).Error
 }
 
 // READ / GET
@@ -814,6 +828,92 @@ func (ar *AdminRepository) GetTransactionByID(ctx context.Context, tx *gorm.DB, 
 
 	return transaction, true, nil
 }
+func (ar *AdminRepository) GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, studentAmbassadorReferalCode string) (entity.StudentAmbassador, bool, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var studentAmbassador entity.StudentAmbassador
+	if err := tx.WithContext(ctx).Where("referal_code = ?", studentAmbassadorReferalCode).Take(&studentAmbassador).Error; err != nil {
+		return entity.StudentAmbassador{}, false, err
+	}
+
+	return studentAmbassador, true, nil
+}
+func (ar *AdminRepository) GetAllStudentAmbassador(ctx context.Context, tx *gorm.DB) ([]entity.StudentAmbassador, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var (
+		studentAmbassadors []entity.StudentAmbassador
+		err                error
+	)
+
+	query := tx.WithContext(ctx).Model(&entity.StudentAmbassador{})
+
+	if err := query.Order(`"createdAt" DESC`).Find(&studentAmbassadors).Error; err != nil {
+		return []entity.StudentAmbassador{}, err
+	}
+
+	return studentAmbassadors, err
+}
+func (ar *AdminRepository) GetAllStudentAmbassadorWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.StudentAmbassadorPaginationRepositoryResponse, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var studentAmbassadors []entity.StudentAmbassador
+	var err error
+	var count int64
+
+	if req.PerPage == 0 {
+		req.PerPage = 10
+	}
+
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	query := tx.WithContext(ctx).Model(&entity.StudentAmbassador{})
+
+	if req.Search != "" {
+		searchValue := "%" + strings.ToLower(req.Search) + "%"
+		query = query.Where("LOWER(name) LIKE ? OR LOWER(referal_code) LIKE ?", searchValue, searchValue)
+	}
+
+	if err := query.Count(&count).Error; err != nil {
+		return dto.StudentAmbassadorPaginationRepositoryResponse{}, err
+	}
+
+	if err := query.Order(`"createdAt" DESC`).Scopes(Paginate(req.Page, req.PerPage)).Find(&studentAmbassadors).Error; err != nil {
+		return dto.StudentAmbassadorPaginationRepositoryResponse{}, err
+	}
+
+	totalPage := int64(math.Ceil(float64(count) / float64(req.PerPage)))
+
+	return dto.StudentAmbassadorPaginationRepositoryResponse{
+		StudentAmbassadors: studentAmbassadors,
+		PaginationResponse: dto.PaginationResponse{
+			Page:    req.Page,
+			PerPage: req.PerPage,
+			MaxPage: totalPage,
+			Count:   count,
+		},
+	}, err
+}
+func (ar *AdminRepository) GetStudentAmbassadorByID(ctx context.Context, tx *gorm.DB, studentAmbassadorID string) (entity.StudentAmbassador, bool, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var studentAmbassador entity.StudentAmbassador
+	if err := tx.WithContext(ctx).Where("id = ?", studentAmbassadorID).Take(&studentAmbassador).Error; err != nil {
+		return entity.StudentAmbassador{}, false, err
+	}
+
+	return studentAmbassador, true, nil
+}
 
 // UPDATE / PATCH
 func (ar *AdminRepository) UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error {
@@ -877,6 +977,13 @@ func (ar *AdminRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, t
 	}
 
 	return nil
+}
+func (ar *AdminRepository) UpdateStudentAmbassador(ctx context.Context, tx *gorm.DB, studentAmbassador entity.StudentAmbassador) error {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	return tx.WithContext(ctx).Where("id = ?", studentAmbassador.ID).Save(&studentAmbassador).Error
 }
 
 // DELETE / DELETE
@@ -942,4 +1049,11 @@ func (ar *AdminRepository) DeleteBundleItemsByBundleID(ctx context.Context, tx *
 	}
 
 	return tx.WithContext(ctx).Where("bundle_id = ?", bundleID).Delete(&entity.BundleItem{}).Error
+}
+func (ar *AdminRepository) DeleteStudentAmbassadorByID(ctx context.Context, tx *gorm.DB, studentAmbassadorID string) error {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	return tx.WithContext(ctx).Where("id = ?", studentAmbassadorID).Delete(&entity.StudentAmbassador{}).Error
 }

@@ -57,6 +57,13 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 			routes.PATCH("/update-bundle/:id", adminHandler.UpdateBundle)
 			routes.DELETE("/delete-bundle/:id", adminHandler.DeleteBundle)
 
+			// Student Ambassador
+			routes.POST("/create-student-ambassador", adminHandler.CreateStudentAmbassador)
+			routes.GET("/get-all-student-ambassador", adminHandler.GetAllStudentAmbassador)
+			routes.GET("/get-detail-student-ambassador/:id", adminHandler.GetDetailStudentAmbassador)
+			routes.PATCH("/update-student-ambassador/:id", adminHandler.UpdateStudentAmbassador)
+			routes.DELETE("/delete-student-ambassador/:id", adminHandler.DeleteStudentAmbassador)
+
 			// Transaction & Ticket Form
 			routes.POST("/create-transaction-ticket", adminHandler.CreateTransactionTicket)
 			routes.GET("/get-all-transaction-ticket", adminHandler.GetAllTransactionTicket)

@@ -30,6 +30,7 @@ type (
 		GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, referalCode string) (entity.StudentAmbassador, bool, error)
 
 		// UPDATE / PATCH
+		UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error
 		UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error
 		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
 		UpdateTransactionTicket(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
@@ -240,6 +241,13 @@ func (ur *UserRepository) GetStudentAmbassadorByReferalCode(ctx context.Context,
 }
 
 // UPDATE / PATCH
+func (ur *UserRepository) UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	return tx.WithContext(ctx).Where("id = ?", user.ID).Updates(&user).Error
+}
 func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error {
 	if tx == nil {
 		tx = ur.db
