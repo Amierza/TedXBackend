@@ -1,17 +1,26 @@
 package helpers
 
 import (
-	"encoding/base64"
+	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/skip2/go-qrcode"
 )
 
-func GenerateBase64QRCode(content string) (string, error) {
-	var png []byte
-	png, err := qrcode.Encode(content, qrcode.Medium, 256)
+func GenerateQRCodeFile(content string, filename string) (string, error) {
+	localPath := filepath.Join("assets", "qrcodes", filename)
+
+	err := qrcode.WriteFile(content, qrcode.Medium, 256, localPath)
 	if err != nil {
 		return "", err
 	}
-	base64Img := base64.StdEncoding.EncodeToString(png)
-	return "data:image/png;base64," + base64Img, nil
+
+	baseURL := os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+
+	publicURL := fmt.Sprintf("%s/assets/qrcodes/%s", baseURL, filename)
+	return publicURL, nil
 }
