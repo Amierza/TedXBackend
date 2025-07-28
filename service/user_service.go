@@ -377,6 +377,10 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrInvalidReferalCode
 			}
 
+			if sa.MaxReferal <= 0 {
+				return dto.ErrReferalCodeSoldOut
+			}
+
 			err = txRepo.UpdateMaxReferal(ctx, nil, sa.ID.String(), sa.MaxReferal-1)
 			if err != nil {
 				return dto.ErrUpdateMaxReferal
@@ -549,6 +553,7 @@ func makeETicketEmail(data struct {
 	AudienceType string
 	BookingDate  string
 	Price        string
+	QRCode       string
 }) (map[string]string, error) {
 	readHTML, err := os.ReadFile("utils/email_template/e-ticket-mail.html")
 	if err != nil {
@@ -616,6 +621,13 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 	}
 
 	for _, form := range transaction.TicketForms {
+		qrContent := fmt.Sprintf("TICKET_FORM_ID:%s", form.ID.String())
+		qrCodeBase64, err := helpers.GenerateBase64QRCode(qrContent)
+		if err != nil {
+			log.Printf("gagal generate QR code untuk %s: %v", form.ID, err)
+			continue
+		}
+
 		emailData := struct {
 			TicketID     string
 			Status       string
@@ -624,6 +636,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			AudienceType string
 			BookingDate  string
 			Price        string
+			QRCode       string
 		}{
 			TicketID:     transaction.ID.String(),
 			Status:       transaction.TransactionStatus,
@@ -632,6 +645,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			AudienceType: string(form.AudienceType),
 			BookingDate:  transaction.CreatedAt.Format("02 Jan 2006 15:04"),
 			Price:        fmt.Sprintf("Rp %.0f", transaction.GrossAmount),
+			QRCode:       qrCodeBase64,
 		}
 
 		draftEmail, err := makeETicketEmail(emailData)

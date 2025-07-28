@@ -290,6 +290,7 @@ var (
 	ErrUpdateTransactionTicket       = errors.New("failed update transaction ticket")
 	ErrUnknownTransactionStatus      = errors.New("failed unknown transaction status")
 	ErrUpdateMaxReferal              = errors.New("failed update max referal")
+	ErrReferalCodeSoldOut            = errors.New("failed referal code sold out")
 	// Check-in
 	ErrAlreadyCheckedIn                  = errors.New("failed already check in")
 	ErrCreateGuestAttendance             = errors.New("failed create guest attendance")
