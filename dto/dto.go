@@ -76,6 +76,8 @@ const (
 	MESSAGE_FAILED_GET_DETAIL_STUDENT_AMBASSADOR = "failed get detail student ambassador"
 	MESSAGE_FAILED_UPDATE_STUDENT_AMBASSADOR     = "failed update student ambassador"
 	MESSAGE_FAILED_DELETE_STUDENT_AMBASSADOR     = "failed delete student ambassador"
+	// Check Referal Code
+	MESSAGE_FAILED_INVALID_REFERAL_CODE = "failed invalid referal code"
 	// Transaction & Ticket Form
 	MESSAGE_FAILED_CREATE_TRANSACTION_TICKET     = "failed create transaction ticket"
 	MESSAGE_FAILED_GET_LIST_TRANSACTION_TICKET   = "failed get list transaction ticket"
@@ -132,6 +134,8 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_STUDENT_AMBASSADOR = "success get detail student ambassador"
 	MESSAGE_SUCCESS_UPDATE_STUDENT_AMBASSADOR     = "success update student ambassador"
 	MESSAGE_SUCCESS_DELETE_STUDENT_AMBASSADOR     = "success delete student ambassador"
+	// Check Referal Code
+	MESSAGE_SUCCESS_VALID_REFERAL_CODE = "success valid referal code"
 	// Transaction & Ticket Form
 	MESSAGE_SUCCESS_CREATE_TRANSACTION_TICKET     = "success create transaction ticket"
 	MESSAGE_SUCCESS_GET_LIST_TRANSACTION_TICKET   = "success get list transaction ticket"
@@ -605,6 +609,9 @@ type (
 
 // Transaction & Ticket Form
 type (
+	CheckReferalCodeRequest struct {
+		ReferalCode string `json:"referal_code"`
+	}
 	TransactionResponse struct {
 		ID                uuid.UUID            `json:"transaction_id"`
 		OrderID           string               `json:"order_id"`

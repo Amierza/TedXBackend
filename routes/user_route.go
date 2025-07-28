@@ -37,6 +37,9 @@ func User(route *gin.Engine, userHandler handler.IUserHandler, jwtService servic
 			routes.GET("/get-detail-user", userHandler.GetDetailUser)
 			routes.PATCH("/update-user/:id", userHandler.UpdateUser)
 
+			// Check Referal Code
+			routes.POST("/check-referal-code", userHandler.CheckReferalCode)
+
 			// Snap for trigger midtrans
 			routes.POST("/create-transaction-ticket", userHandler.CreateTransactionTicket)
 		}
