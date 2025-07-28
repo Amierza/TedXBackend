@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -619,12 +620,16 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		return dto.ErrUpdateTransactionTicket
 	}
 
-	for _, form := range transaction.TicketForms {
+	for i, form := range transaction.TicketForms {
+		log.Printf("[DEBUG] Process form %d - Name: %s, Email: %s\n", i+1, form.FullName, form.Email)
+
 		qrContent := fmt.Sprintf("TICKET_FORM_ID:%s", form.ID.String())
 		qrCodeBase64, err := helpers.GenerateBase64QRCode(qrContent)
 		if err != nil {
+			log.Printf("[ERROR] Failed to generate QR code for form ID: %s - err: %v\n", form.ID.String(), err)
 			return dto.ErrGenerateQRCode
 		}
+		log.Println("[DEBUG] QR code generated successfully")
 
 		emailData := struct {
 			TicketID     string
@@ -646,15 +651,21 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			QRCode:       qrCodeBase64,
 		}
 
+		log.Println("[DEBUG] Start generating e-ticket email template...")
 		draftEmail, err := makeETicketEmail(emailData)
 		if err != nil {
+			log.Printf("[ERROR] Failed to make email template for %s - err: %v\n", form.Email, err)
 			return dto.ErrMakeETicketEmail
 		}
+		log.Println("[DEBUG] Email template generated")
 
-		fmt.Printf("Sending email to %s...\n", emailData.Email)
-		if err := utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"]); err != nil {
+		log.Printf("[DEBUG] Sending email to: %s | Subject: %s\n", emailData.Email, draftEmail["subject"])
+		err = utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"])
+		if err != nil {
+			log.Printf("[ERROR] Failed to send email to %s - err: %v\n", emailData.Email, err)
 			return dto.ErrSendEmail
 		}
+		log.Printf("[SUCCESS] Email sent to %s\n", emailData.Email)
 	}
 
 	return nil
