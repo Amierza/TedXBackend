@@ -35,6 +35,7 @@ func User(route *gin.Engine, userHandler handler.IUserHandler, jwtService servic
 		{
 			// User
 			routes.GET("/get-detail-user", userHandler.GetDetailUser)
+			routes.PATCH("/update-user/:id", userHandler.UpdateUser)
 
 			// Snap for trigger midtrans
 			routes.POST("/create-transaction-ticket", userHandler.CreateTransactionTicket)

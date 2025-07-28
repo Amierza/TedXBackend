@@ -70,6 +70,12 @@ const (
 	MESSAGE_FAILED_GET_DETAIL_BUNDLE      = "failed get detail bundle"
 	MESSAGE_FAILED_UPDATE_BUNDLE          = "failed update bundle"
 	MESSAGE_FAILED_DELETE_BUNDLE          = "failed delete bundle"
+	// Student Ambassador
+	MESSAGE_FAILED_CREATE_STUDENT_AMBASSADOR     = "failed create student ambassador"
+	MESSAGE_FAILED_GET_LIST_STUDENT_AMBASSADOR   = "failed get list student ambassador"
+	MESSAGE_FAILED_GET_DETAIL_STUDENT_AMBASSADOR = "failed get detail student ambassador"
+	MESSAGE_FAILED_UPDATE_STUDENT_AMBASSADOR     = "failed update student ambassador"
+	MESSAGE_FAILED_DELETE_STUDENT_AMBASSADOR     = "failed delete student ambassador"
 	// Transaction & Ticket Form
 	MESSAGE_FAILED_CREATE_TRANSACTION_TICKET     = "failed create transaction ticket"
 	MESSAGE_FAILED_GET_LIST_TRANSACTION_TICKET   = "failed get list transaction ticket"
@@ -117,6 +123,12 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_BUNDLE = "success get detail bundle"
 	MESSAGE_SUCCESS_UPDATE_BUNDLE     = "success update bundle"
 	MESSAGE_SUCCESS_DELETE_BUNDLE     = "success delete bundle"
+	// Student Ambassador
+	MESSAGE_SUCCESS_CREATE_STUDENT_AMBASSADOR     = "success create student ambassador"
+	MESSAGE_SUCCESS_GET_LIST_STUDENT_AMBASSADOR   = "success get list student ambassador"
+	MESSAGE_SUCCESS_GET_DETAIL_STUDENT_AMBASSADOR = "success get detail student ambassador"
+	MESSAGE_SUCCESS_UPDATE_STUDENT_AMBASSADOR     = "success update student ambassador"
+	MESSAGE_SUCCESS_DELETE_STUDENT_AMBASSADOR     = "success delete student ambassador"
 	// Transaction & Ticket Form
 	MESSAGE_SUCCESS_CREATE_TRANSACTION_TICKET     = "success create transaction ticket"
 	MESSAGE_SUCCESS_GET_LIST_TRANSACTION_TICKET   = "success get list transaction ticket"
@@ -141,24 +153,26 @@ var (
 	ErrValidateToken           = errors.New("failed to validate token")
 	ErrGetUserIDFromToken      = errors.New("failed to get user id from token")
 	// Parse
-	ErrParseUUID = errors.New("failed parse uuid")
-	ErrParseTime = errors.New("failed parse time")
+	ErrParseUUID    = errors.New("failed parse uuid")
+	ErrParseTime    = errors.New("failed parse time")
+	ErrHashPassword = errors.New("failed hash password")
 	// Input Validation
-	ErrEmptyFields                = errors.New("failed there are empty fields")
-	ErrInvalidEmail               = errors.New("failed invalid email")
-	ErrInvalidPassword            = errors.New("failed invalid password")
-	ErrInvalidPhoneNumber         = errors.New("failed invalid phone number")
-	ErrInvalidUserRole            = errors.New("failed invalid user role")
-	ErrUserNameTooShort           = errors.New("failed user name too short (min 3.)")
-	ErrUserFullNameTooShort       = errors.New("failed user name too short (min 5.)")
-	ErrPasswordTooShort           = errors.New("failed password too short (min 8.)")
-	ErrTicketNameTooShort         = errors.New("failed ticket name too short (min 3.)")
-	ErrBundleNameTooShort         = errors.New("failed bundle name too short (min 3.)")
-	ErrSponsorshipNameTooShort    = errors.New("failed sponsorship name too short (min 3.)")
-	ErrSpeakerNameTooShort        = errors.New("failed speaker name too short (min 3.)")
-	ErrSpeakerDescriptionTooShort = errors.New("failed speaker description too short (min 5.)")
-	ErrMerchNameTooShort          = errors.New("failed merch name too short (min 3.)")
-	ErrMerchDescriptionTooShort   = errors.New("failed merch description too short (min 5.)")
+	ErrEmptyFields                   = errors.New("failed there are empty fields")
+	ErrInvalidEmail                  = errors.New("failed invalid email")
+	ErrInvalidPassword               = errors.New("failed invalid password")
+	ErrInvalidPhoneNumber            = errors.New("failed invalid phone number")
+	ErrInvalidUserRole               = errors.New("failed invalid user role")
+	ErrUserNameTooShort              = errors.New("failed user name too short (min 3.)")
+	ErrUserFullNameTooShort          = errors.New("failed user name too short (min 5.)")
+	ErrPasswordTooShort              = errors.New("failed password too short (min 8.)")
+	ErrTicketNameTooShort            = errors.New("failed ticket name too short (min 3.)")
+	ErrBundleNameTooShort            = errors.New("failed bundle name too short (min 3.)")
+	ErrStudentAmbassadorNameTooShort = errors.New("failed student ambassador name too short (min 3.)")
+	ErrSponsorshipNameTooShort       = errors.New("failed sponsorship name too short (min 3.)")
+	ErrSpeakerNameTooShort           = errors.New("failed speaker name too short (min 3.)")
+	ErrSpeakerDescriptionTooShort    = errors.New("failed speaker description too short (min 5.)")
+	ErrMerchNameTooShort             = errors.New("failed merch name too short (min 3.)")
+	ErrMerchDescriptionTooShort      = errors.New("failed merch description too short (min 5.)")
 	// Email
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrEmailNotFound      = errors.New("email not found")
@@ -233,6 +247,15 @@ var (
 	ErrInvalidTicketIDInBundleMerch = errors.New("bundle type 'bundle merch' cannot contain ticket")
 	ErrDeleteBundleItemsByBundleID  = errors.New("failed delete bundle items by bundle id")
 	ErrBundleSoldOut                = errors.New("failed bundle sold out")
+	// Student Ambassador
+	ErrCreateStudentAmbassador               = errors.New("failed create student ambassador")
+	ErrGetAllStudentAmbassadorNoPagination   = errors.New("failed get all student ambassador no pagination")
+	ErrGetAllStudentAmbassadorWithPagination = errors.New("failed get all student ambassador with pagination")
+	ErrStudentAmbassadorNotFound             = errors.New("failed student ambassador not found")
+	ErrUpdateStudentAmbassador               = errors.New("failed update student ambassador")
+	ErrDeleteStudentAmbassadorByID           = errors.New("failed delete student ambassador by id")
+	ErrStudentAmbassadorAlreadyExists        = errors.New("failed student ambassador already exists")
+	ErrReferalCodeAlreadyExists              = errors.New("failed referal code already exists")
 	// Transaction & Ticket Form
 	ErrEmptyTicketForms              = errors.New("failed empty ticket forms")
 	ErrInvalidAudienceType           = errors.New("failed invalid audience type")
@@ -507,6 +530,41 @@ type (
 	}
 	DeleteBundleRequest struct {
 		BundleID string `json:"-"`
+	}
+)
+
+// Student Ambassador
+type (
+	StudentAmbassadorResponse struct {
+		ID          uuid.UUID `json:"student_ambassador_id"`
+		Name        string    `json:"student_ambassador_name"`
+		ReferalCode string    `json:"student_ambassador_referal_code"`
+		Discount    float64   `json:"student_ambassador_discount"`
+		MaxReferal  int       `json:"student_ambassador_max_referal"`
+	}
+	CreateStudentAmbassadorRequest struct {
+		Name        string  `json:"name" form:"name"`
+		ReferalCode string  `json:"referal_code" form:"referal_code"`
+		Discount    float64 `json:"discount" form:"discount"`
+		MaxReferal  int     `json:"max_referal" form:"max_referal"`
+	}
+	UpdateStudentAmbassadorRequest struct {
+		ID          string   `json:"-"`
+		Name        string   `json:"name" form:"name"`
+		ReferalCode string   `json:"referal_code" form:"referal_code"`
+		Discount    *float64 `json:"discount" form:"discount"`
+		MaxReferal  *int     `json:"max_referal" form:"max_referal"`
+	}
+	StudentAmbassadorPaginationResponse struct {
+		PaginationResponse
+		Data []StudentAmbassadorResponse `json:"data"`
+	}
+	StudentAmbassadorPaginationRepositoryResponse struct {
+		PaginationResponse
+		StudentAmbassadors []entity.StudentAmbassador
+	}
+	DeleteStudentAmbassadorRequest struct {
+		StudentAmbassadorID string `json:"-"`
 	}
 )
 

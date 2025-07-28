@@ -24,6 +24,7 @@ type (
 
 		// User
 		GetDetailUser(ctx context.Context) (dto.UserResponse, error)
+		UpdateUser(ctx context.Context, req dto.UpdateUserRequest) (dto.UserResponse, error)
 
 		// Ticket
 		GetAllTicket(ctx context.Context) ([]dto.TicketResponse, error)
@@ -116,6 +117,71 @@ func (us *UserService) GetDetailUser(ctx context.Context) (dto.UserResponse, err
 		Password:      user.Password,
 		Role:          user.Role,
 	}, nil
+}
+func (us *UserService) UpdateUser(ctx context.Context, req dto.UpdateUserRequest) (dto.UserResponse, error) {
+	token := ctx.Value("Authorization").(string)
+
+	userIDStr, err := us.jwtService.GetUserIDByToken(token)
+	if err != nil {
+		return dto.UserResponse{}, dto.ErrGetUserIDFromToken
+	}
+
+	req.ID = userIDStr
+
+	user, flag, err := us.userRepo.GetUserByID(ctx, nil, req.ID)
+	if err != nil || !flag {
+		return dto.UserResponse{}, dto.ErrUserNotFound
+	}
+
+	if req.Email != "" {
+		_, flag, err := us.userRepo.GetUserByEmail(ctx, nil, req.Email)
+		if err == nil || flag {
+			return dto.UserResponse{}, dto.ErrEmailAlreadyExists
+		}
+
+		if !helpers.IsValidEmail(req.Email) {
+			return dto.UserResponse{}, dto.ErrInvalidEmail
+		}
+
+		user.Email = req.Email
+	}
+
+	if req.Name != "" {
+		if len(req.Name) < 3 {
+			return dto.UserResponse{}, dto.ErrUserNameTooShort
+		}
+
+		user.Name = req.Name
+	}
+
+	if req.Password != "" {
+		if len(req.Password) < 8 {
+			return dto.UserResponse{}, dto.ErrPasswordTooShort
+		}
+
+		hashP, err := helpers.HashPassword(req.Password)
+		if err != nil {
+			return dto.UserResponse{}, dto.ErrHashPassword
+		}
+
+		user.Password = hashP
+	}
+
+	err = us.userRepo.UpdateUser(ctx, nil, user)
+	if err != nil {
+		return dto.UserResponse{}, dto.ErrUpdateUser
+	}
+
+	res := dto.UserResponse{
+		ID:            user.ID,
+		Name:          user.Name,
+		Email:         user.Email,
+		EmailVerified: user.EmailVerified,
+		Password:      user.Password,
+		Role:          user.Role,
+	}
+
+	return res, nil
 }
 
 // Ticket

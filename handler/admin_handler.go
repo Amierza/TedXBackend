@@ -59,6 +59,13 @@ type (
 		UpdateBundle(ctx *gin.Context)
 		DeleteBundle(ctx *gin.Context)
 
+		// Student Ambassador
+		CreateStudentAmbassador(ctx *gin.Context)
+		GetAllStudentAmbassador(ctx *gin.Context)
+		GetDetailStudentAmbassador(ctx *gin.Context)
+		UpdateStudentAmbassador(ctx *gin.Context)
+		DeleteStudentAmbassador(ctx *gin.Context)
+
 		// Transaction & Ticket Form
 		CreateTransactionTicket(ctx *gin.Context)
 		GetAllTransactionTicket(ctx *gin.Context)
@@ -1082,6 +1089,119 @@ func (ah *AdminHandler) DeleteBundle(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Student Ambassador
+func (ah *AdminHandler) CreateStudentAmbassador(ctx *gin.Context) {
+	var payload dto.CreateStudentAmbassadorRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.CreateStudentAmbassador(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_STUDENT_AMBASSADOR, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_STUDENT_AMBASSADOR, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetAllStudentAmbassador(ctx *gin.Context) {
+	paginationParam := ctx.DefaultQuery("pagination", "true")
+	usePagination := paginationParam != "false"
+
+	if !usePagination {
+		// Tanpa pagination
+		result, err := ah.adminService.GetAllStudentAmbassador(ctx)
+		if err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_STUDENT_AMBASSADOR, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_STUDENT_AMBASSADOR, result)
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
+
+	var payload dto.PaginationRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllStudentAmbassadorWithPagination(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_STUDENT_AMBASSADOR, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.Response{
+		Status:   true,
+		Messsage: dto.MESSAGE_SUCCESS_GET_LIST_STUDENT_AMBASSADOR,
+		Data:     result.Data,
+		Meta:     result.PaginationResponse,
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) GetDetailStudentAmbassador(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := ah.adminService.GetDetailStudentAmbassador(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_STUDENT_AMBASSADOR, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_STUDENT_AMBASSADOR, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) UpdateStudentAmbassador(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.UpdateStudentAmbassadorRequest
+	payload.ID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.UpdateStudentAmbassador(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_UPDATE_STUDENT_AMBASSADOR, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_UPDATE_STUDENT_AMBASSADOR, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (ah *AdminHandler) DeleteStudentAmbassador(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	var payload dto.DeleteStudentAmbassadorRequest
+	payload.StudentAmbassadorID = idStr
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.DeleteStudentAmbassador(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_DELETE_STUDENT_AMBASSADOR, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_STUDENT_AMBASSADOR, result)
 	ctx.JSON(http.StatusOK, res)
 }
 

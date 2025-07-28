@@ -69,6 +69,14 @@ type (
 		UpdateBundle(ctx context.Context, req dto.UpdateBundleRequest) (dto.BundleResponse, error)
 		DeleteBundle(ctx context.Context, req dto.DeleteBundleRequest) (dto.BundleResponse, error)
 
+		// Student Ambassador
+		CreateStudentAmbassador(ctx context.Context, req dto.CreateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error)
+		GetAllStudentAmbassador(ctx context.Context) ([]dto.StudentAmbassadorResponse, error)
+		GetAllStudentAmbassadorWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.StudentAmbassadorPaginationResponse, error)
+		GetDetailStudentAmbassador(ctx context.Context, studentAmbassadorID string) (dto.StudentAmbassadorResponse, error)
+		UpdateStudentAmbassador(ctx context.Context, req dto.UpdateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error)
+		DeleteStudentAmbassador(ctx context.Context, req dto.DeleteStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error)
+
 		// Ticket Form
 		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
 		GetAllTransactionTicket(ctx context.Context, transactionStatus, ticketCategory string) ([]dto.TransactionResponse, error)
@@ -270,7 +278,12 @@ func (as *AdminService) UpdateUser(ctx context.Context, req dto.UpdateUserReques
 			return dto.UserResponse{}, dto.ErrPasswordTooShort
 		}
 
-		user.Password = req.Password
+		hashP, err := helpers.HashPassword(req.Password)
+		if err != nil {
+			return dto.UserResponse{}, dto.ErrHashPassword
+		}
+
+		user.Password = hashP
 	}
 
 	err = as.adminRepo.UpdateUser(ctx, nil, user)
@@ -1759,6 +1772,174 @@ func (as *AdminService) DeleteBundle(ctx context.Context, req dto.DeleteBundleRe
 	}
 
 	return b, nil
+}
+
+// User
+func (as *AdminService) CreateStudentAmbassador(ctx context.Context, req dto.CreateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error) {
+	if req.Name == "" || req.ReferalCode == "" {
+		return dto.StudentAmbassadorResponse{}, dto.ErrEmptyFields
+	}
+
+	_, flag, err := as.adminRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
+	if err == nil || flag {
+		return dto.StudentAmbassadorResponse{}, dto.ErrStudentAmbassadorAlreadyExists
+	}
+
+	if len(req.Name) < 3 {
+		return dto.StudentAmbassadorResponse{}, dto.ErrStudentAmbassadorNameTooShort
+	}
+
+	studentAmbassador := entity.StudentAmbassador{
+		ID:          uuid.New(),
+		Name:        req.Name,
+		ReferalCode: req.ReferalCode,
+		Discount:    req.Discount,
+		MaxReferal:  req.MaxReferal,
+	}
+
+	err = as.adminRepo.CreateStudentAmbassador(ctx, nil, studentAmbassador)
+	if err != nil {
+		return dto.StudentAmbassadorResponse{}, dto.ErrCreateStudentAmbassador
+	}
+
+	return dto.StudentAmbassadorResponse{
+		ID:          studentAmbassador.ID,
+		Name:        studentAmbassador.Name,
+		ReferalCode: studentAmbassador.ReferalCode,
+		Discount:    studentAmbassador.Discount,
+		MaxReferal:  studentAmbassador.MaxReferal,
+	}, nil
+}
+func (as *AdminService) GetAllStudentAmbassador(ctx context.Context) ([]dto.StudentAmbassadorResponse, error) {
+	studentAmbassadors, err := as.adminRepo.GetAllStudentAmbassador(ctx, nil)
+	if err != nil {
+		return nil, dto.ErrGetAllStudentAmbassadorNoPagination
+	}
+
+	var datas []dto.StudentAmbassadorResponse
+	for _, studentAmbassador := range studentAmbassadors {
+		data := dto.StudentAmbassadorResponse{
+			ID:          studentAmbassador.ID,
+			Name:        studentAmbassador.Name,
+			ReferalCode: studentAmbassador.ReferalCode,
+			Discount:    studentAmbassador.Discount,
+			MaxReferal:  studentAmbassador.MaxReferal,
+		}
+
+		datas = append(datas, data)
+	}
+
+	return datas, nil
+}
+func (as *AdminService) GetAllStudentAmbassadorWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.StudentAmbassadorPaginationResponse, error) {
+	dataWithPaginate, err := as.adminRepo.GetAllStudentAmbassadorWithPagination(ctx, nil, req)
+	if err != nil {
+		return dto.StudentAmbassadorPaginationResponse{}, dto.ErrGetAllStudentAmbassadorWithPagination
+	}
+
+	var datas []dto.StudentAmbassadorResponse
+	for _, studentAmbassador := range dataWithPaginate.StudentAmbassadors {
+		data := dto.StudentAmbassadorResponse{
+			ID:          studentAmbassador.ID,
+			Name:        studentAmbassador.Name,
+			ReferalCode: studentAmbassador.ReferalCode,
+			Discount:    studentAmbassador.Discount,
+			MaxReferal:  studentAmbassador.MaxReferal,
+		}
+
+		datas = append(datas, data)
+	}
+
+	return dto.StudentAmbassadorPaginationResponse{
+		Data: datas,
+		PaginationResponse: dto.PaginationResponse{
+			Page:    dataWithPaginate.Page,
+			PerPage: dataWithPaginate.PerPage,
+			MaxPage: dataWithPaginate.MaxPage,
+			Count:   dataWithPaginate.Count,
+		},
+	}, nil
+}
+func (as *AdminService) GetDetailStudentAmbassador(ctx context.Context, studentAmbassadorID string) (dto.StudentAmbassadorResponse, error) {
+	studentAmbassador, _, err := as.adminRepo.GetStudentAmbassadorByID(ctx, nil, studentAmbassadorID)
+	if err != nil {
+		return dto.StudentAmbassadorResponse{}, dto.ErrStudentAmbassadorNotFound
+	}
+
+	return dto.StudentAmbassadorResponse{
+		ID:          studentAmbassador.ID,
+		Name:        studentAmbassador.Name,
+		ReferalCode: studentAmbassador.ReferalCode,
+		Discount:    studentAmbassador.Discount,
+		MaxReferal:  studentAmbassador.MaxReferal,
+	}, nil
+}
+func (as *AdminService) UpdateStudentAmbassador(ctx context.Context, req dto.UpdateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error) {
+	studentAmbassador, flag, err := as.adminRepo.GetStudentAmbassadorByID(ctx, nil, req.ID)
+	if err != nil || !flag {
+		return dto.StudentAmbassadorResponse{}, dto.ErrStudentAmbassadorNotFound
+	}
+
+	if req.Name != "" {
+		if len(req.Name) < 3 {
+			return dto.StudentAmbassadorResponse{}, dto.ErrStudentAmbassadorNameTooShort
+		}
+
+		studentAmbassador.Name = req.Name
+	}
+
+	if req.ReferalCode != "" {
+		_, flag, err := as.adminRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
+		if err == nil || flag {
+			return dto.StudentAmbassadorResponse{}, dto.ErrReferalCodeAlreadyExists
+		}
+
+		studentAmbassador.ReferalCode = req.ReferalCode
+	}
+
+	if req.Discount != nil {
+		studentAmbassador.Discount = *req.Discount
+	}
+
+	if req.MaxReferal != nil {
+		studentAmbassador.MaxReferal = *req.MaxReferal
+	}
+
+	err = as.adminRepo.UpdateStudentAmbassador(ctx, nil, studentAmbassador)
+	if err != nil {
+		return dto.StudentAmbassadorResponse{}, dto.ErrUpdateStudentAmbassador
+	}
+
+	res := dto.StudentAmbassadorResponse{
+		ID:          studentAmbassador.ID,
+		Name:        studentAmbassador.Name,
+		ReferalCode: studentAmbassador.ReferalCode,
+		Discount:    studentAmbassador.Discount,
+		MaxReferal:  studentAmbassador.MaxReferal,
+	}
+
+	return res, nil
+}
+func (as *AdminService) DeleteStudentAmbassador(ctx context.Context, req dto.DeleteStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error) {
+	deletedStudentAmbassador, _, err := as.adminRepo.GetStudentAmbassadorByID(ctx, nil, req.StudentAmbassadorID)
+	if err != nil {
+		return dto.StudentAmbassadorResponse{}, dto.ErrStudentAmbassadorNotFound
+	}
+
+	err = as.adminRepo.DeleteStudentAmbassadorByID(ctx, nil, req.StudentAmbassadorID)
+	if err != nil {
+		return dto.StudentAmbassadorResponse{}, dto.ErrDeleteStudentAmbassadorByID
+	}
+
+	res := dto.StudentAmbassadorResponse{
+		ID:          deletedStudentAmbassador.ID,
+		Name:        deletedStudentAmbassador.Name,
+		ReferalCode: deletedStudentAmbassador.ReferalCode,
+		Discount:    deletedStudentAmbassador.Discount,
+		MaxReferal:  deletedStudentAmbassador.MaxReferal,
+	}
+
+	return res, nil
 }
 
 // Transaction & Ticket Form
