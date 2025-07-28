@@ -34,6 +34,7 @@ type (
 		UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error
 		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
 		UpdateTransactionTicket(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
+		UpdateMaxReferal(ctx context.Context, tx *gorm.DB, saID string, maxReferal int) error
 
 		// DELETE / DELETE
 	}
@@ -294,6 +295,26 @@ func (ur *UserRepository) UpdateTransactionTicket(ctx context.Context, tx *gorm.
 	}
 
 	return tx.WithContext(ctx).Where("id = ?", transaction.ID).Updates(&transaction).Error
+}
+func (ur *UserRepository) UpdateMaxReferal(ctx context.Context, tx *gorm.DB, saID string, maxReferal int) error {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	result := tx.WithContext(ctx).
+		Model(&entity.StudentAmbassador{}).
+		Where("id = ?", saID).
+		Update("max_referal", maxReferal)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return errors.New("student ambassador not found or no change made")
+	}
+
+	return nil
 }
 
 // DELETE / DELETE

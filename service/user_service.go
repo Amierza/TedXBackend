@@ -367,9 +367,14 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 	var transactionResponse dto.TransactionResponse
 	err = us.userRepo.RunInTransaction(ctx, func(txRepo repository.IUserRepository) error {
 		if req.ReferalCode != "" {
-			_, found, err := txRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
+			sa, found, err := txRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
 			if err != nil || !found {
 				return dto.ErrInvalidReferalCode
+			}
+
+			err = txRepo.UpdateMaxReferal(ctx, nil, sa.ID.String(), sa.MaxReferal-1)
+			if err != nil {
+				return dto.ErrUpdateMaxReferal
 			}
 		}
 
