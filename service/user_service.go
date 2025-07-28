@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -600,6 +599,59 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		}
 		transaction.GrossAmount = grossAmount
 
+		err = us.userRepo.UpdateTransactionTicket(ctx, nil, transaction)
+		if err != nil {
+			return dto.ErrUpdateTransactionTicket
+		}
+
+		sentEmails := make(map[string]bool)
+		for _, form := range transaction.TicketForms {
+			if sentEmails[form.Email] {
+				continue
+			}
+			sentEmails[form.Email] = true
+
+			qrURL, err := helpers.GenerateQRCodeFile(form.ID.String(), form.ID.String()+".png")
+			if err != nil {
+				return dto.ErrGenerateQRCode
+			}
+
+			headerImage := fmt.Sprintf("%s/assets/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			emailData := struct {
+				HeaderImage  string
+				TicketID     string
+				Status       string
+				AttendeeName string
+				Email        string
+				AudienceType string
+				BookingDate  string
+				Price        string
+				QRCode       string
+			}{
+				HeaderImage:  headerImage,
+				TicketID:     transaction.ID.String(),
+				Status:       transaction.TransactionStatus,
+				AttendeeName: form.FullName,
+				Email:        form.Email,
+				AudienceType: string(form.AudienceType),
+				BookingDate:  transaction.CreatedAt.Format("02 Jan 2006 15:04"),
+				Price:        fmt.Sprintf("Rp %.0f", transaction.GrossAmount),
+				QRCode:       qrURL,
+			}
+
+			draftEmail, err := makeETicketEmail(emailData)
+			if err != nil {
+				return dto.ErrMakeETicketEmail
+			}
+
+			err = utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"])
+			if err != nil {
+				return dto.ErrSendEmail
+			}
+		}
+
+		return nil
+
 	case "pending":
 		transaction.TransactionStatus = "pending"
 
@@ -616,67 +668,5 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		return dto.ErrUnknownTransactionStatus
 	}
 
-	err = us.userRepo.UpdateTransactionTicket(ctx, nil, transaction)
-	if err != nil {
-		return dto.ErrUpdateTransactionTicket
-	}
-
-	sentEmails := make(map[string]bool)
-	for i, form := range transaction.TicketForms {
-		log.Printf("[DEBUG] Process form %d - Name: %s, Email: %s\n", i+1, form.FullName, form.Email)
-
-		if sentEmails[form.Email] {
-			log.Printf("[INFO] Email to %s already sent, skipping...\n", form.Email)
-			continue
-		}
-		sentEmails[form.Email] = true
-
-		qrURL, err := helpers.GenerateQRCodeFile(form.ID.String(), form.ID.String()+".png")
-		if err != nil {
-			log.Printf("[ERROR] Failed to generate QR code for form ID: %s - err: %v\n", form.ID.String(), err)
-			return dto.ErrGenerateQRCode
-		}
-		log.Println("[DEBUG] QR code generated successfully")
-
-		headerImage := fmt.Sprintf("%s/assets/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
-		emailData := struct {
-			HeaderImage  string
-			TicketID     string
-			Status       string
-			AttendeeName string
-			Email        string
-			AudienceType string
-			BookingDate  string
-			Price        string
-			QRCode       string
-		}{
-			HeaderImage:  headerImage,
-			TicketID:     transaction.ID.String(),
-			Status:       transaction.TransactionStatus,
-			AttendeeName: form.FullName,
-			Email:        form.Email,
-			AudienceType: string(form.AudienceType),
-			BookingDate:  transaction.CreatedAt.Format("02 Jan 2006 15:04"),
-			Price:        fmt.Sprintf("Rp %.0f", transaction.GrossAmount),
-			QRCode:       qrURL,
-		}
-
-		log.Println("[DEBUG] Start generating e-ticket email template...")
-		draftEmail, err := makeETicketEmail(emailData)
-		if err != nil {
-			log.Printf("[ERROR] Failed to make email template for %s - err: %v\n", form.Email, err)
-			return dto.ErrMakeETicketEmail
-		}
-		log.Println("[DEBUG] Email template generated")
-
-		log.Printf("[DEBUG] Sending email to: %s | Subject: %s\n", emailData.Email, draftEmail["subject"])
-		err = utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"])
-		if err != nil {
-			log.Printf("[ERROR] Failed to send email to %s - err: %v\n", emailData.Email, err)
-			return dto.ErrSendEmail
-		}
-		log.Printf("[SUCCESS] Email sent to %s\n", emailData.Email)
-	}
-
-	return nil
+	return us.userRepo.UpdateTransactionTicket(ctx, nil, transaction)
 }
