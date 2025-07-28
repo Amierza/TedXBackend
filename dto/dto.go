@@ -150,6 +150,9 @@ const (
 var (
 	// Middleware
 	ErrDeniedAccess = errors.New("denied access")
+	// Email
+	ErrMakeETicketEmail = errors.New("failed create e-ticket email")
+	ErrSendEmail        = errors.New("failed send email")
 	// File
 	ErrInvalidExtensionPhoto = errors.New("only jpg/jpeg/png allowed")
 	ErrCreateFile            = errors.New("failed create file")

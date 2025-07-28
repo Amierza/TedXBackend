@@ -1,8 +1,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"html/template"
+	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -12,6 +16,7 @@ import (
 	"github.com/Amierza/TedXBackend/entity"
 	"github.com/Amierza/TedXBackend/helpers"
 	"github.com/Amierza/TedXBackend/repository"
+	"github.com/Amierza/TedXBackend/utils"
 	"github.com/google/uuid"
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/snap"
@@ -536,6 +541,36 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 }
 
 // Webhook for Midtrans
+func makeETicketEmail(data struct {
+	TicketID     string
+	Status       string
+	AttendeeName string
+	Email        string
+	AudienceType string
+	BookingDate  string
+	Price        string
+}) (map[string]string, error) {
+	readHTML, err := os.ReadFile("utils/email_template/e-ticket-mail.html")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read HTML template: %w", err)
+	}
+
+	tmpl, err := template.New("eticket").Parse(string(readHTML))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HTML template: %w", err)
+	}
+
+	var strMail bytes.Buffer
+	if err := tmpl.Execute(&strMail, data); err != nil {
+		return nil, fmt.Errorf("failed to execute HTML template: %w", err)
+	}
+
+	draftEmail := map[string]string{
+		"subject": "tedxuniversitasairlangga",
+		"body":    strMail.String(),
+	}
+	return draftEmail, nil
+}
 func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.UpdateMidtransTransactionTicketRequest) error {
 	transaction, found, err := us.userRepo.GetTransactionByOrderID(ctx, nil, req.OrderID)
 	if err != nil || !found {
@@ -578,6 +613,36 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 	err = us.userRepo.UpdateTransactionTicket(ctx, nil, transaction)
 	if err != nil {
 		return dto.ErrUpdateTransactionTicket
+	}
+
+	for _, form := range transaction.TicketForms {
+		emailData := struct {
+			TicketID     string
+			Status       string
+			AttendeeName string
+			Email        string
+			AudienceType string
+			BookingDate  string
+			Price        string
+		}{
+			TicketID:     transaction.ID.String(),
+			Status:       transaction.TransactionStatus,
+			AttendeeName: form.FullName,
+			Email:        form.Email,
+			AudienceType: string(form.AudienceType),
+			BookingDate:  transaction.CreatedAt.Format("02 Jan 2006 15:04"),
+			Price:        fmt.Sprintf("Rp %.0f", transaction.GrossAmount),
+		}
+
+		draftEmail, err := makeETicketEmail(emailData)
+		if err != nil {
+			return dto.ErrMakeETicketEmail
+		}
+
+		if err := utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"]); err != nil {
+			log.Printf("gagal kirim email ke %s: %v", emailData.Email, err)
+			continue
+		}
 	}
 
 	return nil
