@@ -4,6 +4,7 @@ volumes/
 .vscode/
 assets/**
 !assets/
+!assets/header-e-ticket-mail.png
 !assets/speaker/
 !assets/speaker/.gitkeep
 !assets/sponsorship/
