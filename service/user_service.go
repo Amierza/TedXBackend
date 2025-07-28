@@ -546,6 +546,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 
 // Webhook for Midtrans
 func makeETicketEmail(data struct {
+	HeaderImage  string
 	TicketID     string
 	Status       string
 	AttendeeName string
@@ -637,7 +638,9 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		}
 		log.Println("[DEBUG] QR code generated successfully")
 
+		headerImage := fmt.Sprintf("%s/assets/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
 		emailData := struct {
+			HeaderImage  string
 			TicketID     string
 			Status       string
 			AttendeeName string
@@ -647,6 +650,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			Price        string
 			QRCode       string
 		}{
+			HeaderImage:  headerImage,
 			TicketID:     transaction.ID.String(),
 			Status:       transaction.TransactionStatus,
 			AttendeeName: form.FullName,
