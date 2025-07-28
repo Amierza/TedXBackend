@@ -33,6 +33,9 @@ type (
 		// Bundle
 		GetAllBundle(ctx *gin.Context)
 
+		// Check Referal Code
+		CheckReferalCode(ctx *gin.Context)
+
 		// Snap for trigger midtrans
 		CreateTransactionTicket(ctx *gin.Context)
 
@@ -164,6 +167,26 @@ func (uh *UserHandler) GetAllBundle(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Check Referal Code
+func (uh *UserHandler) CheckReferalCode(ctx *gin.Context) {
+	var payload dto.CheckReferalCodeRequest
+	if err := ctx.ShouldBind(&payload); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	err := uh.userService.CheckReferalCode(ctx, payload)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_INVALID_REFERAL_CODE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_VALID_REFERAL_CODE, nil)
 	ctx.JSON(http.StatusOK, res)
 }
 
