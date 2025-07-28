@@ -42,7 +42,7 @@ type (
 		GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error)
 
 		// Check Referal Code
-		CheckReferalCode(ctx context.Context, req dto.CheckReferalCodeRequest) error
+		CheckReferalCode(ctx context.Context, req dto.CheckReferalCodeRequest) (dto.StudentAmbassadorResponse, error)
 
 		// Snap for trigger midtrans
 		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
@@ -324,13 +324,21 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 }
 
 // Check Referal Code
-func (us *UserService) CheckReferalCode(ctx context.Context, req dto.CheckReferalCodeRequest) error {
-	_, found, err := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
+func (us *UserService) CheckReferalCode(ctx context.Context, req dto.CheckReferalCodeRequest) (dto.StudentAmbassadorResponse, error) {
+	sa, found, err := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
 	if err != nil || !found {
-		return dto.ErrInvalidReferalCode
+		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
 	}
 
-	return nil
+	res := dto.StudentAmbassadorResponse{
+		ID:          sa.ID,
+		Name:        sa.Name,
+		ReferalCode: sa.ReferalCode,
+		Discount:    sa.Discount,
+		MaxReferal:  sa.MaxReferal,
+	}
+
+	return res, nil
 }
 
 // Snap for trigger midtrans

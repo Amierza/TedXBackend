@@ -179,14 +179,14 @@ func (uh *UserHandler) CheckReferalCode(ctx *gin.Context) {
 		return
 	}
 
-	err := uh.userService.CheckReferalCode(ctx, payload)
+	result, err := uh.userService.CheckReferalCode(ctx, payload)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_INVALID_REFERAL_CODE, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
 
-	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_VALID_REFERAL_CODE, nil)
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_VALID_REFERAL_CODE, result)
 	ctx.JSON(http.StatusOK, res)
 }
 
