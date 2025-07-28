@@ -82,6 +82,9 @@ const (
 	MESSAGE_FAILED_GET_DETAIL_TRANSACTION_TICKET = "failed get detail transaction ticket"
 	MESSAGE_FAILED_UPDATE_TRANSACTION_TICKET     = "failed update transaction ticket"
 	MESSAGE_FAILED_DELETE_TRANSACTION_TICKET     = "failed delete transaction ticket"
+	// Check-in
+	MESSAGE_FAILED_CHECK_IN                 = "failed create check-in"
+	MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN = "failed get list ticket check-in"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -135,6 +138,9 @@ const (
 	MESSAGE_SUCCESS_GET_DETAIL_TRANSACTION_TICKET = "success get detail transaction ticket"
 	MESSAGE_SUCCESS_UPDATE_TRANSACTION_TICKET     = "success update transaction ticket"
 	MESSAGE_SUCCESS_DELETE_TRANSACTION_TICKET     = "success delete transaction ticket"
+	// Check-in
+	MESSAGE_SUCCESS_CHECK_IN                 = "success create check-in"
+	MESSAGE_SUCCESS_GET_LIST_TICKET_CHECK_IN = "success get list ticket check-in"
 )
 
 var (
@@ -276,6 +282,11 @@ var (
 	ErrTransactionNotFound           = errors.New("failed transaction not found")
 	ErrUpdateTransactionTicket       = errors.New("failed update transaction ticket")
 	ErrUnknownTransactionStatus      = errors.New("failed unknown transaction status")
+	// Check-in
+	ErrAlreadyCheckedIn                  = errors.New("failed already check in")
+	ErrCreateGuestAttendance             = errors.New("failed create guest attendance")
+	ErrGetAllTicketCheckInNoPagination   = errors.New("failed get all ticket check-in")
+	ErrGetAllTicketCheckInWithPagination = errors.New("failed get all ticket check-in with pagination")
 )
 
 // All About Image Request
@@ -565,6 +576,30 @@ type (
 	}
 	DeleteStudentAmbassadorRequest struct {
 		StudentAmbassadorID string `json:"-"`
+	}
+)
+
+// Check in
+type (
+	TicketCheckInResponse struct {
+		TicketID      uuid.UUID           `json:"ticket_id"`
+		TransactionID uuid.UUID           `json:"transaction_id"`
+		TicketName    string              `json:"ticket_name"`
+		AudienceType  entity.AudienceType `json:"audience_type"`
+		Email         string              `json:"email"`
+		FullName      string              `json:"full_name"`
+		PhoneNumber   string              `json:"phone_number"`
+		LineID        string              `json:"line_id"`
+		Status        bool                `json:"status"`
+		EmailChecker  string              `json:"email_checker"`
+	}
+	TicketFormPaginationResponse struct {
+		PaginationResponse
+		Data []TicketCheckInResponse `json:"data"`
+	}
+	TicketFormPaginationRepositoryResponse struct {
+		PaginationResponse
+		TicketForms []entity.TicketForm
 	}
 )
 

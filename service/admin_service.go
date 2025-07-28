@@ -77,6 +77,12 @@ type (
 		UpdateStudentAmbassador(ctx context.Context, req dto.UpdateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error)
 		DeleteStudentAmbassador(ctx context.Context, req dto.DeleteStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error)
 
+		// Check-in
+		GetDetailTicketCheckIn(ctx context.Context, ticketFormIDStr string) (dto.TicketCheckInResponse, error)
+		CheckIn(ctx context.Context, ticketFormIDStr string) error
+		GetAllTicketCheckIn(ctx context.Context) ([]dto.TicketCheckInResponse, error)
+		GetAllTicketCheckInWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.TicketFormPaginationResponse, error)
+
 		// Ticket Form
 		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
 		GetAllTransactionTicket(ctx context.Context, transactionStatus, ticketCategory string) ([]dto.TransactionResponse, error)
@@ -2185,4 +2191,158 @@ func (as *AdminService) GetDetailTransactionTicket(ctx context.Context, transact
 	}
 
 	return res, nil
+}
+
+// Check-in
+func (as *AdminService) GetDetailTicketCheckIn(ctx context.Context, ticketFormIDStr string) (dto.TicketCheckInResponse, error) {
+	ticketForm, found, err := as.adminRepo.GetTicketFormByID(ctx, nil, ticketFormIDStr)
+	if err != nil || !found {
+		return dto.TicketCheckInResponse{}, dto.ErrTicketFormNotFound
+	}
+
+	if ticketForm.TransactionID == nil || ticketForm.Transaction.TicketID == nil {
+		return dto.TicketCheckInResponse{}, dto.ErrTransactionNotFound
+	}
+
+	status := false
+	if len(ticketForm.GuestAttendances) != 0 {
+		status = true
+	}
+
+	var emailChecker string
+	if status {
+		token := ctx.Value("Authorization").(string)
+
+		adminIDStr, err := as.jwtService.GetUserIDByToken(token)
+		if err != nil {
+			return dto.TicketCheckInResponse{}, dto.ErrGetUserIDFromToken
+		}
+
+		admin, found, err := as.adminRepo.GetUserByID(ctx, nil, adminIDStr)
+		if err != nil || !found {
+			return dto.TicketCheckInResponse{}, dto.ErrUserNotFound
+		}
+
+		emailChecker = admin.Email
+	}
+
+	res := dto.TicketCheckInResponse{
+		TicketID:      *ticketForm.Transaction.TicketID,
+		TransactionID: *ticketForm.TransactionID,
+		TicketName:    ticketForm.Transaction.Ticket.Name,
+		AudienceType:  ticketForm.AudienceType,
+		Email:         ticketForm.Email,
+		FullName:      ticketForm.FullName,
+		PhoneNumber:   ticketForm.PhoneNumber,
+		LineID:        ticketForm.LineID,
+		Status:        status,
+		EmailChecker:  emailChecker,
+	}
+
+	return res, nil
+}
+func (as *AdminService) CheckIn(ctx context.Context, ticketFormIDStr string) error {
+	ticketForm, found, err := as.adminRepo.GetTicketFormByID(ctx, nil, ticketFormIDStr)
+	if err != nil || !found {
+		return dto.ErrTicketFormNotFound
+	}
+
+	if len(ticketForm.GuestAttendances) > 0 {
+		return dto.ErrAlreadyCheckedIn
+	}
+
+	token := ctx.Value("Authorization").(string)
+
+	adminIDStr, err := as.jwtService.GetUserIDByToken(token)
+	if err != nil {
+		return dto.ErrGetUserIDFromToken
+	}
+
+	adminID, err := uuid.Parse(adminIDStr)
+	if err != nil {
+		return dto.ErrParseUUID
+	}
+
+	guestAttendance := entity.GuestAttendance{
+		ID:           uuid.New(),
+		TicketFormID: &ticketForm.ID,
+		CheckedBy:    &adminID,
+	}
+
+	err = as.adminRepo.CreateGuestAttendance(ctx, nil, guestAttendance)
+	if err != nil {
+		return dto.ErrCreateGuestAttendance
+	}
+
+	return nil
+}
+func (as *AdminService) GetAllTicketCheckIn(ctx context.Context) ([]dto.TicketCheckInResponse, error) {
+	ticketForms, err := as.adminRepo.GetAllTicketForm(ctx, nil)
+	if err != nil {
+		return nil, dto.ErrGetAllTicketCheckInNoPagination
+	}
+
+	var datas []dto.TicketCheckInResponse
+	for _, ticketForm := range ticketForms {
+		var emailChecker string
+		if len(ticketForm.GuestAttendances) > 0 {
+			emailChecker = ticketForm.GuestAttendances[0].CheckedByUser.Email
+		}
+
+		data := dto.TicketCheckInResponse{
+			TicketID:      *ticketForm.Transaction.TicketID,
+			TransactionID: *ticketForm.TransactionID,
+			TicketName:    ticketForm.Transaction.Ticket.Name,
+			AudienceType:  ticketForm.AudienceType,
+			Email:         ticketForm.Email,
+			FullName:      ticketForm.FullName,
+			PhoneNumber:   ticketForm.PhoneNumber,
+			LineID:        ticketForm.LineID,
+			Status:        true,
+			EmailChecker:  emailChecker,
+		}
+
+		datas = append(datas, data)
+	}
+
+	return datas, nil
+}
+func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.TicketFormPaginationResponse, error) {
+	dataWithPaginate, err := as.adminRepo.GetAllTicketFormWithPagination(ctx, nil, req)
+	if err != nil {
+		return dto.TicketFormPaginationResponse{}, dto.ErrGetAllTicketCheckInWithPagination
+	}
+
+	var datas []dto.TicketCheckInResponse
+	for _, ticketForm := range dataWithPaginate.TicketForms {
+		var emailChecker string
+		if len(ticketForm.GuestAttendances) > 0 {
+			emailChecker = ticketForm.GuestAttendances[0].CheckedByUser.Email
+		}
+
+		data := dto.TicketCheckInResponse{
+			TicketID:      *ticketForm.Transaction.TicketID,
+			TransactionID: *ticketForm.TransactionID,
+			TicketName:    ticketForm.Transaction.Ticket.Name,
+			AudienceType:  ticketForm.AudienceType,
+			Email:         ticketForm.Email,
+			FullName:      ticketForm.FullName,
+			PhoneNumber:   ticketForm.PhoneNumber,
+			LineID:        ticketForm.LineID,
+			Status:        true,
+			EmailChecker:  emailChecker,
+		}
+
+		datas = append(datas, data)
+	}
+
+	return dto.TicketFormPaginationResponse{
+		Data: datas,
+		PaginationResponse: dto.PaginationResponse{
+			Page:    dataWithPaginate.Page,
+			PerPage: dataWithPaginate.PerPage,
+			MaxPage: dataWithPaginate.MaxPage,
+			Count:   dataWithPaginate.Count,
+		},
+	}, nil
 }
