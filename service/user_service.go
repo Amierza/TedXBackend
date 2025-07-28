@@ -553,7 +553,7 @@ func makeETicketEmail(data struct {
 	AudienceType string
 	BookingDate  string
 	Price        string
-	QRCode       template.HTML
+	QRCode       string
 }) (map[string]string, error) {
 	readHTML, err := os.ReadFile("utils/email_template/e-ticket-mail.html")
 	if err != nil {
@@ -630,8 +630,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		}
 		sentEmails[form.Email] = true
 
-		qrContent := fmt.Sprintf("TICKET_FORM_ID:%s", form.ID.String())
-		qrCodeBase64, err := helpers.GenerateBase64QRCode(qrContent)
+		qrURL, err := helpers.GenerateQRCodeFile(form.ID.String(), form.ID.String()+".png")
 		if err != nil {
 			log.Printf("[ERROR] Failed to generate QR code for form ID: %s - err: %v\n", form.ID.String(), err)
 			return dto.ErrGenerateQRCode
@@ -646,7 +645,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			AudienceType string
 			BookingDate  string
 			Price        string
-			QRCode       template.HTML
+			QRCode       string
 		}{
 			TicketID:     transaction.ID.String(),
 			Status:       transaction.TransactionStatus,
@@ -655,7 +654,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			AudienceType: string(form.AudienceType),
 			BookingDate:  transaction.CreatedAt.Format("02 Jan 2006 15:04"),
 			Price:        fmt.Sprintf("Rp %.0f", transaction.GrossAmount),
-			QRCode:       template.HTML(qrCodeBase64),
+			QRCode:       qrURL,
 		}
 
 		log.Println("[DEBUG] Start generating e-ticket email template...")
