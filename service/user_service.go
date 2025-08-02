@@ -201,11 +201,14 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
 		data := dto.TicketResponse{
-			ID:    ticket.ID,
-			Name:  ticket.Name,
-			Price: ticket.Price,
-			Quota: ticket.Quota,
-			Image: ticket.Image,
+			ID:          ticket.ID.String(),
+			Name:        ticket.Name,
+			Type:        ticket.Type,
+			Price:       ticket.Price,
+			Quota:       ticket.Quota,
+			Image:       ticket.Image,
+			Description: ticket.Description,
+			EventDate:   ticket.EventDate.Format("2006-01-02"),
 		}
 
 		datas = append(datas, data)
@@ -303,12 +306,14 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 	var datas []dto.BundleResponse
 	for _, bundle := range bundles {
 		data := dto.BundleResponse{
-			ID:    bundle.ID,
-			Name:  bundle.Name,
-			Image: bundle.Image,
-			Type:  bundle.Type,
-			Price: bundle.Price,
-			Quota: bundle.Quota,
+			ID:          bundle.ID,
+			Name:        bundle.Name,
+			Image:       bundle.Image,
+			Type:        bundle.Type,
+			Price:       bundle.Price,
+			Quota:       bundle.Quota,
+			Description: bundle.Description,
+			EventDate:   bundle.EventDate.Format("2006-01-02"),
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -585,7 +590,8 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 	switch req.TransactionStatus {
 	case "settlement":
 		transaction.TransactionStatus = "settlement"
-		settlementTime, err := time.Parse("2006-01-02 15:04:05", req.SettlementTime)
+		loc, _ := time.LoadLocation("Asia/Jakarta")
+		settlementTime, err := time.ParseInLocation("2006-01-02 15:04:05", req.SettlementTime, loc)
 		if err != nil {
 			return dto.ErrParseTime
 		}

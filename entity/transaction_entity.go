@@ -9,11 +9,11 @@ import (
 )
 
 type Transaction struct {
-	ID                uuid.UUID  `gorm:"type:uuid;primaryKey" json:"transaction_id"`
+	ID                uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
 	OrderID           string     `json:"order_id"`
 	ItemType          ItemType   `json:"item_type"`
 	ReferalCode       string     `json:"referal_code"`
-	TransactionStatus string     `json:"transaction_status"`
+	TransactionStatus string     `json:"status"`
 	PaymentType       string     `json:"payment_type"`
 	SignatureKey      string     `json:"signature_key"`
 	Acquire           string     `json:"acquire"`

@@ -210,6 +210,8 @@ var (
 	ErrTicketAlreadyExists        = errors.New("failed ticket already exists")
 	ErrQuotaOutOfBound            = errors.New("failed quota out of bound")
 	ErrTicketSoldOut              = errors.New("failed ticket sold out")
+	ErrInvalidTicketType          = errors.New("failed invalid ticket type")
+	ErrSameTicketType             = errors.New("failed same ticket type")
 	// Sponsorship
 	ErrCreateSponsorship               = errors.New("failed create sponsorship")
 	ErrGetAllSponsorship               = errors.New("failed get all sponsorship")
@@ -355,25 +357,35 @@ type (
 // Ticket
 type (
 	TicketResponse struct {
-		ID    uuid.UUID `json:"ticket_id"`
-		Name  string    `json:"ticket_name"`
-		Price float64   `json:"ticket_price"`
-		Image string    `json:"ticket_image"`
-		Quota int       `json:"ticket_quota"`
+		ID          string            `json:"ticket_id"`
+		Name        string            `json:"ticket_name"`
+		Type        entity.TicketType `json:"ticket_type"`
+		Price       float64           `json:"ticket_price"`
+		Image       string            `json:"ticket_image"`
+		Quota       int               `json:"ticket_quota"`
+		Description string            `json:"ticket_description"`
+		EventDate   string            `json:"ticket_event_date"`
+		IsAvailable *bool             `json:"ticket_is_available,omitempty"`
 	}
 	CreateTicketRequest struct {
-		Name  string  `json:"ticket_name" form:"ticket_name"`
-		Price float64 `json:"ticket_price" form:"ticket_price"`
-		Image string  `json:"ticket_image" form:"ticket_image"`
-		Quota int     `json:"ticket_quota" form:"ticket_quota"`
+		Name        string            `json:"ticket_name" form:"ticket_name"`
+		Type        entity.TicketType `json:"ticket_type" form:"ticket_type"`
+		Price       float64           `json:"ticket_price" form:"ticket_price"`
+		Image       string            `json:"ticket_image" form:"ticket_image"`
+		Quota       int               `json:"ticket_quota" form:"ticket_quota"`
+		Description string            `json:"ticket_description" form:"ticket_description"`
+		EventDate   string            `json:"ticket_event_date" form:"ticket_event_date"`
 		ImageUpload
 	}
 	UpdateTicketRequest struct {
-		ID    string   `json:"-"`
-		Name  string   `json:"ticket_name,omitempty" form:"ticket_name"`
-		Price *float64 `json:"ticket_price,omitempty" form:"ticket_price"`
-		Image string   `json:"ticket_image,omitempty" form:"ticket_image"`
-		Quota *int     `json:"ticket_quota,omitempty" form:"ticket_quota"`
+		ID          string            `json:"-"`
+		Name        string            `json:"ticket_name,omitempty" form:"ticket_name"`
+		Type        entity.TicketType `json:"ticket_type" form:"ticket_type"`
+		Price       *float64          `json:"ticket_price,omitempty" form:"ticket_price"`
+		Image       string            `json:"ticket_image,omitempty" form:"ticket_image"`
+		Quota       *int              `json:"ticket_quota,omitempty" form:"ticket_quota"`
+		Description string            `json:"ticket_description" form:"ticket_description"`
+		EventDate   string            `json:"ticket_event_date" form:"ticket_event_date"`
 		ImageUpload
 	}
 	TicketPaginationResponse struct {
@@ -515,6 +527,9 @@ type (
 		Type        entity.BundleType    `json:"bundle_type"`
 		Price       float64              `json:"bundle_price"`
 		Quota       int                  `json:"bundle_quota"`
+		Description string               `json:"bundle_description"`
+		EventDate   string               `json:"bundle_event_date"`
+		IsAvailable *bool                `json:"ticket_is_available,omitempty"`
 		BundleItems []BundleItemResponse `json:"bundle_items"`
 	}
 	BundleItemResponse struct {
@@ -528,6 +543,8 @@ type (
 		Type        entity.BundleType `json:"bundle_type" form:"bundle_type"`
 		Price       float64           `json:"bundle_price" form:"bundle_price"`
 		Quota       int               `json:"bundle_quota" form:"bundle_quota"`
+		Description string            `json:"bundle_description" form:"bundle_description"`
+		EventDate   string            `json:"bundle_event_date" form:"bundle_event_date"`
 		BundleItems []*uuid.UUID      `json:"bundle_items"`
 		ImageUpload
 	}
@@ -538,6 +555,8 @@ type (
 		Type        entity.BundleType `json:"bundle_type,omitempty" form:"bundle_type"`
 		Price       *float64          `json:"bundle_price,omitempty" form:"bundle_price"`
 		Quota       *int              `json:"bundle_quota,omitempty" form:"bundle_quota"`
+		Description string            `json:"bundle_description" form:"bundle_description"`
+		EventDate   string            `json:"bundle_event_date" form:"bundle_event_date"`
 		BundleItems []*uuid.UUID      `json:"bundle_items,omitempty" form:"bundle_items"`
 		ImageUpload
 	}

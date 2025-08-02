@@ -333,7 +333,7 @@ func (as *AdminService) DeleteUser(ctx context.Context, req dto.DeleteUserReques
 
 // Ticket
 func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRequest) (dto.TicketResponse, error) {
-	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil {
+	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || req.Type == "" || req.EventDate == "" {
 		return dto.TicketResponse{}, dto.ErrEmptyFields
 	}
 
@@ -344,6 +344,10 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 
 	if len(req.Name) < 3 {
 		return dto.TicketResponse{}, dto.ErrTicketNameTooShort
+	}
+
+	if !entity.IsValidTicketType(req.Type) {
+		return dto.TicketResponse{}, dto.ErrInvalidTicketType
 	}
 
 	if req.Price < 0 {
@@ -381,12 +385,21 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 	}
 	req.Image = fileName
 
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+	if err != nil {
+		return dto.TicketResponse{}, dto.ErrParseTime
+	}
+
 	ticket := entity.Ticket{
-		ID:    uuid.New(),
-		Name:  req.Name,
-		Price: req.Price,
-		Quota: req.Quota,
-		Image: req.Image,
+		ID:          uuid.New(),
+		Name:        req.Name,
+		Type:        req.Type,
+		Price:       req.Price,
+		Quota:       req.Quota,
+		Image:       req.Image,
+		Description: req.Description,
+		EventDate:   eventDate,
 	}
 
 	err = as.adminRepo.CreateTicket(ctx, nil, ticket)
@@ -395,11 +408,14 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 	}
 
 	return dto.TicketResponse{
-		ID:    ticket.ID,
-		Name:  ticket.Name,
-		Price: ticket.Price,
-		Quota: ticket.Quota,
-		Image: ticket.Image,
+		ID:          ticket.ID.String(),
+		Name:        ticket.Name,
+		Type:        ticket.Type,
+		Price:       ticket.Price,
+		Quota:       ticket.Quota,
+		Image:       ticket.Image,
+		Description: ticket.Description,
+		EventDate:   ticket.EventDate.Format("2006-01-02"),
 	}, nil
 }
 func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, error) {
@@ -411,11 +427,22 @@ func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse,
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
 		data := dto.TicketResponse{
-			ID:    ticket.ID,
-			Name:  ticket.Name,
-			Price: ticket.Price,
-			Quota: ticket.Quota,
-			Image: ticket.Image,
+			ID:          ticket.ID.String(),
+			Name:        ticket.Name,
+			Type:        ticket.Type,
+			Price:       ticket.Price,
+			Quota:       ticket.Quota,
+			Image:       ticket.Image,
+			Description: ticket.Description,
+			EventDate:   ticket.EventDate.Format("2006-01-02"),
+		}
+
+		if time.Now().Before(ticket.EventDate) {
+			available := true
+			data.IsAvailable = &available
+		} else {
+			available := false
+			data.IsAvailable = &available
 		}
 
 		datas = append(datas, data)
@@ -432,11 +459,22 @@ func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.
 	var datas []dto.TicketResponse
 	for _, ticket := range dataWithPaginate.Tickets {
 		data := dto.TicketResponse{
-			ID:    ticket.ID,
-			Name:  ticket.Name,
-			Price: ticket.Price,
-			Quota: ticket.Quota,
-			Image: ticket.Image,
+			ID:          ticket.ID.String(),
+			Name:        ticket.Name,
+			Type:        ticket.Type,
+			Price:       ticket.Price,
+			Quota:       ticket.Quota,
+			Image:       ticket.Image,
+			Description: ticket.Description,
+			EventDate:   ticket.EventDate.Format("2006-01-02"),
+		}
+
+		if time.Now().Before(ticket.EventDate) {
+			available := true
+			data.IsAvailable = &available
+		} else {
+			available := false
+			data.IsAvailable = &available
 		}
 
 		datas = append(datas, data)
@@ -459,11 +497,14 @@ func (as *AdminService) GetDetailTicket(ctx context.Context, ticketID string) (d
 	}
 
 	return dto.TicketResponse{
-		ID:    ticket.ID,
-		Name:  ticket.Name,
-		Price: ticket.Price,
-		Quota: ticket.Quota,
-		Image: ticket.Image,
+		ID:          ticket.ID.String(),
+		Name:        ticket.Name,
+		Type:        ticket.Type,
+		Price:       ticket.Price,
+		Quota:       ticket.Quota,
+		Image:       ticket.Image,
+		Description: ticket.Description,
+		EventDate:   ticket.EventDate.Format("2006-01-02"),
 	}, nil
 }
 func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRequest) (dto.TicketResponse, error) {
@@ -478,6 +519,18 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		}
 
 		ticket.Name = req.Name
+	}
+
+	if req.Type != "" {
+		if req.Type == ticket.Type {
+			return dto.TicketResponse{}, dto.ErrSameTicketType
+		}
+
+		if !entity.IsValidTicketType(req.Type) {
+			return dto.TicketResponse{}, dto.ErrInvalidTicketType
+		}
+
+		ticket.Type = req.Type
 	}
 
 	if req.Price != nil {
@@ -532,17 +585,34 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		ticket.Image = fileName
 	}
 
+	if req.Description != "" {
+		ticket.Description = req.Description
+	}
+
+	if req.EventDate != "" {
+		loc, _ := time.LoadLocation("Asia/Jakarta")
+		eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+		if err != nil {
+			return dto.TicketResponse{}, dto.ErrParseTime
+		}
+
+		ticket.EventDate = eventDate
+	}
+
 	err = as.adminRepo.UpdateTicket(ctx, nil, ticket)
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrCreateTicket
 	}
 
 	return dto.TicketResponse{
-		ID:    ticket.ID,
-		Name:  ticket.Name,
-		Price: ticket.Price,
-		Quota: ticket.Quota,
-		Image: ticket.Image,
+		ID:          ticket.ID.String(),
+		Name:        ticket.Name,
+		Type:        ticket.Type,
+		Price:       ticket.Price,
+		Quota:       ticket.Quota,
+		Image:       ticket.Image,
+		Description: ticket.Description,
+		EventDate:   ticket.EventDate.Format("2006-01-02"),
 	}, nil
 }
 func (as *AdminService) DeleteTicket(ctx context.Context, req dto.DeleteTicketRequest) (dto.TicketResponse, error) {
@@ -557,11 +627,13 @@ func (as *AdminService) DeleteTicket(ctx context.Context, req dto.DeleteTicketRe
 	}
 
 	res := dto.TicketResponse{
-		ID:    deletedTicket.ID,
-		Name:  deletedTicket.Name,
-		Price: deletedTicket.Price,
-		Quota: deletedTicket.Quota,
-		Image: deletedTicket.Image,
+		ID:        deletedTicket.ID.String(),
+		Name:      deletedTicket.Name,
+		Type:      deletedTicket.Type,
+		Price:     deletedTicket.Price,
+		Quota:     deletedTicket.Quota,
+		Image:     deletedTicket.Image,
+		EventDate: deletedTicket.EventDate.Format("2006-01-02"),
 	}
 
 	return res, nil
@@ -1376,7 +1448,7 @@ func (as *AdminService) DeleteMerch(ctx context.Context, req dto.DeleteMerchRequ
 
 // Bundle
 func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRequest) (dto.BundleResponse, error) {
-	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || len(req.BundleItems) == 0 || req.Type == "" {
+	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || len(req.BundleItems) == 0 || req.Type == "" || req.EventDate == "" {
 		return dto.BundleResponse{}, dto.ErrEmptyFields
 	}
 
@@ -1425,14 +1497,22 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		}
 	}
 
+	loc, _ := time.LoadLocation("Asia/Jakarta")
+	eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+	if err != nil {
+		return dto.BundleResponse{}, dto.ErrParseTime
+	}
+
 	bundleID := uuid.New()
 	bundle := entity.Bundle{
-		ID:    bundleID,
-		Name:  req.Name,
-		Type:  req.Type,
-		Price: req.Price,
-		Quota: req.Quota,
-		Image: fileName,
+		ID:          bundleID,
+		Name:        req.Name,
+		Type:        req.Type,
+		Price:       req.Price,
+		Quota:       req.Quota,
+		Image:       fileName,
+		Description: req.Description,
+		EventDate:   eventDate,
 	}
 
 	var bundleItems []entity.BundleItem
@@ -1444,7 +1524,7 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		})
 	}
 
-	err := as.adminRepo.RunInTransaction(ctx, func(txRepo repository.IAdminRepository) error {
+	err = as.adminRepo.RunInTransaction(ctx, func(txRepo repository.IAdminRepository) error {
 		if err := txRepo.CreateBundle(ctx, nil, bundle); err != nil {
 			return err
 		}
@@ -1483,6 +1563,8 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		Type:        bundle.Type,
 		Price:       bundle.Price,
 		Quota:       bundle.Quota,
+		Description: bundle.Description,
+		EventDate:   bundle.EventDate.Format("2006-01-02"),
 		BundleItems: itemsResp,
 	}, nil
 }
@@ -1495,12 +1577,22 @@ func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse,
 	var datas []dto.BundleResponse
 	for _, bundle := range bundles {
 		data := dto.BundleResponse{
-			ID:    bundle.ID,
-			Name:  bundle.Name,
-			Image: bundle.Image,
-			Type:  bundle.Type,
-			Price: bundle.Price,
-			Quota: bundle.Quota,
+			ID:          bundle.ID,
+			Name:        bundle.Name,
+			Image:       bundle.Image,
+			Type:        bundle.Type,
+			Price:       bundle.Price,
+			Quota:       bundle.Quota,
+			Description: bundle.Description,
+			EventDate:   bundle.EventDate.Format("2006-01-02"),
+		}
+
+		if time.Now().Before(bundle.EventDate) {
+			available := true
+			data.IsAvailable = &available
+		} else {
+			available := false
+			data.IsAvailable = &available
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -1527,12 +1619,22 @@ func (as *AdminService) GetAllBundleWithPagination(ctx context.Context, req dto.
 	var datas []dto.BundleResponse
 	for _, bundle := range dataWithPaginate.Bundles {
 		data := dto.BundleResponse{
-			ID:    bundle.ID,
-			Name:  bundle.Name,
-			Image: bundle.Image,
-			Type:  bundle.Type,
-			Price: bundle.Price,
-			Quota: bundle.Quota,
+			ID:          bundle.ID,
+			Name:        bundle.Name,
+			Image:       bundle.Image,
+			Type:        bundle.Type,
+			Price:       bundle.Price,
+			Quota:       bundle.Quota,
+			Description: bundle.Description,
+			EventDate:   bundle.EventDate.Format("2006-01-02"),
+		}
+
+		if time.Now().Before(bundle.EventDate) {
+			available := true
+			data.IsAvailable = &available
+		} else {
+			available := false
+			data.IsAvailable = &available
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -1565,12 +1667,14 @@ func (as *AdminService) GetDetailBundle(ctx context.Context, bundleID string) (d
 	}
 
 	b := dto.BundleResponse{
-		ID:    bundle.ID,
-		Name:  bundle.Name,
-		Image: bundle.Image,
-		Type:  bundle.Type,
-		Price: bundle.Price,
-		Quota: bundle.Quota,
+		ID:          bundle.ID,
+		Name:        bundle.Name,
+		Image:       bundle.Image,
+		Type:        bundle.Type,
+		Price:       bundle.Price,
+		Quota:       bundle.Quota,
+		Description: bundle.Description,
+		EventDate:   bundle.EventDate.Format("2006-01-02"),
 	}
 
 	for _, bi := range bundle.BundleItems {
@@ -1659,6 +1763,20 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 		bundle.Image = fileName
 	}
 
+	if req.Description != "" {
+		bundle.Description = req.Description
+	}
+
+	if req.EventDate != "" {
+		loc, _ := time.LoadLocation("Asia/Jakarta")
+		eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+		if err != nil {
+			return dto.BundleResponse{}, dto.ErrParseTime
+		}
+
+		bundle.EventDate = eventDate
+	}
+
 	updateItems := req.BundleItems != nil
 
 	var newItems []dto.BundleItemResponse
@@ -1736,6 +1854,8 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 		Type:        bundle.Type,
 		Price:       bundle.Price,
 		Quota:       bundle.Quota,
+		Description: bundle.Description,
+		EventDate:   bundle.EventDate.Format("2006-01-02"),
 		BundleItems: respItems,
 	}, nil
 }
@@ -1759,12 +1879,14 @@ func (as *AdminService) DeleteBundle(ctx context.Context, req dto.DeleteBundleRe
 	})
 
 	b := dto.BundleResponse{
-		ID:    deletedBundle.ID,
-		Name:  deletedBundle.Name,
-		Image: deletedBundle.Image,
-		Type:  deletedBundle.Type,
-		Price: deletedBundle.Price,
-		Quota: deletedBundle.Quota,
+		ID:          deletedBundle.ID,
+		Name:        deletedBundle.Name,
+		Image:       deletedBundle.Image,
+		Type:        deletedBundle.Type,
+		Price:       deletedBundle.Price,
+		Quota:       deletedBundle.Quota,
+		Description: deletedBundle.Description,
+		EventDate:   deletedBundle.EventDate.Format("2006-01-02"),
 	}
 
 	for _, bi := range deletedBundle.BundleItems {
@@ -1996,12 +2118,6 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			return dto.ErrCreateTransaction
 		}
 
-		transactionResponse.ID = transactionID
-		transactionResponse.OrderID = transaction.OrderID
-		transactionResponse.ItemType = transaction.ItemType
-		transactionResponse.UserID = transaction.UserID
-		transactionResponse.TicketID = transaction.TicketID
-
 		for _, form := range req.TicketForms {
 			if form.AudienceType == "" || form.Instansi == "" || form.Email == "" || form.FullName == "" || form.PhoneNumber == "" {
 				return dto.ErrEmptyFields
@@ -2056,6 +2172,12 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				PhoneNumber:  ticketForm.PhoneNumber,
 				LineID:       ticketForm.LineID,
 			})
+
+			transactionResponse.ID = transactionID
+			transactionResponse.OrderID = transaction.OrderID
+			transactionResponse.ItemType = transaction.ItemType
+			transactionResponse.UserID = transaction.UserID
+			transactionResponse.TicketID = transaction.TicketID
 		}
 
 		return nil

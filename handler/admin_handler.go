@@ -231,6 +231,7 @@ func (ah *AdminHandler) CreateTicket(ctx *gin.Context) {
 		return
 	}
 	payload.Name = ctx.PostForm("ticket_name")
+	payload.Type = entity.TicketType(ctx.PostForm("ticket_type"))
 
 	if priceStr := ctx.PostForm("ticket_price"); priceStr != "" {
 		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
@@ -265,6 +266,9 @@ func (ah *AdminHandler) CreateTicket(ctx *gin.Context) {
 		payload.ImageUpload.FileHeader = fileHeader
 		payload.ImageUpload.FileReader = file
 	}
+
+	payload.Description = ctx.PostForm("ticket_description")
+	payload.EventDate = ctx.PostForm("ticket_event_date")
 
 	result, err := ah.adminService.CreateTicket(ctx, payload)
 	if err != nil {
@@ -339,6 +343,7 @@ func (ah *AdminHandler) UpdateTicket(ctx *gin.Context) {
 		return
 	}
 	payload.Name = ctx.PostForm("ticket_name")
+	payload.Type = entity.TicketType(ctx.PostForm("ticket_type"))
 
 	if priceStr := ctx.PostForm("ticket_price"); priceStr != "" {
 		if price, err := strconv.ParseFloat(priceStr, 64); err == nil {
@@ -373,6 +378,9 @@ func (ah *AdminHandler) UpdateTicket(ctx *gin.Context) {
 		payload.ImageUpload.FileHeader = fileHeader
 		payload.ImageUpload.FileReader = file
 	}
+
+	payload.Description = ctx.PostForm("ticket_description")
+	payload.EventDate = ctx.PostForm("ticket_event_date")
 
 	result, err := ah.adminService.UpdateTicket(ctx, payload)
 	if err != nil {
@@ -945,6 +953,9 @@ func (ah *AdminHandler) CreateBundle(ctx *gin.Context) {
 		payload.ImageUpload.FileReader = file
 	}
 
+	payload.Description = ctx.PostForm("bundle_description")
+	payload.EventDate = ctx.PostForm("bundle_event_date")
+
 	result, err := ah.adminService.CreateBundle(ctx, payload)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_CREATE_BUNDLE, err.Error(), nil)
@@ -1065,6 +1076,9 @@ func (ah *AdminHandler) UpdateBundle(ctx *gin.Context) {
 		payload.ImageUpload.FileHeader = fileHeader
 		payload.ImageUpload.FileReader = file
 	}
+
+	payload.Description = ctx.PostForm("bundle_description")
+	payload.EventDate = ctx.PostForm("bundle_event_date")
 
 	result, err := ah.adminService.UpdateBundle(ctx, payload)
 	if err != nil {
