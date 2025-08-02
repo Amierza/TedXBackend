@@ -200,6 +200,8 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
+		isAvailable := ticket.Quota > 0 && time.Now().Before(ticket.EventDate)
+
 		data := dto.TicketResponse{
 			ID:          ticket.ID.String(),
 			Name:        ticket.Name,
@@ -209,14 +211,7 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 			Image:       ticket.Image,
 			Description: ticket.Description,
 			EventDate:   ticket.EventDate.Format("2006-01-02"),
-		}
-
-		if time.Now().Before(ticket.EventDate) {
-			available := true
-			data.IsAvailable = &available
-		} else {
-			available := false
-			data.IsAvailable = &available
+			IsAvailable: &isAvailable,
 		}
 
 		datas = append(datas, data)
