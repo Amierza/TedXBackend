@@ -592,7 +592,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		transaction.TransactionStatus = "settlement"
 		loc, err := time.LoadLocation("Asia/Jakarta")
 		if err != nil {
-			return dto.ErrParseTime
+			loc = time.FixedZone("UTC+7", 7*60*60)
 		}
 		settlementTime, err := time.ParseInLocation("2006-01-02 15:04:05", req.SettlementTime, loc)
 		if err != nil {
