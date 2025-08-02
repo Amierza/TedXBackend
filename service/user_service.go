@@ -590,7 +590,10 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 	switch req.TransactionStatus {
 	case "settlement":
 		transaction.TransactionStatus = "settlement"
-		loc, _ := time.LoadLocation("Asia/Jakarta")
+		loc, err := time.LoadLocation("Asia/Jakarta")
+		if err != nil {
+			return dto.ErrParseTime
+		}
 		settlementTime, err := time.ParseInLocation("2006-01-02 15:04:05", req.SettlementTime, loc)
 		if err != nil {
 			return dto.ErrParseTime
