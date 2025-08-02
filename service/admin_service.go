@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -388,8 +387,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 
 	loc, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
-		log.Println("failed to load timezone:", err)
-		return dto.TicketResponse{}, dto.ErrParseTime
+		loc = time.FixedZone("UTC+7", 7*60*60)
 	}
 
 	eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
@@ -596,7 +594,10 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 	}
 
 	if req.EventDate != "" {
-		loc, _ := time.LoadLocation("Asia/Jakarta")
+		loc, err := time.LoadLocation("Asia/Jakarta")
+		if err != nil {
+			loc = time.FixedZone("UTC+7", 7*60*60)
+		}
 		eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
 		if err != nil {
 			return dto.TicketResponse{}, dto.ErrParseTime
@@ -1503,7 +1504,10 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 		}
 	}
 
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		loc = time.FixedZone("UTC+7", 7*60*60)
+	}
 	eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
 	if err != nil {
 		return dto.BundleResponse{}, dto.ErrParseTime
@@ -1774,7 +1778,10 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 	}
 
 	if req.EventDate != "" {
-		loc, _ := time.LoadLocation("Asia/Jakarta")
+		loc, err := time.LoadLocation("Asia/Jakarta")
+		if err != nil {
+			loc = time.FixedZone("UTC+7", 7*60*60)
+		}
 		eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
 		if err != nil {
 			return dto.BundleResponse{}, dto.ErrParseTime
