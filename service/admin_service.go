@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -385,7 +386,12 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 	}
 	req.Image = fileName
 
-	loc, _ := time.LoadLocation("Asia/Jakarta")
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		log.Println("failed to load timezone:", err)
+		return dto.TicketResponse{}, dto.ErrParseTime
+	}
+
 	eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrParseTime
