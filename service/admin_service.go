@@ -1,10 +1,8 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"io"
 	"os"
 	"path/filepath"
@@ -2067,38 +2065,6 @@ func (as *AdminService) DeleteStudentAmbassador(ctx context.Context, req dto.Del
 }
 
 // Transaction & Ticket Form
-func makeETicketEmailInvited(data struct {
-	HeaderImage  string
-	TicketID     string
-	Status       string
-	AttendeeName string
-	Email        string
-	AudienceType string
-	BookingDate  string
-	Price        string
-	QRCode       string
-}) (map[string]string, error) {
-	readHTML, err := os.ReadFile("utils/email_template/e-ticket-mail.html")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read HTML template: %w", err)
-	}
-
-	tmpl, err := template.New("eticket").Parse(string(readHTML))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML template: %w", err)
-	}
-
-	var strMail bytes.Buffer
-	if err := tmpl.Execute(&strMail, data); err != nil {
-		return nil, fmt.Errorf("failed to execute HTML template: %w", err)
-	}
-
-	draftEmail := map[string]string{
-		"subject": "tedxuniversitasairlangga",
-		"body":    strMail.String(),
-	}
-	return draftEmail, nil
-}
 func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error) {
 	if len(req.TicketForms) == 0 {
 		return dto.TransactionResponse{}, dto.ErrEmptyTicketForms
