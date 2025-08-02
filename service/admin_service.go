@@ -1,8 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,6 +15,7 @@ import (
 	"github.com/Amierza/TedXBackend/entity"
 	"github.com/Amierza/TedXBackend/helpers"
 	"github.com/Amierza/TedXBackend/repository"
+	"github.com/Amierza/TedXBackend/utils"
 	"github.com/google/uuid"
 )
 
@@ -430,6 +433,8 @@ func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse,
 
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
+		isAvailable := ticket.Quota > 0 && time.Now().Before(ticket.EventDate)
+
 		data := dto.TicketResponse{
 			ID:          ticket.ID.String(),
 			Name:        ticket.Name,
@@ -439,14 +444,7 @@ func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse,
 			Image:       ticket.Image,
 			Description: ticket.Description,
 			EventDate:   ticket.EventDate.Format("2006-01-02"),
-		}
-
-		if time.Now().Before(ticket.EventDate) {
-			available := true
-			data.IsAvailable = &available
-		} else {
-			available := false
-			data.IsAvailable = &available
+			IsAvailable: &isAvailable,
 		}
 
 		datas = append(datas, data)
@@ -462,6 +460,8 @@ func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.
 
 	var datas []dto.TicketResponse
 	for _, ticket := range dataWithPaginate.Tickets {
+		isAvailable := ticket.Quota > 0 && time.Now().Before(ticket.EventDate)
+
 		data := dto.TicketResponse{
 			ID:          ticket.ID.String(),
 			Name:        ticket.Name,
@@ -471,14 +471,7 @@ func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.
 			Image:       ticket.Image,
 			Description: ticket.Description,
 			EventDate:   ticket.EventDate.Format("2006-01-02"),
-		}
-
-		if time.Now().Before(ticket.EventDate) {
-			available := true
-			data.IsAvailable = &available
-		} else {
-			available := false
-			data.IsAvailable = &available
+			IsAvailable: &isAvailable,
 		}
 
 		datas = append(datas, data)
@@ -1586,6 +1579,8 @@ func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse,
 
 	var datas []dto.BundleResponse
 	for _, bundle := range bundles {
+		isAvailable := bundle.Quota > 0 && time.Now().Before(bundle.EventDate)
+
 		data := dto.BundleResponse{
 			ID:          bundle.ID,
 			Name:        bundle.Name,
@@ -1595,14 +1590,7 @@ func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse,
 			Quota:       bundle.Quota,
 			Description: bundle.Description,
 			EventDate:   bundle.EventDate.Format("2006-01-02"),
-		}
-
-		if time.Now().Before(bundle.EventDate) {
-			available := true
-			data.IsAvailable = &available
-		} else {
-			available := false
-			data.IsAvailable = &available
+			IsAvailable: &isAvailable,
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -1628,6 +1616,8 @@ func (as *AdminService) GetAllBundleWithPagination(ctx context.Context, req dto.
 
 	var datas []dto.BundleResponse
 	for _, bundle := range dataWithPaginate.Bundles {
+		isAvailable := bundle.Quota > 0 && time.Now().Before(bundle.EventDate)
+
 		data := dto.BundleResponse{
 			ID:          bundle.ID,
 			Name:        bundle.Name,
@@ -1637,14 +1627,7 @@ func (as *AdminService) GetAllBundleWithPagination(ctx context.Context, req dto.
 			Quota:       bundle.Quota,
 			Description: bundle.Description,
 			EventDate:   bundle.EventDate.Format("2006-01-02"),
-		}
-
-		if time.Now().Before(bundle.EventDate) {
-			available := true
-			data.IsAvailable = &available
-		} else {
-			available := false
-			data.IsAvailable = &available
+			IsAvailable: &isAvailable,
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -2084,6 +2067,38 @@ func (as *AdminService) DeleteStudentAmbassador(ctx context.Context, req dto.Del
 }
 
 // Transaction & Ticket Form
+func makeETicketEmailInvited(data struct {
+	HeaderImage  string
+	TicketID     string
+	Status       string
+	AttendeeName string
+	Email        string
+	AudienceType string
+	BookingDate  string
+	Price        string
+	QRCode       string
+}) (map[string]string, error) {
+	readHTML, err := os.ReadFile("utils/email_template/e-ticket-mail.html")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read HTML template: %w", err)
+	}
+
+	tmpl, err := template.New("eticket").Parse(string(readHTML))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse HTML template: %w", err)
+	}
+
+	var strMail bytes.Buffer
+	if err := tmpl.Execute(&strMail, data); err != nil {
+		return nil, fmt.Errorf("failed to execute HTML template: %w", err)
+	}
+
+	draftEmail := map[string]string{
+		"subject": "tedxuniversitasairlangga",
+		"body":    strMail.String(),
+	}
+	return draftEmail, nil
+}
 func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error) {
 	if len(req.TicketForms) == 0 {
 		return dto.TransactionResponse{}, dto.ErrEmptyTicketForms
@@ -2174,6 +2189,44 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			}
 			if err := txRepo.CreateTicketForm(ctx, nil, ticketForm); err != nil {
 				return dto.ErrCreateTicketForm
+			}
+
+			qrURL, err := helpers.GenerateQRCodeFile(ticketForm.ID.String(), ticketForm.ID.String()+".png")
+			if err != nil {
+				return dto.ErrGenerateQRCode
+			}
+
+			headerImage := fmt.Sprintf("%s/assets/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			emailData := struct {
+				HeaderImage  string
+				TicketID     string
+				Status       string
+				AttendeeName string
+				Email        string
+				AudienceType string
+				BookingDate  string
+				Price        string
+				QRCode       string
+			}{
+				HeaderImage:  headerImage,
+				TicketID:     transaction.ID.String(),
+				Status:       "settlement",
+				AttendeeName: ticketForm.FullName,
+				Email:        ticketForm.Email,
+				AudienceType: string(ticketForm.AudienceType),
+				BookingDate:  time.Now().Format("02 Jan 2006 15:04"),
+				Price:        "Rp 0",
+				QRCode:       qrURL,
+			}
+
+			draftEmail, err := makeETicketEmail(emailData)
+			if err != nil {
+				return dto.ErrMakeETicketEmail
+			}
+
+			err = utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"])
+			if err != nil {
+				return dto.ErrSendEmail
 			}
 
 			transactionResponse.TicketForms = append(transactionResponse.TicketForms, dto.TicketFormResponse{
