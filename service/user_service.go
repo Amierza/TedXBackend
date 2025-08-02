@@ -211,6 +211,14 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 			EventDate:   ticket.EventDate.Format("2006-01-02"),
 		}
 
+		if time.Now().Before(ticket.EventDate) {
+			available := true
+			data.IsAvailable = &available
+		} else {
+			available := false
+			data.IsAvailable = &available
+		}
+
 		datas = append(datas, data)
 	}
 
