@@ -9,7 +9,7 @@ import (
 )
 
 type TicketForm struct {
-	ID           uuid.UUID    `gorm:"type:uuid;primaryKey" json:"ticket_form_id"`
+	ID           uuid.UUID    `gorm:"type:uuid;primaryKey" json:"id"`
 	AudienceType AudienceType `gorm:"default:'regular'" json:"audience_type"`
 	Instansi     Instansi     `gorm:"default:'unair'" json:"instansi"`
 	Email        string       `gorm:"unique;not null" json:"email"`

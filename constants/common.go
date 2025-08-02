@@ -26,6 +26,9 @@ const (
 	ENUM_BUNDLE_MERCH_TYPE        = "bundle merch"
 	ENUM_BUNDLE_MERCH_TICKET_TYPE = "bundle merch ticket"
 
+	ENUM_TICKET_PRE_EVENT_3 = "pre-event-3"
+	ENUM_TICKET_MAIN_EVENT  = "main-event"
+
 	ENUM_RUN_PRODUCTION = "production"
 	ENUM_RUN_TESTING    = "testing"
 

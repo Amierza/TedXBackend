@@ -5,7 +5,7 @@ import (
 )
 
 type Account struct {
-	ID                uuid.UUID `gorm:"type:uuid;primaryKey" json:"account_id"`
+	ID                uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 	Type              string    `gorm:"not null" json:"type"`
 	Provider          string    `gorm:"not null" json:"provider"`
 	ProviderAccountID string    `gorm:"not null" json:"provider_account_id"`

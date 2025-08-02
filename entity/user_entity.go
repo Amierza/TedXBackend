@@ -10,13 +10,13 @@ import (
 )
 
 type User struct {
-	ID            uuid.UUID  `gorm:"type:uuid;primaryKey" json:"user_id"`
-	Name          string     `gorm:"not null" json:"user_name"`
-	Email         string     `gorm:"unique;not null" json:"user_email"`
+	ID            uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
+	Name          string     `gorm:"not null" json:"name"`
+	Email         string     `gorm:"unique;not null" json:"email"`
 	EmailVerified *time.Time `json:"email_verified"`
-	Image         string     `json:"user_image"`
-	Password      string     `json:"user_password"`
-	Role          Role       `gorm:"not null;default:'guest'" json:"user_role"`
+	Image         string     `json:"image"`
+	Password      string     `json:"password"`
+	Role          Role       `gorm:"not null;default:'guest'" json:"role"`
 
 	GuestAttendances []GuestAttendance `gorm:"foreignKey:CheckedBy"`
 	Accounts         []Account         `gorm:"foreignKey:UserID"`

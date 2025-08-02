@@ -21,14 +21,15 @@ type (
 	Instansi            string
 	ItemType            string
 	BundleType          string
+	TicketType          string
 )
 
 const (
 	Admin Role = constants.ENUM_ROLE_ADMIN
 	Guest Role = constants.ENUM_ROLE_GUEST
 
-	Regular AudienceType = constants.ENUM_AUDIENCE_REGULAR
-	Invited AudienceType = constants.ENUM_AUDIENCE_INVITED
+	PreEvent3 TicketType = constants.ENUM_TICKET_PRE_EVENT_3
+	MainEvent TicketType = constants.ENUM_TICKET_MAIN_EVENT
 
 	Sponsor      SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_SPONSOR
 	Partner      SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_PARTNER
@@ -48,6 +49,9 @@ const (
 
 	BundleMerchType       BundleType = constants.ENUM_BUNDLE_MERCH_TYPE
 	BundleMerchTicketType BundleType = constants.ENUM_BUNDLE_MERCH_TICKET_TYPE
+
+	Regular AudienceType = constants.ENUM_AUDIENCE_REGULAR
+	Invited AudienceType = constants.ENUM_AUDIENCE_INVITED
 )
 
 func IsValidRole(r Role) bool {
@@ -68,6 +72,10 @@ func IsValidMerchCategory(mc MerchCategory) bool {
 
 func IsValidInstansi(i Instansi) bool {
 	return i == Unair || i == Umum
+}
+
+func IsValidTicketType(t TicketType) bool {
+	return t == PreEvent3 || t == MainEvent
 }
 
 func IsValidItemType(it ItemType) bool {

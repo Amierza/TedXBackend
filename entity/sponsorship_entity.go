@@ -8,10 +8,10 @@ import (
 )
 
 type Sponsorship struct {
-	ID       uuid.UUID           `gorm:"type:uuid;primaryKey" json:"sponsorship_id"`
-	Category SponsorshipCategory `gorm:"not null" json:"sponsorship_cat"`
-	Name     string              `gorm:"not null" json:"sponsorship_name"`
-	Image    string              `gorm:"not null" json:"sponsorship_image"`
+	ID       uuid.UUID           `gorm:"type:uuid;primaryKey" json:"id"`
+	Category SponsorshipCategory `gorm:"not null" json:"cat"`
+	Name     string              `gorm:"not null" json:"name"`
+	Image    string              `gorm:"not null" json:"image"`
 
 	TimeStamp
 }
