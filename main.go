@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -18,6 +19,7 @@ import (
 func main() {
 	db := database.SetUpPostgreSQLConnection()
 	defer database.ClosePostgreSQLConnection(db)
+	fmt.Println(os.Getenv("MIDTRANS_SERVER_KEY"))
 
 	midtransEnv := os.Getenv("MIDTRANS_ENV") // bisa "sandbox" atau "production"
 	midtrans.InitMidtransClient(os.Getenv("MIDTRANS_SERVER_KEY"), midtransEnv)

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -48,6 +49,7 @@ func Authentication(jwtService service.IJWTService) gin.HandlerFunc {
 
 		ctx.Set("Authorization", authHeader)
 		ctx.Set("user_id", userID)
+		fmt.Println(userID)
 		ctx.Next()
 	}
 }
