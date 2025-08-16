@@ -108,7 +108,6 @@ func (ar *AdminRepository) RunInTransaction(ctx context.Context, fn func(txRepo 
 	})
 }
 
-// tes
 // CREATE / POST
 func (ar *AdminRepository) CreateUser(ctx context.Context, tx *gorm.DB, user entity.User) error {
 	if tx == nil {
