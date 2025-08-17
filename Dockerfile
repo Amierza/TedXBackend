@@ -1,5 +1,5 @@
 # Gunakan image Go untuk build
-FROM golang:1.22 AS builder
+FROM golang:1.23.2 AS builder
 
 WORKDIR /app
 
@@ -18,8 +18,6 @@ FROM debian:bookworm-slim
 
 WORKDIR /root/
 COPY --from=builder /app/app .
-
-# Gunakan port yang sama seperti di app kamu
-EXPOSE 8000
+COPY .env .env
 
 CMD ["./app"]

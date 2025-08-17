@@ -1,9 +1,0 @@
-version: "3.9"
-
-services:
-  backend:
-    build: .
-    container_name: golang-backend
-    restart: always
-    ports:
-      - "8000:8000"  # port VPS 8000 di-mapping ke container port 8000
