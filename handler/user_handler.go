@@ -20,6 +20,7 @@ type (
 
 		// Ticket
 		GetAllTicket(ctx *gin.Context)
+		GetDetailTicket(ctx *gin.Context)
 
 		// Sponsorship
 		GetAllSponsorship(ctx *gin.Context)
@@ -115,6 +116,18 @@ func (uh *UserHandler) GetAllTicket(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_TICKET, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (uh *UserHandler) GetDetailTicket(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := uh.userService.GetDetailTicket(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_TICKET, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_TICKET, result)
 	ctx.JSON(http.StatusOK, res)
 }
 

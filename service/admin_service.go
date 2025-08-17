@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Amierza/TedXBackend/constants"
 	"github.com/Amierza/TedXBackend/dto"
 	"github.com/Amierza/TedXBackend/entity"
 	"github.com/Amierza/TedXBackend/helpers"
@@ -1675,6 +1676,13 @@ func (as *AdminService) GetDetailBundle(ctx context.Context, bundleID string) (d
 			MerchName: bi.Merch.Name,
 		}
 
+		for _, mi := range bi.Merch.MerchImages {
+			bundleItem.MerchImages = append(bundleItem.MerchImages, dto.MerchImageResponse{
+				ID:   mi.ID,
+				Name: mi.Name,
+			})
+		}
+
 		b.BundleItems = append(b.BundleItems, bundleItem)
 	}
 
@@ -2084,13 +2092,17 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 
 	var transactionResponse dto.TransactionResponse
 	err = as.adminRepo.RunInTransaction(ctx, func(txRepo repository.IAdminRepository) error {
-		if !entity.IsValidItemType(req.ItemType) || req.ItemType != "ticket" {
+		if !entity.IsValidItemType(req.ItemType) && req.ItemType != constants.ENUM_TICKET_ITEM_TYPE {
 			return dto.ErrItemTypeMustBeTicket
 		}
 
 		ticket, found, err := txRepo.GetTicketByID(ctx, nil, req.TicketID.String())
 		if err != nil || !found {
 			return dto.ErrTicketNotFound
+		}
+
+		if ticket.Type != "main-event" {
+			return dto.ErrTicketTypeMustBeMainEvent
 		}
 
 		if ticket.Quota <= 0 {
@@ -2100,12 +2112,17 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 		transactionID := uuid.New()
 		orderID := fmt.Sprintf("TEDX-%s", time.Now().Format("060102150405"))
 
+		now := time.Now()
+
 		transaction := entity.Transaction{
-			ID:       transactionID,
-			OrderID:  orderID,
-			ItemType: req.ItemType,
-			UserID:   &userID,
-			TicketID: req.TicketID,
+			ID:                transactionID,
+			OrderID:           orderID,
+			ItemType:          req.ItemType,
+			TransactionStatus: "settlement",
+			PaymentType:       "invitation",
+			SettlementTime:    &now,
+			UserID:            &userID,
+			TicketID:          req.TicketID,
 		}
 
 		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
@@ -2208,6 +2225,10 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			transactionResponse.ID = transactionID
 			transactionResponse.OrderID = transaction.OrderID
 			transactionResponse.ItemType = transaction.ItemType
+			transactionResponse.TicketType = ticket.Type
+			transactionResponse.TransactionStatus = transaction.TransactionStatus
+			transactionResponse.PaymentType = transaction.PaymentType
+			transactionResponse.SettlementTime = transaction.SettlementTime
 			transactionResponse.UserID = transaction.UserID
 			transactionResponse.TicketID = transaction.TicketID
 		}
@@ -2384,6 +2405,7 @@ func (as *AdminService) GetDetailTicketCheckIn(ctx context.Context, ticketFormID
 		TicketID:      *ticketForm.Transaction.TicketID,
 		TransactionID: *ticketForm.TransactionID,
 		TicketName:    ticketForm.Transaction.Ticket.Name,
+		TicketType:    ticketForm.Transaction.Ticket.Type,
 		AudienceType:  ticketForm.AudienceType,
 		Email:         ticketForm.Email,
 		FullName:      ticketForm.FullName,
@@ -2447,6 +2469,7 @@ func (as *AdminService) GetAllTicketCheckIn(ctx context.Context) ([]dto.TicketCh
 			TicketID:      *ticketForm.Transaction.TicketID,
 			TransactionID: *ticketForm.TransactionID,
 			TicketName:    ticketForm.Transaction.Ticket.Name,
+			TicketType:    ticketForm.Transaction.Ticket.Type,
 			AudienceType:  ticketForm.AudienceType,
 			Email:         ticketForm.Email,
 			FullName:      ticketForm.FullName,
@@ -2478,6 +2501,7 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 			TicketID:      *ticketForm.Transaction.TicketID,
 			TransactionID: *ticketForm.TransactionID,
 			TicketName:    ticketForm.Transaction.Ticket.Name,
+			TicketType:    ticketForm.Transaction.Ticket.Type,
 			AudienceType:  ticketForm.AudienceType,
 			Email:         ticketForm.Email,
 			FullName:      ticketForm.FullName,

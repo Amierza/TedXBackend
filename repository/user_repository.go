@@ -210,7 +210,7 @@ func (ur *UserRepository) GetBundleByID(ctx context.Context, tx *gorm.DB, bundle
 	}
 
 	var bundle entity.Bundle
-	if err := tx.WithContext(ctx).Preload("BundleItems.Merch").Where("id = ?", bundleID).Take(&bundle).Error; err != nil {
+	if err := tx.WithContext(ctx).Preload("BundleItems.Merch.MerchImages").Where("id = ?", bundleID).Take(&bundle).Error; err != nil {
 		return entity.Bundle{}, false, err
 	}
 
