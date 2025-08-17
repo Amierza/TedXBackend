@@ -15,6 +15,7 @@ func User(route *gin.Engine, userHandler handler.IUserHandler, jwtService servic
 
 		// Ticket
 		routes.GET("/get-all-ticket", userHandler.GetAllTicket)
+		routes.GET("/get-detail-ticket/:id", userHandler.GetDetailTicket)
 
 		// Sponsorship
 		routes.GET("/get-all-sponsorship", userHandler.GetAllSponsorship)

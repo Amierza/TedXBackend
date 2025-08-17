@@ -32,6 +32,7 @@ type (
 
 		// Ticket
 		GetAllTicket(ctx context.Context) ([]dto.TicketResponse, error)
+		GetDetailTicket(ctx context.Context, ticketID string) (dto.TicketResponse, error)
 
 		// Sponsorship
 		GetAllSponsorship(ctx context.Context) ([]dto.SponsorshipResponse, error)
@@ -218,6 +219,23 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 	}
 
 	return datas, nil
+}
+func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dto.TicketResponse, error) {
+	ticket, _, err := us.userRepo.GetTicketByID(ctx, nil, ticketID)
+	if err != nil {
+		return dto.TicketResponse{}, dto.ErrTicketNotFound
+	}
+
+	return dto.TicketResponse{
+		ID:          ticket.ID.String(),
+		Name:        ticket.Name,
+		Type:        ticket.Type,
+		Price:       ticket.Price,
+		Quota:       ticket.Quota,
+		Image:       ticket.Image,
+		Description: ticket.Description,
+		EventDate:   ticket.EventDate.Format("2006-01-02"),
+	}, nil
 }
 
 // Sponsorship
@@ -535,6 +553,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			transactionResponse.ID = transactionID
 			transactionResponse.OrderID = transaction.OrderID
 			transactionResponse.ItemType = transaction.ItemType
+			transactionResponse.TicketType = ticket.Type
 			transactionResponse.UserID = transaction.UserID
 			transactionResponse.TicketID = transaction.TicketID
 			transactionResponse.BundleID = transaction.BundleID

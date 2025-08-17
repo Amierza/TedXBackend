@@ -280,6 +280,7 @@ var (
 	ErrCreateTransaction             = errors.New("failed create transaction")
 	ErrMustBeInvitedGuest            = errors.New("failed audience must be invited guest")
 	ErrItemTypeMustBeTicket          = errors.New("failed item type must be ticket")
+	ErrTicketTypeMustBeMainEvent     = errors.New("failed ticket type must be main event")
 	ErrItemTypeMustBeTicketOrBundle  = errors.New("failed item type must be ticket or bundle")
 	ErrGetAllTransactionNoPagination = errors.New("failed get all transaction no pagination")
 	ErrTicketFormNotFound            = errors.New("failed ticket form not found")
@@ -533,9 +534,10 @@ type (
 		BundleItems []BundleItemResponse `json:"bundle_items"`
 	}
 	BundleItemResponse struct {
-		ID        uuid.UUID  `json:"bundle_item_id"`
-		MerchID   *uuid.UUID `json:"merch_id,omitempty"`
-		MerchName string     `json:"merch_name,omitempty"`
+		ID          uuid.UUID            `json:"bundle_item_id"`
+		MerchID     *uuid.UUID           `json:"merch_id,omitempty"`
+		MerchName   string               `json:"merch_name,omitempty"`
+		MerchImages []MerchImageResponse `json:"merch_images,omitempty"`
 	}
 	CreateBundleRequest struct {
 		Name        string            `json:"bundle_name" form:"bundle_name"`
@@ -614,6 +616,7 @@ type (
 		TicketID      uuid.UUID           `json:"ticket_id"`
 		TransactionID uuid.UUID           `json:"transaction_id"`
 		TicketName    string              `json:"ticket_name"`
+		TicketType    entity.TicketType   `json:"ticket_type"`
 		AudienceType  entity.AudienceType `json:"audience_type"`
 		Email         string              `json:"email"`
 		FullName      string              `json:"full_name"`
@@ -641,6 +644,7 @@ type (
 		ID                uuid.UUID            `json:"transaction_id"`
 		OrderID           string               `json:"order_id"`
 		ItemType          entity.ItemType      `json:"item_type"`
+		TicketType        entity.TicketType    `json:"ticket_type"`
 		ReferalCode       string               `json:"referal_code"`
 		TransactionStatus string               `json:"transaction_status"`
 		PaymentType       string               `json:"payment_type"`

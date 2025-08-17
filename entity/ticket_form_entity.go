@@ -12,7 +12,7 @@ type TicketForm struct {
 	ID           uuid.UUID    `gorm:"type:uuid;primaryKey" json:"id"`
 	AudienceType AudienceType `gorm:"default:'regular'" json:"audience_type"`
 	Instansi     Instansi     `gorm:"default:'unair'" json:"instansi"`
-	Email        string       `gorm:"unique;not null" json:"email"`
+	Email        string       `gorm:"not null" json:"email"`
 	FullName     string       `gorm:"not null" json:"full_name"`
 	PhoneNumber  string       `gorm:"not null" json:"phone_number"`
 	LineID       string       `json:"line_id"`

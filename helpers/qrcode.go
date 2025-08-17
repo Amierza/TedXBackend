@@ -18,7 +18,7 @@ func GenerateQRCodeFile(content string, filename string) (string, error) {
 
 	baseURL := os.Getenv("BASE_URL")
 	if baseURL == "" {
-		baseURL = "http://localhost:8080"
+		baseURL = "http://localhost:8000"
 	}
 
 	publicURL := fmt.Sprintf("%s/assets/qrcodes/%s", baseURL, filename)
