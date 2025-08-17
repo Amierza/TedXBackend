@@ -18,6 +18,6 @@ FROM debian:bookworm-slim
 
 WORKDIR /root/
 COPY --from=builder /app/app .
-COPY .env .env
+# COPY .env .env
 
 CMD ["./app"]
