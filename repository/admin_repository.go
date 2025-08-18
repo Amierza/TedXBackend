@@ -757,7 +757,7 @@ func (ar *AdminRepository) GetAllTransaction(ctx context.Context, tx *gorm.DB, t
 		err          error
 	)
 
-	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms")
+	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms").Preload("Ticket").Preload("Bundle")
 
 	if transactionStatus != "" {
 		query = query.Where("transactions.transaction_status = ?", transactionStatus)
@@ -792,7 +792,7 @@ func (ar *AdminRepository) GetAllTransactionWithPagination(ctx context.Context, 
 		req.Page = 1
 	}
 
-	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms")
+	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms").Preload("Ticket").Preload("Bundle")
 
 	if transactionStatus != "" {
 		query = query.Where("transactions.transaction_status = ?", transactionStatus)
@@ -833,7 +833,7 @@ func (ar *AdminRepository) GetTransactionByID(ctx context.Context, tx *gorm.DB, 
 	}
 
 	var transaction entity.Transaction
-	if err := tx.WithContext(ctx).Preload("TicketForms").Where("id = ?", transactionID).Take(&transaction).Error; err != nil {
+	if err := tx.WithContext(ctx).Preload("TicketForms").Preload("Ticket").Preload("Bundle").Where("id = ?", transactionID).Take(&transaction).Error; err != nil {
 		return entity.Transaction{}, false, err
 	}
 
