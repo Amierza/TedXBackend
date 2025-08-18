@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -12,7 +11,12 @@ import (
 func GenerateQRCodeFile(content string, filename string) (string, error) {
 	localPath := filepath.Join("assets", "qrcodes", filename)
 
-	err := qrcode.WriteFile(content, qrcode.Medium, 256, localPath)
+	err := os.MkdirAll(filepath.Dir(localPath), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	err = qrcode.WriteFile(content, qrcode.Medium, 256, localPath)
 	if err != nil {
 		return "", err
 	}
@@ -23,6 +27,5 @@ func GenerateQRCodeFile(content string, filename string) (string, error) {
 	}
 
 	publicURL := fmt.Sprintf("%s/assets/qrcodes/%s", baseURL, filename)
-	log.Println(publicURL)
 	return publicURL, nil
 }
