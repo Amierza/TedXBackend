@@ -1325,12 +1325,23 @@ func (ah *AdminHandler) CheckIn(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 func (ah *AdminHandler) GetAllTicketCheckIn(ctx *gin.Context) {
+	var (
+		payload dto.PaginationRequest
+		filter  dto.CheckInFilterQuery
+	)
+
 	paginationParam := ctx.DefaultQuery("pagination", "true")
 	usePagination := paginationParam != "false"
 
 	if !usePagination {
 		// Tanpa pagination
-		result, err := ah.adminService.GetAllTicketCheckIn(ctx)
+		if err := ctx.ShouldBindQuery(&filter); err != nil {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_INVALID_QUERY_PARAMS, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+
+		result, err := ah.adminService.GetAllTicketCheckIn(ctx, filter)
 		if err != nil {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -1342,14 +1353,19 @@ func (ah *AdminHandler) GetAllTicketCheckIn(ctx *gin.Context) {
 		return
 	}
 
-	var payload dto.PaginationRequest
 	if err := ctx.ShouldBind(&payload); err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
 
-	result, err := ah.adminService.GetAllTicketCheckInWithPagination(ctx, payload)
+	if err := ctx.ShouldBindQuery(&filter); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_INVALID_QUERY_PARAMS, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	result, err := ah.adminService.GetAllTicketCheckInWithPagination(ctx, payload, filter)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
