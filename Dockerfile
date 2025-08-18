@@ -18,6 +18,11 @@ FROM debian:bookworm-slim
 
 WORKDIR /root/
 COPY --from=builder /app/app .
+
+# Install CA certificates biar TLS jalan
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
 # COPY .env .env
 
 CMD ["./app"]
