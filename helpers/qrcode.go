@@ -11,7 +11,12 @@ import (
 func GenerateQRCodeFile(content string, filename string) (string, error) {
 	localPath := filepath.Join("assets", "qrcodes", filename)
 
-	err := qrcode.WriteFile(content, qrcode.Medium, 256, localPath)
+	err := os.MkdirAll(filepath.Dir(localPath), os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	err = qrcode.WriteFile(content, qrcode.Medium, 256, localPath)
 	if err != nil {
 		return "", err
 	}
