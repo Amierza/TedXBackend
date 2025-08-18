@@ -2221,17 +2221,16 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				PhoneNumber:  ticketForm.PhoneNumber,
 				LineID:       ticketForm.LineID,
 			})
-
-			transactionResponse.ID = transactionID
-			transactionResponse.OrderID = transaction.OrderID
-			transactionResponse.ItemType = transaction.ItemType
-			transactionResponse.TicketType = ticket.Type
-			transactionResponse.TransactionStatus = transaction.TransactionStatus
-			transactionResponse.PaymentType = transaction.PaymentType
-			transactionResponse.SettlementTime = transaction.SettlementTime
-			transactionResponse.UserID = transaction.UserID
-			transactionResponse.TicketID = transaction.TicketID
 		}
+		transactionResponse.ID = transactionID
+		transactionResponse.OrderID = transaction.OrderID
+		transactionResponse.ItemType = transaction.ItemType
+		transactionResponse.TicketType = ticket.Type
+		transactionResponse.TransactionStatus = transaction.TransactionStatus
+		transactionResponse.PaymentType = transaction.PaymentType
+		transactionResponse.SettlementTime = transaction.SettlementTime
+		transactionResponse.UserID = transaction.UserID
+		transactionResponse.TicketID = transaction.TicketID
 
 		return nil
 	})
@@ -2253,6 +2252,7 @@ func (as *AdminService) GetAllTransactionTicket(ctx context.Context, transaction
 			ID:                transaction.ID,
 			OrderID:           transaction.OrderID,
 			ItemType:          transaction.ItemType,
+			TicketType:        entity.TicketType(transaction.Ticket.Type),
 			ReferalCode:       transaction.ReferalCode,
 			TransactionStatus: transaction.TransactionStatus,
 			PaymentType:       transaction.PaymentType,
@@ -2294,6 +2294,7 @@ func (as *AdminService) GetAllTransactionTicketWithPagination(ctx context.Contex
 			ID:                transaction.ID,
 			OrderID:           transaction.OrderID,
 			ItemType:          transaction.ItemType,
+			TicketType:        entity.TicketType(transaction.Ticket.Type),
 			ReferalCode:       transaction.ReferalCode,
 			TransactionStatus: transaction.TransactionStatus,
 			PaymentType:       transaction.PaymentType,
@@ -2341,6 +2342,7 @@ func (as *AdminService) GetDetailTransactionTicket(ctx context.Context, transact
 		ID:                transaction.ID,
 		OrderID:           transaction.OrderID,
 		ItemType:          transaction.ItemType,
+		TicketType:        entity.TicketType(transaction.Ticket.Type),
 		ReferalCode:       transaction.ReferalCode,
 		TransactionStatus: transaction.TransactionStatus,
 		PaymentType:       transaction.PaymentType,
