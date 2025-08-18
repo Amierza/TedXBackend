@@ -2209,7 +2209,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 
 			err = utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"])
 			if err != nil {
-				return dto.ErrSendEmail
+				return fmt.Errorf("error : %s", err)
 			}
 
 			transactionResponse.TicketForms = append(transactionResponse.TicketForms, dto.TicketFormResponse{
