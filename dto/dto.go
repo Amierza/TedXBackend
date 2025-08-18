@@ -24,6 +24,8 @@ const (
 	// Authentication
 	MESSAGE_FAILED_LOGIN_ADMIN = "failed login admin"
 	MESSAGE_FAILED_LOGIN_USER  = "failed login user"
+	// Query Params
+	MESSAGE_FAILED_INVALID_QUERY_PARAMS = "failed invalid query params"
 	// Middleware
 	MESSAGE_FAILED_PROSES_REQUEST             = "failed proses request"
 	MESSAGE_FAILED_ACCESS_DENIED              = "failed access denied"
@@ -612,6 +614,11 @@ type (
 
 // Check in
 type (
+	CheckInFilterQuery struct {
+		Search     string `form:"search"`
+		TicketType string `form:"ticket_type"`
+		Status     string `form:"status"`
+	}
 	TicketCheckInResponse struct {
 		TicketID      uuid.UUID           `json:"ticket_id"`
 		TransactionID uuid.UUID           `json:"transaction_id"`

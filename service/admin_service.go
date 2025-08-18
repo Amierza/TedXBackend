@@ -79,17 +79,17 @@ type (
 		UpdateStudentAmbassador(ctx context.Context, req dto.UpdateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error)
 		DeleteStudentAmbassador(ctx context.Context, req dto.DeleteStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error)
 
-		// Check-in
-		GetDetailTicketCheckIn(ctx context.Context, ticketFormIDStr string) (dto.TicketCheckInResponse, error)
-		CheckIn(ctx context.Context, ticketFormIDStr string) error
-		GetAllTicketCheckIn(ctx context.Context) ([]dto.TicketCheckInResponse, error)
-		GetAllTicketCheckInWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.TicketFormPaginationResponse, error)
-
 		// Ticket Form
 		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
 		GetAllTransactionTicket(ctx context.Context, transactionStatus, ticketCategory string) ([]dto.TransactionResponse, error)
 		GetAllTransactionTicketWithPagination(ctx context.Context, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationResponse, error)
 		GetDetailTransactionTicket(ctx context.Context, transactionTicketID string) (dto.TransactionResponse, error)
+
+		// Check-in
+		GetDetailTicketCheckIn(ctx context.Context, ticketFormIDStr string) (dto.TicketCheckInResponse, error)
+		CheckIn(ctx context.Context, ticketFormIDStr string) error
+		GetAllTicketCheckIn(ctx context.Context, filter dto.CheckInFilterQuery) ([]dto.TicketCheckInResponse, error)
+		GetAllTicketCheckInWithPagination(ctx context.Context, req dto.PaginationRequest, filter dto.CheckInFilterQuery) (dto.TicketFormPaginationResponse, error)
 	}
 
 	AdminService struct {
@@ -2454,8 +2454,8 @@ func (as *AdminService) CheckIn(ctx context.Context, ticketFormIDStr string) err
 
 	return nil
 }
-func (as *AdminService) GetAllTicketCheckIn(ctx context.Context) ([]dto.TicketCheckInResponse, error) {
-	ticketForms, err := as.adminRepo.GetAllTicketForm(ctx, nil)
+func (as *AdminService) GetAllTicketCheckIn(ctx context.Context, filter dto.CheckInFilterQuery) ([]dto.TicketCheckInResponse, error) {
+	ticketForms, err := as.adminRepo.GetAllTicketForm(ctx, nil, filter)
 	if err != nil {
 		return nil, dto.ErrGetAllTicketCheckInNoPagination
 	}
@@ -2486,8 +2486,8 @@ func (as *AdminService) GetAllTicketCheckIn(ctx context.Context) ([]dto.TicketCh
 
 	return datas, nil
 }
-func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.TicketFormPaginationResponse, error) {
-	dataWithPaginate, err := as.adminRepo.GetAllTicketFormWithPagination(ctx, nil, req)
+func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, req dto.PaginationRequest, filter dto.CheckInFilterQuery) (dto.TicketFormPaginationResponse, error) {
+	dataWithPaginate, err := as.adminRepo.GetAllTicketFormWithPagination(ctx, nil, req, filter)
 	if err != nil {
 		return dto.TicketFormPaginationResponse{}, dto.ErrGetAllTicketCheckInWithPagination
 	}
