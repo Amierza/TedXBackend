@@ -2204,7 +2204,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 
 			draftEmail, err := makeETicketEmail(emailData)
 			if err != nil {
-				return dto.ErrMakeETicketEmail
+				return fmt.Errorf("error : %s", err)
 			}
 
 			err = utils.SendEmail(emailData.Email, draftEmail["subject"], draftEmail["body"])
