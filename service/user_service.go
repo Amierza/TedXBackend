@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -582,7 +583,10 @@ func makeETicketEmail(data struct {
 	Price        string
 	QRCode       string
 }) (map[string]string, error) {
-	readHTML, err := os.ReadFile("utils/email_template/e-ticket-mail.html")
+	exePath, _ := os.Executable()
+	basePath := filepath.Dir(exePath)
+	filePath := filepath.Join(basePath, "utils/email_template/e-ticket-mail.html")
+	readHTML, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read HTML template: %w", err)
 	}
