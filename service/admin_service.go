@@ -2404,6 +2404,7 @@ func (as *AdminService) GetDetailTicketCheckIn(ctx context.Context, ticketFormID
 	}
 
 	res := dto.TicketCheckInResponse{
+		TicketFormID:  ticketForm.ID,
 		TicketID:      *ticketForm.Transaction.TicketID,
 		TransactionID: *ticketForm.TransactionID,
 		TicketName:    ticketForm.Transaction.Ticket.Name,
@@ -2468,6 +2469,7 @@ func (as *AdminService) GetAllTicketCheckIn(ctx context.Context, filter dto.Chec
 		}
 
 		data := dto.TicketCheckInResponse{
+			TicketFormID:  ticketForm.ID,
 			TicketID:      *ticketForm.Transaction.TicketID,
 			TransactionID: *ticketForm.TransactionID,
 			TicketName:    ticketForm.Transaction.Ticket.Name,
@@ -2500,6 +2502,7 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 		}
 
 		data := dto.TicketCheckInResponse{
+			TicketFormID:  ticketForm.ID,
 			TicketID:      *ticketForm.Transaction.TicketID,
 			TransactionID: *ticketForm.TransactionID,
 			TicketName:    ticketForm.Transaction.Ticket.Name,

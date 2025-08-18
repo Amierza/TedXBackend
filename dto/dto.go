@@ -620,6 +620,7 @@ type (
 		Status     string `form:"status"`
 	}
 	TicketCheckInResponse struct {
+		TicketFormID  uuid.UUID           `json:"ticket_form_id"`
 		TicketID      uuid.UUID           `json:"ticket_id"`
 		TransactionID uuid.UUID           `json:"transaction_id"`
 		TicketName    string              `json:"ticket_name"`
