@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -22,5 +23,6 @@ func GenerateQRCodeFile(content string, filename string) (string, error) {
 	}
 
 	publicURL := fmt.Sprintf("%s/assets/qrcodes/%s", baseURL, filename)
+	log.Println(publicURL)
 	return publicURL, nil
 }
