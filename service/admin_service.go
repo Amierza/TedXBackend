@@ -2176,7 +2176,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 
 			qrURL, err := helpers.GenerateQRCodeFile(ticketForm.ID.String(), ticketForm.ID.String()+".png")
 			if err != nil {
-				return dto.ErrGenerateQRCode
+				return fmt.Errorf("error : ", err)
 			}
 
 			headerImage := fmt.Sprintf("%s/assets/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
