@@ -3,10 +3,10 @@ package service
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -17,6 +17,7 @@ import (
 	"github.com/Amierza/TedXBackend/helpers"
 	"github.com/Amierza/TedXBackend/repository"
 	"github.com/Amierza/TedXBackend/utils"
+	emailtemplate "github.com/Amierza/TedXBackend/utils/email_template"
 	"github.com/google/uuid"
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/snap"
@@ -583,15 +584,7 @@ func makeETicketEmail(data struct {
 	Price        string
 	QRCode       string
 }) (map[string]string, error) {
-	exePath, _ := os.Executable()
-	basePath := filepath.Dir(exePath)
-	filePath := filepath.Join(basePath, "utils/email_template/e-ticket-mail.html")
-	readHTML, err := os.ReadFile(filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read HTML template: %w", err)
-	}
-
-	tmpl, err := template.New("eticket").Parse(string(readHTML))
+	tmpl, err := template.New("eticket").Parse(emailtemplate.EticketHTML)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML template: %w", err)
 	}
