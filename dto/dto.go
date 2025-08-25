@@ -89,6 +89,8 @@ const (
 	// Check-in
 	MESSAGE_FAILED_CHECK_IN                 = "failed create check-in"
 	MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN = "failed get list ticket check-in"
+	// Dashboard Stats
+	MESSAGE_FAILED_GET_ALL_STATS = "failed get all stats"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -147,6 +149,8 @@ const (
 	// Check-in
 	MESSAGE_SUCCESS_CHECK_IN                 = "success create check-in"
 	MESSAGE_SUCCESS_GET_LIST_TICKET_CHECK_IN = "success get list ticket check-in"
+	// Dashboard Stats
+	MESSAGE_SUCCESS_GET_ALL_STATS = "success get all stats"
 )
 
 var (
@@ -302,6 +306,16 @@ var (
 	ErrCreateGuestAttendance             = errors.New("failed create guest attendance")
 	ErrGetAllTicketCheckInNoPagination   = errors.New("failed get all ticket check-in")
 	ErrGetAllTicketCheckInWithPagination = errors.New("failed get all ticket check-in with pagination")
+	// Dashboard Stats
+	ErrGetAllPreEvent3Stats      = errors.New("failed get all pre-event-3 stats")
+	ErrGetAllMainEventStats      = errors.New("failed get all main-event stats")
+	ErrGetTotalBundleMerch       = errors.New("failed get total bundle merch")
+	ErrGetTotalBundleMerchTicket = errors.New("failed get total bundle merch ticket")
+	ErrGetTotalAdmin             = errors.New("failed get total admin")
+	ErrGetAllGuestStats          = errors.New("failed get all guest stats")
+	ErrGetTotalSponsor           = errors.New("failed get total sponsor")
+	ErrGetTotalPartner           = errors.New("failed get total partner")
+	ErrGetTotalMediaPartner      = errors.New("failed get total media partner")
 )
 
 // All About Image Request
@@ -718,5 +732,35 @@ type (
 	TransactionTicketPaginationRepositoryResponse struct {
 		PaginationResponse
 		Transactions []entity.Transaction
+	}
+)
+
+// Dashboard Stats
+type (
+	// Ticket Type Stat Response
+	TicketTypeStatResponse struct {
+		Revenue          float64 `json:"revenue"`
+		TicketSold       int64   `json:"ticket_sold"`
+		TotalTransaction int64   `json:"total_transaction"`
+		TotalTicket      int64   `json:"total_ticket"`
+	}
+	// Guest Stat Response
+	GuestStatResponse struct {
+		Total                int64 `json:"total"`
+		TotalCheckInGuest    int64 `json:"total_check_in_guest"`
+		TotalNotCheckInGuest int64 `json:"total_not_check_in_guest"`
+		TotalInvitedGuest    int64 `json:"total_invited_guest"`
+	}
+	// Response
+	DashboardStatResponse struct {
+		PreEvent3              TicketTypeStatResponse `json:"pre-event-3"`
+		MainEvent              TicketTypeStatResponse `json:"main-event"`
+		TotalBundleMerch       int64                  `json:"total_bundle_merch"`
+		TotalBundleMerchTicket int64                  `json:"total_bundle_merch_ticket"`
+		TotalAdmin             int64                  `json:"total_admin"`
+		Guest                  GuestStatResponse      `json:"guest"`
+		Sponsor                int64                  `json:"sponsor"`
+		Partner                int64                  `json:"partner"`
+		MediaPartner           int64                  `json:"media partner"`
 	}
 )

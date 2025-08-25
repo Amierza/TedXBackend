@@ -66,6 +66,11 @@ type (
 		GetTicketFormByID(ctx context.Context, tx *gorm.DB, ticketFormID string) (entity.TicketForm, bool, error)
 		GetAllTicketForm(ctx context.Context, tx *gorm.DB, filter dto.CheckInFilterQuery) ([]entity.TicketForm, error)
 		GetAllTicketFormWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, filter dto.CheckInFilterQuery) (dto.TicketFormPaginationRepositoryResponse, error)
+		GetAllTicketStats(ctx context.Context, tx *gorm.DB, ticketType string) (*dto.TicketTypeStatResponse, error)
+		GetTotalBundle(ctx context.Context, tx *gorm.DB, bundleType string) (int64, error)
+		GetTotalAdmin(ctx context.Context, tx *gorm.DB) (int64, error)
+		GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*dto.GuestStatResponse, error)
+		GetTotalSponsor(ctx context.Context, tx *gorm.DB, sponsorType string) (int64, error)
 
 		// UPDATE / PATCH
 		UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error
@@ -1052,6 +1057,141 @@ func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, t
 			Count:   count,
 		},
 	}, nil
+}
+func (ar *AdminRepository) GetAllTicketStats(ctx context.Context, tx *gorm.DB, ticketType string) (*dto.TicketTypeStatResponse, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	stat := &dto.TicketTypeStatResponse{}
+
+	// total ticket (quota)
+	if err := tx.WithContext(ctx).
+		Model(&entity.Ticket{}).
+		Select("COALESCE(SUM(quota),0)").
+		Where("type = ?", ticketType).
+		Scan(&stat.TotalTicket).Error; err != nil {
+		return stat, err
+	}
+
+	// total transaksi sukses
+	if err := tx.WithContext(ctx).
+		Model(&entity.Transaction{}).
+		Select("COUNT(DISTINCT transactions.id)").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Joins("JOIN ticket_forms ON ticket_forms.transaction_id = transactions.id").
+		Where("tickets.type = ? AND transactions.transaction_status = ? AND ticket_forms.audience_type != ?", ticketType, "settlement", "invited").
+		Count(&stat.TotalTransaction).Error; err != nil {
+		return stat, err
+	}
+
+	// ticket sold (jumlah tiket yang berhasil dijual, = jumlah transaksi sukses)
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("tickets.type = ? AND transactions.transaction_status = ? AND ticket_forms.audience_type != ? ", ticketType, "settlement", "invited").
+		Count(&stat.TicketSold).Error; err != nil {
+		return stat, err
+	}
+
+	// total revenue
+	if err := tx.WithContext(ctx).
+		Model(&entity.Transaction{}).
+		Select("COALESCE(SUM(gross_amount),0)").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("tickets.type = ? AND transactions.transaction_status = ?", ticketType, "settlement").
+		Scan(&stat.Revenue).Error; err != nil {
+		return stat, err
+	}
+
+	return stat, nil
+}
+func (ar *AdminRepository) GetTotalBundle(ctx context.Context, tx *gorm.DB, bundleType string) (int64, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var total int64
+
+	// total bundle (quota)
+	if err := tx.WithContext(ctx).
+		Model(&entity.Bundle{}).
+		Where("type = ?", bundleType).
+		Count(&total).Error; err != nil {
+		return total, err
+	}
+
+	return total, nil
+}
+func (ar *AdminRepository) GetTotalAdmin(ctx context.Context, tx *gorm.DB) (int64, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var total int64
+
+	// total bundle (quota)
+	if err := tx.WithContext(ctx).
+		Model(&entity.User{}).
+		Where("role = ?", "admin").
+		Count(&total).Error; err != nil {
+		return total, err
+	}
+
+	return total, nil
+}
+func (ar *AdminRepository) GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*dto.GuestStatResponse, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	stat := &dto.GuestStatResponse{}
+
+	// total guest (quota)
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Count(&stat.Total).Error; err != nil {
+		return stat, err
+	}
+
+	// total check-in guest (unique guest yang sudah pernah check-in)
+	if err := tx.WithContext(ctx).
+		Model(&entity.GuestAttendance{}).
+		Select("COUNT(DISTINCT id)").
+		Scan(&stat.TotalCheckInGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// total not check-in guest
+	stat.TotalNotCheckInGuest = stat.Total - stat.TotalCheckInGuest
+
+	// total invited guest
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Where("audience_type = ?", "invited").
+		Count(&stat.TotalInvitedGuest).Error; err != nil {
+		return stat, err
+	}
+
+	return stat, nil
+}
+func (ar *AdminRepository) GetTotalSponsor(ctx context.Context, tx *gorm.DB, sponsorType string) (int64, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	var total int64
+
+	// total bundle (quota)
+	if err := tx.WithContext(ctx).
+		Model(&entity.Sponsorship{}).
+		Where("category = ?", sponsorType).
+		Count(&total).Error; err != nil {
+		return total, err
+	}
+
+	return total, nil
 }
 
 // UPDATE / PATCH

@@ -90,6 +90,9 @@ type (
 		CheckIn(ctx context.Context, ticketFormIDStr string) error
 		GetAllTicketCheckIn(ctx context.Context, filter dto.CheckInFilterQuery) ([]dto.TicketCheckInResponse, error)
 		GetAllTicketCheckInWithPagination(ctx context.Context, req dto.PaginationRequest, filter dto.CheckInFilterQuery) (dto.TicketFormPaginationResponse, error)
+
+		// Dashboard Stats
+		GetAllStats(ctx context.Context) (dto.DashboardStatResponse, error)
 	}
 
 	AdminService struct {
@@ -2167,7 +2170,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				TransactionID: &transactionID,
 			}
 
-			if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-1); err != nil {
+			if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-len(req.TicketForms)); err != nil {
 				return dto.ErrUpdateTicket
 			}
 			if err := txRepo.CreateTicketForm(ctx, nil, ticketForm); err != nil {
@@ -2528,4 +2531,68 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 			Count:   dataWithPaginate.Count,
 		},
 	}, nil
+}
+
+// Dashboard Stats
+func (as *AdminService) GetAllStats(ctx context.Context) (dto.DashboardStatResponse, error) {
+	// Ticket Type Stats
+	preEvent3, err := as.adminRepo.GetAllTicketStats(ctx, nil, "pre-event-3")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetAllPreEvent3Stats
+	}
+	mainEvent, err := as.adminRepo.GetAllTicketStats(ctx, nil, "main-event")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetAllMainEventStats
+	}
+
+	// Total Bundle Type
+	totalBundleMerch, err := as.adminRepo.GetTotalBundle(ctx, nil, "bundle merch")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetTotalBundleMerch
+	}
+	totalBundleMerchTicket, err := as.adminRepo.GetTotalBundle(ctx, nil, "bundle merch ticket")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetTotalBundleMerchTicket
+	}
+
+	// Total Admin
+	totalAdmin, err := as.adminRepo.GetTotalAdmin(ctx, nil)
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetTotalAdmin
+	}
+
+	// Guest Stats
+	guest, err := as.adminRepo.GetAllGuestStats(ctx, nil)
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetAllGuestStats
+	}
+
+	// Sponsor Stats
+	sponsor, err := as.adminRepo.GetTotalSponsor(ctx, nil, "sponsor")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetTotalSponsor
+	}
+	partner, err := as.adminRepo.GetTotalSponsor(ctx, nil, "partner")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetTotalPartner
+	}
+	mediaPartner, err := as.adminRepo.GetTotalSponsor(ctx, nil, "media partner")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetTotalMediaPartner
+	}
+
+	// Response
+	res := dto.DashboardStatResponse{
+		PreEvent3:              *preEvent3,
+		MainEvent:              *mainEvent,
+		TotalBundleMerch:       totalBundleMerch,
+		TotalBundleMerchTicket: totalBundleMerchTicket,
+		TotalAdmin:             totalAdmin,
+		Guest:                  *guest,
+		Sponsor:                sponsor,
+		Partner:                partner,
+		MediaPartner:           mediaPartner,
+	}
+
+	return res, nil
 }

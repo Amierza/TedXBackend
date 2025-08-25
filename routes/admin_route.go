@@ -73,6 +73,9 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 			routes.GET("/get-detail-ticket-check-in/:ticket-form-id", adminHandler.GetDetailTicketCheckIn)
 			routes.POST("/check-in/:ticket-form-id", adminHandler.CheckIn)
 			routes.GET("/get-all-ticket-check-in", adminHandler.GetAllTicketCheckIn)
+
+			// Dashboard Stats
+			routes.GET("/get-all-stats", adminHandler.GetAllStats)
 		}
 	}
 }
