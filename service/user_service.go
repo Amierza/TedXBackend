@@ -509,13 +509,13 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			}
 
 			if req.BundleID != nil && *req.BundleID != uuid.Nil {
-				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.Quota-1); err != nil {
+				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.Quota-len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateBundleQuota
 				}
 			}
 
 			if req.TicketID != nil && *req.TicketID != uuid.Nil {
-				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-1); err != nil {
+				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateTicketQuota
 				}
 			}

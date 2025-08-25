@@ -75,6 +75,9 @@ type (
 		GetDetailTicketCheckIn(ctx *gin.Context)
 		CheckIn(ctx *gin.Context)
 		GetAllTicketCheckIn(ctx *gin.Context)
+
+		// Dashboard Stats
+		GetAllStats(ctx *gin.Context)
 	}
 
 	AdminHandler struct {
@@ -1379,5 +1382,18 @@ func (ah *AdminHandler) GetAllTicketCheckIn(ctx *gin.Context) {
 		Meta:     result.PaginationResponse,
 	}
 
+	ctx.JSON(http.StatusOK, res)
+}
+
+// Dashboard Stats
+func (ah *AdminHandler) GetAllStats(ctx *gin.Context) {
+	result, err := ah.adminService.GetAllStats(ctx)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_ALL_STATS, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_ALL_STATS, result)
 	ctx.JSON(http.StatusOK, res)
 }
