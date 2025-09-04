@@ -1005,7 +1005,7 @@ func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, t
 
 	query := tx.WithContext(ctx).
 		Model(&entity.TicketForm{}).
-		Joins("JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Joins("LEFT JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
 		Preload("GuestAttendances.CheckedByUser").
 		Preload("Transaction.Ticket")
 
