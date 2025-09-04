@@ -2498,10 +2498,15 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 	}
 
 	var datas []dto.TicketCheckInResponse
+	status := false
 	for _, ticketForm := range dataWithPaginate.TicketForms {
 		var emailChecker string
 		if len(ticketForm.GuestAttendances) > 0 {
 			emailChecker = ticketForm.GuestAttendances[0].CheckedByUser.Email
+		}
+
+		if emailChecker != "" {
+			status = true
 		}
 
 		data := dto.TicketCheckInResponse{
@@ -2515,7 +2520,7 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 			FullName:      ticketForm.FullName,
 			PhoneNumber:   ticketForm.PhoneNumber,
 			LineID:        ticketForm.LineID,
-			Status:        true,
+			Status:        status,
 			EmailChecker:  emailChecker,
 		}
 
