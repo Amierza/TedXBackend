@@ -3,7 +3,7 @@ version: "3.9"
 services:
   backend:
     build: .
-    container_name: golang-backend
+    container_name: golang-backend-dev
     restart: always
     ports:
       - "8010:8010"
