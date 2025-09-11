@@ -2104,9 +2104,9 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			return dto.ErrTicketNotFound
 		}
 
-		if ticket.Type != "main-event" {
-			return dto.ErrTicketTypeMustBeMainEvent
-		}
+		// if ticket.Type != "main-event" {
+		// 	return dto.ErrTicketTypeMustBeMainEvent
+		// }
 
 		if ticket.Quota <= 0 {
 			return dto.ErrTicketSoldOut
