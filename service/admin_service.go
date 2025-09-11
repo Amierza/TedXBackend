@@ -2182,7 +2182,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				return dto.ErrGenerateQRCode
 			}
 
-			headerImage := fmt.Sprintf("%s/assets/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
 			emailData := struct {
 				HeaderImage  string
 				TicketID     string
