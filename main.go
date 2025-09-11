@@ -46,7 +46,6 @@ func main() {
 	routes.Admin(server, adminHandler, jwtService)
 
 	server.Static("/assets", "./assets")
-	server.Static("/assets_static", "./assets_static")
 
 	port := os.Getenv("PORT")
 	if port == "" {
