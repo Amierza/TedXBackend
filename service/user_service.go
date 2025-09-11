@@ -319,7 +319,7 @@ func (us *UserService) GetAllMerch(ctx context.Context) ([]dto.MerchResponse, er
 
 // Bundle
 func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error) {
-	bundleType := "bundle merch ticket"
+	bundleType := ""
 
 	bundles, err := us.userRepo.GetAllBundle(ctx, nil, bundleType)
 	if err != nil {
@@ -644,7 +644,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 				return dto.ErrGenerateQRCode
 			}
 
-			headerImage := fmt.Sprintf("%s/assets/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
 			emailData := struct {
 				HeaderImage  string
 				TicketID     string
