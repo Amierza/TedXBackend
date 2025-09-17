@@ -435,6 +435,7 @@ func (ah *AdminHandler) CreateSponsorship(ctx *gin.Context) {
 
 	payload.Category = ctx.PostForm("sponsorship_cat")
 	payload.Name = ctx.PostForm("sponsorship_name")
+	payload.Size = ctx.PostForm("sponsorship_size")
 
 	result, err := ah.adminService.CreateSponsorship(ctx, payload)
 	if err != nil {
