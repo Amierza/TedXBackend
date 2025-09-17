@@ -22,6 +22,7 @@ type (
 	ItemType            string
 	BundleType          string
 	TicketType          string
+	SponsorshipSize     string
 )
 
 const (
@@ -34,6 +35,11 @@ const (
 	Sponsor      SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_SPONSOR
 	Partner      SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_PARTNER
 	MediaPartner SponsorshipCategory = constants.ENUM_SPONSORSHIP_CATEGORY_MEDIA_PARTNER
+
+	ExtraLarge SponsorshipSize = constants.ENUM_SPONSORSHIP_SIZE_EXTRA_LARGE
+	Large      SponsorshipSize = constants.ENUM_SPONSORSHIP_SIZE_LARGE
+	Medium     SponsorshipSize = constants.ENUM_SPONSORSHIP_SIZE_MEDIUM
+	Small      SponsorshipSize = constants.ENUM_SPONSORSHIP_SIZE_SMALL
 
 	TShirt  MerchCategory = constants.ENUM_MERCH_CATEGORY_TSHIRT
 	Cap     MerchCategory = constants.ENUM_MERCH_CATEGORY_CAP
@@ -64,6 +70,10 @@ func IsValidAudienceType(at AudienceType) bool {
 
 func IsValidSponsorshipCategory(sc SponsorshipCategory) bool {
 	return sc == Sponsor || sc == Partner || sc == MediaPartner
+}
+
+func IsValidSponsorshipSize(ss SponsorshipSize) bool {
+	return ss == ExtraLarge || ss == Large || ss == Medium || ss == Small
 }
 
 func IsValidMerchCategory(mc MerchCategory) bool {
