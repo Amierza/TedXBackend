@@ -227,6 +227,7 @@ var (
 	ErrDeleteSponsorshipByID           = errors.New("failed delete sponsorship by id")
 	ErrSponsorshipAlreadyExists        = errors.New("failed sponsorship already exists")
 	ErrInvalidSponsorshipCategory      = errors.New("failed invalid sponsorship category")
+	ErrInvalidSponsorshipSize          = errors.New("failed invalid sponsorship size")
 	// Speaker
 	ErrCreateSpeaker               = errors.New("failed create speaker")
 	ErrGetAllSpeakerNoPagination   = errors.New("failed get all speaker no pagination")
@@ -425,11 +426,13 @@ type (
 		Category string    `json:"sponsorship_cat"`
 		Name     string    `json:"sponsorship_name"`
 		Image    string    `json:"sponsorship_image"`
+		Size     string    `json:"sponsorship_size"`
 	}
 	CreateSponsorshipRequest struct {
 		Category   string                `json:"sponsorship_cat" form:"sponsorship_cat"`
 		Name       string                `json:"sponsorship_name" form:"sponsorship_name"`
 		Image      string                `json:"sponsorship_image" form:"sponsorship_image"`
+		Size       string                `json:"sponsorship_size" form:"sponsorship_size"`
 		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
 		FileReader multipart.File        `json:"filereader,omitempty"`
 	}
@@ -446,6 +449,7 @@ type (
 		Category   string                `json:"sponsorship_cat,omitempty"`
 		Name       string                `json:"sponsorship_name,omitempty"`
 		Image      string                `json:"sponsorship_image,omitempty"`
+		Size       string                `json:"sponsorship_size,omitempty"`
 		FileHeader *multipart.FileHeader `json:"fileheader,omitempty"`
 		FileReader multipart.File        `json:"filereader,omitempty"`
 	}

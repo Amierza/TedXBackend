@@ -254,6 +254,7 @@ func (us *UserService) GetAllSponsorship(ctx context.Context) ([]dto.Sponsorship
 			Category: string(sponsorship.Category),
 			Name:     sponsorship.Name,
 			Image:    sponsorship.Image,
+			Size:     string(sponsorship.Size),
 		}
 
 		datas = append(datas, data)
