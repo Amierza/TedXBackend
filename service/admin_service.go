@@ -643,7 +643,7 @@ func (as *AdminService) DeleteTicket(ctx context.Context, req dto.DeleteTicketRe
 
 // Sponsorship
 func (as *AdminService) CreateSponsorship(ctx context.Context, req dto.CreateSponsorshipRequest) (dto.SponsorshipResponse, error) {
-	if req.FileHeader == nil || req.FileReader == nil || req.Category == "" || req.Name == "" {
+	if req.FileHeader == nil || req.FileReader == nil || req.Category == "" || req.Name == "" || req.Size == "" {
 		return dto.SponsorshipResponse{}, dto.ErrEmptyFields
 	}
 
@@ -655,6 +655,11 @@ func (as *AdminService) CreateSponsorship(ctx context.Context, req dto.CreateSpo
 	sponCat := entity.SponsorshipCategory(req.Category)
 	if !entity.IsValidSponsorshipCategory(sponCat) {
 		return dto.SponsorshipResponse{}, dto.ErrInvalidSponsorshipCategory
+	}
+
+	sponSize := entity.SponsorshipSize(req.Size)
+	if !entity.IsValidSponsorshipSize(sponSize) {
+		return dto.SponsorshipResponse{}, dto.ErrInvalidSponsorshipSize
 	}
 
 	if len(req.Name) < 3 {
@@ -693,6 +698,7 @@ func (as *AdminService) CreateSponsorship(ctx context.Context, req dto.CreateSpo
 		Category: sponCat,
 		Name:     req.Name,
 		Image:    req.Image,
+		Size:     sponSize,
 	}
 
 	err = as.adminRepo.CreateSponsorship(ctx, nil, spon)
@@ -705,6 +711,7 @@ func (as *AdminService) CreateSponsorship(ctx context.Context, req dto.CreateSpo
 		Category: string(spon.Category),
 		Name:     spon.Name,
 		Image:    req.Image,
+		Size:     string(spon.Size),
 	}, nil
 }
 func (as *AdminService) GetAllSponsorship(ctx context.Context) ([]dto.SponsorshipResponse, error) {
@@ -720,6 +727,7 @@ func (as *AdminService) GetAllSponsorship(ctx context.Context) ([]dto.Sponsorshi
 			Category: string(sponsorship.Category),
 			Name:     sponsorship.Name,
 			Image:    sponsorship.Image,
+			Size:     string(sponsorship.Size),
 		}
 
 		datas = append(datas, data)
@@ -740,6 +748,7 @@ func (as *AdminService) GetAllSponsorshipWithPagination(ctx context.Context, req
 			Category: string(sponsorship.Category),
 			Name:     sponsorship.Name,
 			Image:    sponsorship.Image,
+			Size:     string(sponsorship.Size),
 		}
 
 		datas = append(datas, data)
@@ -766,6 +775,7 @@ func (as *AdminService) GetDetailSponsorship(ctx context.Context, sponsorshipID 
 		Category: string(sponsorship.Category),
 		Name:     sponsorship.Name,
 		Image:    sponsorship.Image,
+		Size:     string(sponsorship.Size),
 	}, nil
 }
 func (as *AdminService) UpdateSponsorship(ctx context.Context, req dto.UpdateSponsorshipRequest) (dto.SponsorshipResponse, error) {
@@ -789,6 +799,15 @@ func (as *AdminService) UpdateSponsorship(ctx context.Context, req dto.UpdateSpo
 		}
 
 		sponsorship.Category = sponCat
+	}
+
+	if req.Size != "" {
+		sponSize := entity.SponsorshipSize(req.Size)
+		if !entity.IsValidSponsorshipSize(sponSize) {
+			return dto.SponsorshipResponse{}, dto.ErrInvalidSponsorshipSize
+		}
+
+		sponsorship.Size = sponSize
 	}
 
 	if req.FileHeader != nil || req.FileReader != nil {
@@ -837,6 +856,7 @@ func (as *AdminService) UpdateSponsorship(ctx context.Context, req dto.UpdateSpo
 		Category: string(sponsorship.Category),
 		Name:     sponsorship.Name,
 		Image:    sponsorship.Image,
+		Size:     string(sponsorship.Size),
 	}
 
 	return res, nil
@@ -857,6 +877,7 @@ func (as *AdminService) DeleteSponsorship(ctx context.Context, req dto.DeleteSpo
 		Category: string(deletedSponsorship.Category),
 		Name:     deletedSponsorship.Name,
 		Image:    deletedSponsorship.Image,
+		Size:     string(deletedSponsorship.Size),
 	}
 
 	return res, nil
@@ -2104,9 +2125,9 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			return dto.ErrTicketNotFound
 		}
 
-		if ticket.Type != "main-event" {
-			return dto.ErrTicketTypeMustBeMainEvent
-		}
+		// if ticket.Type != "main-event" {
+		// 	return dto.ErrTicketTypeMustBeMainEvent
+		// }
 
 		if ticket.Quota <= 0 {
 			return dto.ErrTicketSoldOut

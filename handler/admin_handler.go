@@ -435,6 +435,7 @@ func (ah *AdminHandler) CreateSponsorship(ctx *gin.Context) {
 
 	payload.Category = ctx.PostForm("sponsorship_cat")
 	payload.Name = ctx.PostForm("sponsorship_name")
+	payload.Size = ctx.PostForm("sponsorship_size")
 
 	result, err := ah.adminService.CreateSponsorship(ctx, payload)
 	if err != nil {
@@ -519,6 +520,7 @@ func (ah *AdminHandler) UpdateSponsorship(ctx *gin.Context) {
 
 	payload.Category = ctx.PostForm("sponsorship_cat")
 	payload.Name = ctx.PostForm("sponsorship_name")
+	payload.Size = ctx.PostForm("sponsorship_size")
 
 	if err := ctx.ShouldBind(&payload); err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)

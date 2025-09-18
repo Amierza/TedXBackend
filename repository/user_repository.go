@@ -180,7 +180,9 @@ func (ur *UserRepository) GetAllBundle(ctx context.Context, tx *gorm.DB, bundleT
 		err     error
 	)
 
-	query := tx.WithContext(ctx).Model(&entity.Bundle{}).Preload("BundleItems.Merch")
+	query := tx.WithContext(ctx).
+		Model(&entity.Bundle{}).
+		Preload("BundleItems.Merch.MerchImages")
 
 	if bundleType != "" {
 		query = query.Where("type = ?", bundleType)

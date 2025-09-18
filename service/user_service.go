@@ -254,6 +254,7 @@ func (us *UserService) GetAllSponsorship(ctx context.Context) ([]dto.Sponsorship
 			Category: string(sponsorship.Category),
 			Name:     sponsorship.Name,
 			Image:    sponsorship.Image,
+			Size:     string(sponsorship.Size),
 		}
 
 		datas = append(datas, data)
@@ -344,6 +345,13 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 				ID:        bi.ID,
 				MerchID:   bi.MerchID,
 				MerchName: bi.Merch.Name,
+			}
+
+			for _, mi := range bi.Merch.MerchImages {
+				bundleItem.MerchImages = append(bundleItem.MerchImages, dto.MerchImageResponse{
+					ID:   mi.ID,
+					Name: mi.Name,
+				})
 			}
 
 			data.BundleItems = append(data.BundleItems, bundleItem)
