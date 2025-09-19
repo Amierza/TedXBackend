@@ -44,9 +44,11 @@ type (
 
 		// Merch
 		GetAllMerch(ctx context.Context) ([]dto.MerchResponse, error)
+		GetDetailMerch(ctx context.Context, merchID string) (dto.MerchResponse, error)
 
 		// Bundle
 		GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error)
+		GetDetailBundle(ctx context.Context, bundleID string) (dto.BundleResponse, error)
 
 		// Check Referal Code
 		CheckReferalCode(ctx context.Context, req dto.CheckReferalCodeRequest) (dto.StudentAmbassadorResponse, error)
@@ -318,6 +320,30 @@ func (us *UserService) GetAllMerch(ctx context.Context) ([]dto.MerchResponse, er
 	return datas, nil
 }
 
+func (us *UserService) GetDetailMerch(ctx context.Context, merchID string) (dto.MerchResponse, error) {
+	merch, _, err := us.userRepo.GetMerchByID(ctx, nil, merchID)
+	if err != nil {
+		return dto.MerchResponse{}, dto.ErrMerchNotFound
+	}
+
+	var merchImages []dto.MerchImageResponse
+	for _, img := range merch.MerchImages {
+		merchImages = append(merchImages, dto.MerchImageResponse{
+			ID:   img.ID,
+			Name: img.Name,
+		})
+	}
+	return dto.MerchResponse{
+		ID:          merch.ID,
+		Name:        merch.Name,
+		Stock:       merch.Stock,
+		Price:       merch.Price,
+		Description: merch.Description,
+		Category:    merch.Category,
+		Images:      merchImages,
+	}, nil
+}
+
 // Bundle
 func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error) {
 	bundleType := ""
@@ -354,6 +380,44 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 	}
 
 	return datas, nil
+}
+
+func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dto.BundleResponse, error) {
+	bundle, _, err := us.userRepo.GetBundleByID(ctx, nil, bundleID)
+	if err != nil {
+		return dto.BundleResponse{}, dto.ErrBundleNotFound
+	}
+
+	b := dto.BundleResponse{
+		ID:          bundle.ID,
+		Name:        bundle.Name,
+		Image:       bundle.Image,
+		Type:        bundle.Type,
+		Price:       bundle.Price,
+		Quota:       bundle.Quota,
+		Description: bundle.Description,
+		EventDate:   bundle.EventDate.Format("2006-01-02"),
+	}
+
+	for _, bi := range bundle.BundleItems {
+		bundleItem := dto.BundleItemResponse{
+			ID:        bi.ID,
+			MerchID:   bi.MerchID,
+			MerchName: bi.Merch.Name,
+		}
+
+		for _, mi := range bi.Merch.MerchImages {
+			bundleItem.MerchImages = append(bundleItem.MerchImages, dto.MerchImageResponse{
+				ID:   mi.ID,
+				Name: mi.Name,
+			})
+		}
+
+		b.BundleItems = append(b.BundleItems, bundleItem)
+	}
+
+	return b, nil
+
 }
 
 // Check Referal Code

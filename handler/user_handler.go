@@ -30,9 +30,11 @@ type (
 
 		// Merch
 		GetAllMerch(ctx *gin.Context)
+		GetDetailMerch(ctx *gin.Context)
 
 		// Bundle
 		GetAllBundle(ctx *gin.Context)
+		GetDetailBundle(ctx *gin.Context)
 
 		// Check Referal Code
 		CheckReferalCode(ctx *gin.Context)
@@ -170,6 +172,19 @@ func (uh *UserHandler) GetAllMerch(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, res)
 }
 
+func (uh *UserHandler) GetDetailMerch(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := uh.userService.GetDetailMerch(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_MERCH, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_MERCH, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
 // Bundle
 func (uh *UserHandler) GetAllBundle(ctx *gin.Context) {
 	result, err := uh.userService.GetAllBundle(ctx)
@@ -180,6 +195,19 @@ func (uh *UserHandler) GetAllBundle(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_BUNDLE, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (uh *UserHandler) GetDetailBundle(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := uh.userService.GetDetailBundle(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_BUNDLE, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_BUNDLE, result)
 	ctx.JSON(http.StatusOK, res)
 }
 
