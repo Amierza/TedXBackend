@@ -25,9 +25,11 @@ func User(route *gin.Engine, userHandler handler.IUserHandler, jwtService servic
 
 		// Merch
 		routes.GET("/get-all-merch", userHandler.GetAllMerch)
+		routes.GET("/get-detail-merch/:id", userHandler.GetDetailMerch)
 
 		// Bundle
 		routes.GET("/get-all-bundle", userHandler.GetAllBundle)
+		routes.GET("/get-detail-bundle/:id", userHandler.GetDetailBundle)
 
 		// Webhook for Midtrans
 		routes.POST("/update-transaction-ticket", userHandler.UpdateTransactionTicket)

@@ -25,6 +25,7 @@ type (
 		GetAllMerch(ctx context.Context, tx *gorm.DB) ([]entity.Merch, error)
 		GetAllBundle(ctx context.Context, tx *gorm.DB, bundleType string) ([]entity.Bundle, error)
 		GetTicketByID(ctx context.Context, tx *gorm.DB, ticketID string) (entity.Ticket, bool, error)
+		GetMerchByID(ctx context.Context, tx *gorm.DB, merchID string) (entity.Merch, bool, error)
 		GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error)
 		GetTransactionByOrderID(ctx context.Context, tx *gorm.DB, orderID string) (entity.Transaction, bool, error)
 		GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, referalCode string) (entity.StudentAmbassador, bool, error)
@@ -205,6 +206,19 @@ func (ur *UserRepository) GetTicketByID(ctx context.Context, tx *gorm.DB, ticket
 	}
 
 	return ticket, true, nil
+}
+
+func (ur *UserRepository) GetMerchByID(ctx context.Context, tx *gorm.DB, merchID string) (entity.Merch, bool, error) {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	var merch entity.Merch
+	if err := tx.WithContext(ctx).Preload("MerchImages").Where("id = ?", merchID).Take(&merch).Error; err != nil {
+		return entity.Merch{}, false, err
+	}
+
+	return merch, true, nil
 }
 func (ur *UserRepository) GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error) {
 	if tx == nil {
