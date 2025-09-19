@@ -373,6 +373,13 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 				MerchName: bi.Merch.Name,
 			}
 
+			for _, mi := range bi.Merch.MerchImages {
+				bundleItem.MerchImages = append(bundleItem.MerchImages, dto.MerchImageResponse{
+					ID:   mi.ID,
+					Name: mi.Name,
+				})
+			}
+
 			data.BundleItems = append(data.BundleItems, bundleItem)
 		}
 
