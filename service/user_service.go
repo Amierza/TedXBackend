@@ -408,9 +408,11 @@ func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dt
 
 	for _, bi := range bundle.BundleItems {
 		bundleItem := dto.BundleItemResponse{
-			ID:        bi.ID,
-			MerchID:   bi.MerchID,
-			MerchName: bi.Merch.Name,
+			ID:               bi.ID,
+			MerchID:          bi.MerchID,
+			MerchName:        bi.Merch.Name,
+			MerchPrice:       bi.Merch.Price,
+			MerchDescription: bi.Merch.Description,
 		}
 
 		for _, mi := range bi.Merch.MerchImages {
