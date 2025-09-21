@@ -877,7 +877,7 @@ func (ah *AdminHandler) UpdateMerch(ctx *gin.Context) {
 		return
 	}
 
-	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_UPDATE_MERCH, result)
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_UPDATE_MERCH, result)
 	ctx.JSON(http.StatusOK, res)
 }
 func (ah *AdminHandler) DeleteMerch(ctx *gin.Context) {
@@ -897,7 +897,7 @@ func (ah *AdminHandler) DeleteMerch(ctx *gin.Context) {
 		return
 	}
 
-	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_MERCH, result)
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_DELETE_MERCH, result)
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -1092,7 +1092,7 @@ func (ah *AdminHandler) UpdateBundle(ctx *gin.Context) {
 		return
 	}
 
-	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_UPDATE_BUNDLE, result)
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_UPDATE_BUNDLE, result)
 	ctx.JSON(http.StatusOK, res)
 }
 func (ah *AdminHandler) DeleteBundle(ctx *gin.Context) {
@@ -1112,7 +1112,7 @@ func (ah *AdminHandler) DeleteBundle(ctx *gin.Context) {
 		return
 	}
 
-	res := utils.BuildResponseSuccess(dto.MESSAGE_FAILED_DELETE_BUNDLE, result)
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_DELETE_BUNDLE, result)
 	ctx.JSON(http.StatusOK, res)
 }
 

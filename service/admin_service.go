@@ -1227,12 +1227,18 @@ func (as *AdminService) GetAllMerch(ctx context.Context) ([]dto.MerchResponse, e
 				Name: img.Name,
 			})
 		}
+		var status = true
+
+		if merch.Stock < 1 {
+			status = false
+		}
 
 		data := dto.MerchResponse{
 			ID:          merch.ID,
 			Name:        merch.Name,
 			Stock:       merch.Stock,
 			Price:       merch.Price,
+			Status:      status,
 			Description: merch.Description,
 			Category:    merch.Category,
 			Images:      merchImages,
@@ -1258,12 +1264,17 @@ func (as *AdminService) GetAllMerchWithPagination(ctx context.Context, req dto.P
 				Name: img.Name,
 			})
 		}
+		var status = true
 
+		if merch.Stock < 1 {
+			status = false
+		}
 		data := dto.MerchResponse{
 			ID:          merch.ID,
 			Name:        merch.Name,
 			Stock:       merch.Stock,
 			Price:       merch.Price,
+			Status:      status,
 			Description: merch.Description,
 			Category:    merch.Category,
 			Images:      merchImages,
@@ -1295,6 +1306,11 @@ func (as *AdminService) GetDetailMerch(ctx context.Context, merchID string) (dto
 			Name: img.Name,
 		})
 	}
+	var status = true
+
+	if merch.Stock < 1 {
+		status = false
+	}
 
 	return dto.MerchResponse{
 		ID:          merch.ID,
@@ -1302,6 +1318,7 @@ func (as *AdminService) GetDetailMerch(ctx context.Context, merchID string) (dto
 		Stock:       merch.Stock,
 		Price:       merch.Price,
 		Description: merch.Description,
+		Status:      status,
 		Category:    merch.Category,
 		Images:      merchImages,
 	}, nil
@@ -1423,6 +1440,11 @@ func (as *AdminService) UpdateMerch(ctx context.Context, req dto.UpdateMerchRequ
 			Name: img.Name,
 		})
 	}
+	var status = true
+
+	if merch.Stock < 1 {
+		status = false
+	}
 
 	return dto.MerchResponse{
 		ID:          merch.ID,
@@ -1432,6 +1454,7 @@ func (as *AdminService) UpdateMerch(ctx context.Context, req dto.UpdateMerchRequ
 		Description: merch.Description,
 		Category:    merch.Category,
 		Images:      imageResponses,
+		Status:      status,
 	}, nil
 }
 func (as *AdminService) DeleteMerch(ctx context.Context, req dto.DeleteMerchRequest) (dto.MerchResponse, error) {

@@ -187,7 +187,8 @@ func (uh *UserHandler) GetDetailMerch(ctx *gin.Context) {
 
 // Bundle
 func (uh *UserHandler) GetAllBundle(ctx *gin.Context) {
-	result, err := uh.userService.GetAllBundle(ctx)
+	bundleType := ctx.Query("type")
+	result, err := uh.userService.GetAllBundle(ctx, bundleType)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_BUNDLE, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)

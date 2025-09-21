@@ -501,6 +501,7 @@ type (
 		Name        string               `json:"merch_name"`
 		Stock       int                  `json:"merch_stock"`
 		Price       float64              `json:"merch_price"`
+		Status      bool                 `json:"merch_is_available"`
 		Description string               `json:"merch_desc"`
 		Category    entity.MerchCategory `json:"merch_cat"`
 		Images      []MerchImageResponse `json:"merch_images"`
@@ -550,7 +551,7 @@ type (
 		Quota       int                  `json:"bundle_quota"`
 		Description string               `json:"bundle_description"`
 		EventDate   string               `json:"bundle_event_date"`
-		IsAvailable *bool                `json:"ticket_is_available,omitempty"`
+		IsAvailable *bool                `json:"bundle_is_available,omitempty"`
 		BundleItems []BundleItemResponse `json:"bundle_items"`
 	}
 	BundleItemResponse struct {

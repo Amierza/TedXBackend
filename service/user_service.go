@@ -47,7 +47,7 @@ type (
 		GetDetailMerch(ctx context.Context, merchID string) (dto.MerchResponse, error)
 
 		// Bundle
-		GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error)
+		GetAllBundle(ctx context.Context, bundleType string) ([]dto.BundleResponse, error)
 		GetDetailBundle(ctx context.Context, bundleID string) (dto.BundleResponse, error)
 
 		// Check Referal Code
@@ -303,12 +303,18 @@ func (us *UserService) GetAllMerch(ctx context.Context) ([]dto.MerchResponse, er
 				Name: img.Name,
 			})
 		}
+		var status = true
+
+		if merch.Stock < 1 {
+			status = false
+		}
 
 		data := dto.MerchResponse{
 			ID:          merch.ID,
 			Name:        merch.Name,
 			Stock:       merch.Stock,
 			Price:       merch.Price,
+			Status:      status,
 			Description: merch.Description,
 			Category:    merch.Category,
 			Images:      merchImages,
@@ -345,8 +351,8 @@ func (us *UserService) GetDetailMerch(ctx context.Context, merchID string) (dto.
 }
 
 // Bundle
-func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error) {
-	bundleType := ""
+func (us *UserService) GetAllBundle(ctx context.Context, bundleType string) ([]dto.BundleResponse, error) {
+	// bundleType := ""
 
 	bundles, err := us.userRepo.GetAllBundle(ctx, nil, bundleType)
 	if err != nil {
@@ -355,6 +361,7 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 
 	var datas []dto.BundleResponse
 	for _, bundle := range bundles {
+		isAvailable := bundle.Quota > 0 && time.Now().Before(bundle.EventDate)
 		data := dto.BundleResponse{
 			ID:          bundle.ID,
 			Name:        bundle.Name,
@@ -362,6 +369,7 @@ func (us *UserService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, 
 			Type:        bundle.Type,
 			Price:       bundle.Price,
 			Quota:       bundle.Quota,
+			IsAvailable: &isAvailable,
 			Description: bundle.Description,
 			EventDate:   bundle.EventDate.Format("2006-01-02"),
 		}
