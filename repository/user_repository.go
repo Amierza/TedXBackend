@@ -189,7 +189,7 @@ func (ur *UserRepository) GetAllBundle(ctx context.Context, tx *gorm.DB, bundleT
 		query = query.Where("type = ?", bundleType)
 	}
 
-	if err := query.Order(`"createdAt" DESC`).Find(&bundles).Error; err != nil {
+	if err := query.Order(`"name" ASC`).Find(&bundles).Error; err != nil {
 		return []entity.Bundle{}, err
 	}
 
