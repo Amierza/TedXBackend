@@ -58,6 +58,10 @@ type (
 
 		// Webhook for Midtrans
 		UpdateTransactionTicket(ctx context.Context, req dto.UpdateMidtransTransactionTicketRequest) error
+
+		// Hisoty Transactions
+		GetAllTransactions(ctx context.Context) ([]dto.TransactionResponse, error)
+		GetDetailTransactions(ctx context.Context, id string) (dto.TransactionResponse, error)
 	}
 
 	UserService struct {
@@ -779,4 +783,93 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 	}
 
 	return us.userRepo.UpdateTransactionTicket(ctx, nil, transaction)
+}
+
+// History Transactions
+func (us *UserService) GetAllTransactions(ctx context.Context) ([]dto.TransactionResponse, error) {
+	token := ctx.Value("Authorization").(string)
+	userIDStr, err := us.jwtService.GetUserIDByToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	transactions, err := us.userRepo.GetAllTransactions(ctx, nil, userIDStr)
+	if err != nil {
+		return nil, err
+	}
+
+	var datas []dto.TransactionResponse
+	for _, transaction := range transactions {
+		data := dto.TransactionResponse{
+			ID:                transaction.ID,
+			OrderID:           transaction.OrderID,
+			ItemType:          transaction.ItemType,
+			TicketType:        transaction.Ticket.Type,
+			ReferalCode:       transaction.ReferalCode,
+			TransactionStatus: transaction.TransactionStatus,
+			PaymentType:       transaction.PaymentType,
+			SignatureKey:      transaction.SignatureKey,
+			Acquire:           transaction.Acquire,
+			SettlementTime:    transaction.SettlementTime,
+			GrossAmount:       transaction.GrossAmount,
+			UserID:            transaction.UserID,
+			TicketID:          transaction.TicketID,
+			BundleID:          transaction.BundleID,
+		}
+
+		for _, tf := range transaction.TicketForms {
+			transactionItem := dto.TicketFormResponse{
+				ID:           tf.ID,
+				AudienceType: tf.AudienceType,
+				Instansi:     tf.Instansi,
+				Email:        tf.Email,
+				FullName:     tf.FullName,
+				PhoneNumber:  tf.PhoneNumber,
+				LineID:       tf.LineID,
+			}
+
+			data.TicketForms = append(data.TicketForms, transactionItem)
+		}
+
+		datas = append(datas, data)
+	}
+
+	return datas, nil
+}
+func (us *UserService) GetDetailTransactions(ctx context.Context, id string) (dto.TransactionResponse, error) {
+	transaction, _, err := us.userRepo.GetTransactionByID(ctx, nil, id)
+	if err != nil {
+		return dto.TransactionResponse{}, err
+	}
+
+	data := dto.TransactionResponse{
+		ID:                transaction.ID,
+		OrderID:           transaction.OrderID,
+		ItemType:          transaction.ItemType,
+		TicketType:        transaction.Ticket.Type,
+		ReferalCode:       transaction.ReferalCode,
+		TransactionStatus: transaction.TransactionStatus,
+		PaymentType:       transaction.PaymentType,
+		SignatureKey:      transaction.SignatureKey,
+		Acquire:           transaction.Acquire,
+		SettlementTime:    transaction.SettlementTime,
+		GrossAmount:       transaction.GrossAmount,
+		UserID:            transaction.UserID,
+		TicketID:          transaction.TicketID,
+		BundleID:          transaction.BundleID,
+	}
+	for _, tf := range transaction.TicketForms {
+		transactionItem := dto.TicketFormResponse{
+			ID:           tf.ID,
+			AudienceType: tf.AudienceType,
+			Instansi:     tf.Instansi,
+			Email:        tf.Email,
+			FullName:     tf.FullName,
+			PhoneNumber:  tf.PhoneNumber,
+			LineID:       tf.LineID,
+		}
+		data.TicketForms = append(data.TicketForms, transactionItem)
+	}
+
+	return data, nil
 }

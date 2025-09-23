@@ -45,6 +45,10 @@ func User(route *gin.Engine, userHandler handler.IUserHandler, jwtService servic
 
 			// Snap for trigger midtrans
 			routes.POST("/create-transaction-ticket", userHandler.CreateTransactionTicket)
+
+			// History Transaction
+			routes.GET("/get-all-transaction", userHandler.GetAllTransactions)
+			routes.GET("/get-detail-transaction/:id", userHandler.GetDetailTransactions)
 		}
 	}
 }

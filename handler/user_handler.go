@@ -44,6 +44,10 @@ type (
 
 		// Webhook for Midtrans
 		UpdateTransactionTicket(ctx *gin.Context)
+
+		// History Transaction
+		GetAllTransactions(ctx *gin.Context)
+		GetDetailTransactions(ctx *gin.Context)
 	}
 
 	UserHandler struct {
@@ -269,5 +273,30 @@ func (uh *UserHandler) UpdateTransactionTicket(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_UPDATE_TRANSACTION_TICKET, "")
+	ctx.JSON(http.StatusOK, res)
+}
+
+// History Transactions
+func (uh *UserHandler) GetAllTransactions(ctx *gin.Context) {
+	result, err := uh.userService.GetAllTransactions(ctx)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_HISTORY_TRANSACTIONS, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_LIST_HISTORY_TRANSACTIONS, result)
+	ctx.JSON(http.StatusOK, res)
+}
+func (uh *UserHandler) GetDetailTransactions(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	result, err := uh.userService.GetDetailTransactions(ctx, idStr)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DETAIL_HISTORY_TRANSACTIONS, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_DETAIL_HISTORY_TRANSACTIONS, result)
 	ctx.JSON(http.StatusOK, res)
 }

@@ -91,6 +91,9 @@ const (
 	MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN = "failed get list ticket check-in"
 	// Dashboard Stats
 	MESSAGE_FAILED_GET_ALL_STATS = "failed get all stats"
+	// History Transactions
+	MESSAGE_FAILED_GET_LIST_HISTORY_TRANSACTIONS   = "failed get list history transactions"
+	MESSAGE_FAILED_GET_DETAIL_HISTORY_TRANSACTIONS = "failed get detail history transactions"
 
 	// ====================================== Success ======================================
 	// Authentication
@@ -151,6 +154,9 @@ const (
 	MESSAGE_SUCCESS_GET_LIST_TICKET_CHECK_IN = "success get list ticket check-in"
 	// Dashboard Stats
 	MESSAGE_SUCCESS_GET_ALL_STATS = "success get all stats"
+	// History Transactions
+	MESSAGE_SUCCESS_GET_LIST_HISTORY_TRANSACTIONS   = "success get list history transactions"
+	MESSAGE_SUCCESS_GET_DETAIL_HISTORY_TRANSACTIONS = "success get detail history transactions"
 )
 
 var (
