@@ -867,6 +867,7 @@ func (us *UserService) GetDetailTransactions(ctx context.Context, id string) (dt
 			FullName:     tf.FullName,
 			PhoneNumber:  tf.PhoneNumber,
 			LineID:       tf.LineID,
+			QRCodeURL:    fmt.Sprintf("assets/qrcodes/%s", tf.ID),
 		}
 		data.TicketForms = append(data.TicketForms, transactionItem)
 	}

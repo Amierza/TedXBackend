@@ -702,6 +702,7 @@ type (
 		FullName     string              `json:"full_name"`
 		PhoneNumber  string              `json:"phone_number"`
 		LineID       string              `json:"line_id"`
+		QRCodeURL    string              `json:"qr_code_url,omitempty"`
 	}
 	TicketFormRequest struct {
 		AudienceType entity.AudienceType `json:"audience_type" form:"audience_type"`

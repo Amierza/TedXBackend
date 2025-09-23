@@ -281,7 +281,13 @@ func (ur *UserRepository) GetTransactionByOrderID(ctx context.Context, tx *gorm.
 	}
 
 	var transaction entity.Transaction
-	if err := tx.WithContext(ctx).Preload("TicketForms").Where("order_id = ?", orderID).Take(&transaction).Error; err != nil {
+	if err := tx.WithContext(ctx).
+		Preload("User").
+		Preload("Bundle").
+		Preload("Ticket").
+		Preload("TicketForms").
+		Where("order_id = ?", orderID).
+		Take(&transaction).Error; err != nil {
 		return entity.Transaction{}, false, err
 	}
 
