@@ -216,7 +216,7 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 			Name:        ticket.Name,
 			Type:        ticket.Type,
 			Price:       ticket.Price,
-			Quota:       ticket.Quota,
+			Quota:       ticket.Quota - ticket.QuotaFilled,
 			Image:       ticket.Image,
 			Description: ticket.Description,
 			EventDate:   ticket.EventDate.Format("2006-01-02"),
@@ -239,7 +239,7 @@ func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dt
 		Name:        ticket.Name,
 		Type:        ticket.Type,
 		Price:       ticket.Price,
-		Quota:       ticket.Quota,
+		Quota:       ticket.Quota - ticket.QuotaFilled,
 		Image:       ticket.Image,
 		Description: ticket.Description,
 		EventDate:   ticket.EventDate.Format("2006-01-02"),
@@ -372,7 +372,7 @@ func (us *UserService) GetAllBundle(ctx context.Context, bundleType string) ([]d
 			Image:       bundle.Image,
 			Type:        bundle.Type,
 			Price:       bundle.Price,
-			Quota:       bundle.Quota,
+			Quota:       bundle.Quota - bundle.QuotaFilled,
 			IsAvailable: &isAvailable,
 			Description: bundle.Description,
 			EventDate:   bundle.EventDate.Format("2006-01-02"),
@@ -413,7 +413,7 @@ func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dt
 		Image:       bundle.Image,
 		Type:        bundle.Type,
 		Price:       bundle.Price,
-		Quota:       bundle.Quota,
+		Quota:       bundle.Quota - bundle.QuotaFilled,
 		Description: bundle.Description,
 		EventDate:   bundle.EventDate.Format("2006-01-02"),
 	}
@@ -595,13 +595,13 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			}
 
 			if req.BundleID != nil && *req.BundleID != uuid.Nil {
-				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.Quota-len(req.TicketForms)); err != nil {
+				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.QuotaFilled+len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateBundleQuota
 				}
 			}
 
 			if req.TicketID != nil && *req.TicketID != uuid.Nil {
-				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-len(req.TicketForms)); err != nil {
+				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateTicketQuota
 				}
 			}
@@ -769,14 +769,11 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 	case "pending":
 		transaction.TransactionStatus = "pending"
 
-	case "deny", "failure":
-		transaction.TransactionStatus = "failed"
-
-	case "cancel":
-		transaction.TransactionStatus = "cancelled"
-
-	case "expire":
-		transaction.TransactionStatus = "expired"
+	case "deny", "failure", "cancel", "expire":
+		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled+len(transaction.TicketForms)); err != nil {
+			return dto.ErrUpdateTicketQuota
+		}
+		transaction.TransactionStatus = req.TransactionStatus
 
 	default:
 		return dto.ErrUnknownTransactionStatus

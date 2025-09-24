@@ -322,7 +322,7 @@ func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bu
 	result := tx.WithContext(ctx).
 		Model(&entity.Bundle{}).
 		Where("id = ?", bundleID).
-		Update("quota", newQuota)
+		Update("quota_filled", newQuota)
 
 	if result.Error != nil {
 		return result.Error
@@ -342,7 +342,7 @@ func (ur *UserRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ti
 	result := tx.WithContext(ctx).
 		Model(&entity.Ticket{}).
 		Where("id = ?", ticketID).
-		Update("quota", newQuota)
+		Update("quota_filled", newQuota)
 
 	if result.Error != nil {
 		return result.Error

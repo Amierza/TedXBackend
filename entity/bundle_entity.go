@@ -15,6 +15,7 @@ type Bundle struct {
 	Type        BundleType `gorm:"not null" json:"type"`
 	Price       float64    `gorm:"not null;default:0" json:"price"`
 	Quota       int        `gorm:"not null;default:0" json:"quota"`
+	QuotaFilled int        `gorm:"not null;default:0" json:"quota_filled"`
 	Description string     `json:"description"`
 	EventDate   time.Time  `gorm:"not null" json:"event_date"`
 
