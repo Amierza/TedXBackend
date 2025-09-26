@@ -209,7 +209,7 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
-		isAvailable := ticket.Quota > 0 && time.Now().Before(ticket.EventDate)
+		isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().Before(ticket.EventDate)
 
 		data := dto.TicketResponse{
 			ID:          ticket.ID.String(),
@@ -234,6 +234,8 @@ func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dt
 		return dto.TicketResponse{}, dto.ErrTicketNotFound
 	}
 
+	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().Before(ticket.EventDate)
+
 	return dto.TicketResponse{
 		ID:          ticket.ID.String(),
 		Name:        ticket.Name,
@@ -243,6 +245,7 @@ func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dt
 		Image:       ticket.Image,
 		Description: ticket.Description,
 		EventDate:   ticket.EventDate.Format("2006-01-02"),
+		IsAvailable: &isAvailable,
 	}, nil
 }
 
