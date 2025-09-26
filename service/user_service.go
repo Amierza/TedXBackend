@@ -519,7 +519,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrTicketNotFound
 			}
 
-			if t.Quota <= 0 {
+			if t.Quota-t.QuotaFilled <= 0 {
 				return dto.ErrTicketSoldOut
 			}
 
@@ -532,7 +532,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrTicketNotFound
 			}
 
-			if b.Quota <= 0 {
+			if b.Quota-b.QuotaFilled <= 0 {
 				return dto.ErrBundleSoldOut
 			}
 
