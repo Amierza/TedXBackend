@@ -209,18 +209,20 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
-		isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().Before(ticket.EventDate)
-
+		isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
 		data := dto.TicketResponse{
-			ID:          ticket.ID.String(),
-			Name:        ticket.Name,
-			Type:        ticket.Type,
-			Price:       ticket.Price,
-			Quota:       ticket.Quota - ticket.QuotaFilled,
-			Image:       ticket.Image,
-			Description: ticket.Description,
-			EventDate:   ticket.EventDate.Format("2006-01-02"),
-			IsAvailable: &isAvailable,
+			ID:             ticket.ID.String(),
+			Name:           ticket.Name,
+			Type:           ticket.Type,
+			Price:          ticket.Price,
+			Quota:          ticket.Quota,
+			QuotaFilled:    ticket.QuotaFilled,
+			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+			Image:          ticket.Image,
+			Description:    ticket.Description,
+			EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+			EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+			IsAvailable:    &isAvailable,
 		}
 
 		datas = append(datas, data)
@@ -234,18 +236,21 @@ func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dt
 		return dto.TicketResponse{}, dto.ErrTicketNotFound
 	}
 
-	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().Before(ticket.EventDate)
+	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
 
 	return dto.TicketResponse{
-		ID:          ticket.ID.String(),
-		Name:        ticket.Name,
-		Type:        ticket.Type,
-		Price:       ticket.Price,
-		Quota:       ticket.Quota - ticket.QuotaFilled,
-		Image:       ticket.Image,
-		Description: ticket.Description,
-		EventDate:   ticket.EventDate.Format("2006-01-02"),
-		IsAvailable: &isAvailable,
+		ID:             ticket.ID.String(),
+		Name:           ticket.Name,
+		Type:           ticket.Type,
+		Price:          ticket.Price,
+		Quota:          ticket.Quota,
+		QuotaFilled:    ticket.QuotaFilled,
+		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+		Image:          ticket.Image,
+		Description:    ticket.Description,
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+		IsAvailable:    &isAvailable,
 	}, nil
 }
 

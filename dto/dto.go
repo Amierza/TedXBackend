@@ -381,35 +381,40 @@ type (
 // Ticket
 type (
 	TicketResponse struct {
-		ID          string            `json:"ticket_id"`
-		Name        string            `json:"ticket_name"`
-		Type        entity.TicketType `json:"ticket_type"`
-		Price       float64           `json:"ticket_price"`
-		Image       string            `json:"ticket_image"`
-		Quota       int               `json:"ticket_quota"`
-		Description string            `json:"ticket_description"`
-		EventDate   string            `json:"ticket_event_date"`
-		IsAvailable *bool             `json:"ticket_is_available,omitempty"`
+		ID             string            `json:"ticket_id"`
+		Name           string            `json:"ticket_name"`
+		Type           entity.TicketType `json:"ticket_type"`
+		Price          float64           `json:"ticket_price"`
+		Image          string            `json:"ticket_image"`
+		Quota          int               `json:"ticket_quota"`
+		QuotaFilled    int               `json:"ticket_quota_filled"`
+		QuotaAvailable int               `json:"ticket_quota_available"`
+		Description    string            `json:"ticket_description"`
+		EventStartDate string            `json:"ticket_event_start_date"`
+		EventEndDate   string            `json:"ticket_event_end_date"`
+		IsAvailable    *bool             `json:"ticket_is_available,omitempty"`
 	}
 	CreateTicketRequest struct {
-		Name        string            `json:"ticket_name" form:"ticket_name"`
-		Type        entity.TicketType `json:"ticket_type" form:"ticket_type"`
-		Price       float64           `json:"ticket_price" form:"ticket_price"`
-		Image       string            `json:"ticket_image" form:"ticket_image"`
-		Quota       int               `json:"ticket_quota" form:"ticket_quota"`
-		Description string            `json:"ticket_description" form:"ticket_description"`
-		EventDate   string            `json:"ticket_event_date" form:"ticket_event_date"`
+		Name           string            `json:"ticket_name" form:"ticket_name"`
+		Type           entity.TicketType `json:"ticket_type" form:"ticket_type"`
+		Price          float64           `json:"ticket_price" form:"ticket_price"`
+		Image          string            `json:"ticket_image" form:"ticket_image"`
+		Quota          int               `json:"ticket_quota" form:"ticket_quota"`
+		Description    string            `json:"ticket_description" form:"ticket_description"`
+		EventStartDate string            `json:"ticket_event_start_date" form:"ticket_event_start_date"`
+		EventEndDate   string            `json:"ticket_event_end_date" form:"ticket_event_end_date"`
 		ImageUpload
 	}
 	UpdateTicketRequest struct {
-		ID          string            `json:"-"`
-		Name        string            `json:"ticket_name,omitempty" form:"ticket_name"`
-		Type        entity.TicketType `json:"ticket_type" form:"ticket_type"`
-		Price       *float64          `json:"ticket_price,omitempty" form:"ticket_price"`
-		Image       string            `json:"ticket_image,omitempty" form:"ticket_image"`
-		Quota       *int              `json:"ticket_quota,omitempty" form:"ticket_quota"`
-		Description string            `json:"ticket_description" form:"ticket_description"`
-		EventDate   string            `json:"ticket_event_date" form:"ticket_event_date"`
+		ID             string            `json:"-"`
+		Name           string            `json:"ticket_name,omitempty" form:"ticket_name"`
+		Type           entity.TicketType `json:"ticket_type" form:"ticket_type"`
+		Price          *float64          `json:"ticket_price,omitempty" form:"ticket_price"`
+		Image          string            `json:"ticket_image,omitempty" form:"ticket_image"`
+		Quota          *int              `json:"ticket_quota,omitempty" form:"ticket_quota"`
+		Description    string            `json:"ticket_description" form:"ticket_description"`
+		EventStartDate string            `json:"ticket_event_start_date" form:"ticket_event_start_date"`
+		EventEndDate   string            `json:"ticket_event_end_date" form:"ticket_event_end_date"`
 		ImageUpload
 	}
 	TicketPaginationResponse struct {
