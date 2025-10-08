@@ -778,7 +778,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		transaction.TransactionStatus = "pending"
 
 	case "deny", "failure", "cancel", "expire":
-		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled+len(transaction.TicketForms)); err != nil {
+		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled-len(transaction.TicketForms)); err != nil {
 			return dto.ErrUpdateTicketQuota
 		}
 		transaction.TransactionStatus = req.TransactionStatus
