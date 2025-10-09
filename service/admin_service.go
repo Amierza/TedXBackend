@@ -2435,6 +2435,7 @@ func (as *AdminService) GetDetailTransactionTicket(ctx context.Context, transact
 		ReferalCode:       transaction.ReferalCode,
 		TransactionStatus: transaction.TransactionStatus,
 		PaymentType:       transaction.PaymentType,
+		CreatedAt:         transaction.CreatedAt,
 		SignatureKey:      transaction.SignatureKey,
 		Acquire:           transaction.Acquire,
 		SettlementTime:    transaction.SettlementTime,
