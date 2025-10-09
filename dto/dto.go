@@ -690,6 +690,7 @@ type (
 		PaymentType       string               `json:"payment_type"`
 		SignatureKey      string               `json:"signature_key"`
 		Acquire           string               `json:"acquire"`
+		CreatedAt         time.Time            `json:"created_at"`
 		SettlementTime    *time.Time           `json:"settlement_time"`
 		GrossAmount       float64              `json:"gross_amount"`
 		UserID            *uuid.UUID           `json:"user_id"`
