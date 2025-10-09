@@ -756,7 +756,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 				QRCode       string
 			}{
 				HeaderImage:  headerImage,
-				TicketID:     transaction.ID.String(),
+				TicketID:     transaction.OrderID,
 				TicketName:   transaction.Ticket.Name,
 				TicketType:   string(transaction.Ticket.Type),
 				Status:       transaction.TransactionStatus,
