@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
-	"os"
 	"strconv"
 	"time"
 
@@ -551,13 +550,14 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		orderID := fmt.Sprintf("TEDX-%s", time.Now().Format("060102150405"))
 
 		transaction := entity.Transaction{
-			ID:          transactionID,
-			OrderID:     orderID,
-			ItemType:    req.ItemType,
-			ReferalCode: req.ReferalCode,
-			UserID:      &userID,
-			TicketID:    req.TicketID,
-			BundleID:    req.BundleID,
+			ID:                transactionID,
+			OrderID:           orderID,
+			ItemType:          req.ItemType,
+			TransactionStatus: "pending",
+			ReferalCode:       req.ReferalCode,
+			UserID:            &userID,
+			TicketID:          req.TicketID,
+			BundleID:          req.BundleID,
 		}
 
 		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
@@ -738,7 +738,8 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 				return dto.ErrGenerateQRCode
 			}
 
-			headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			// headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			headerImage := "https://tedxuniversitasairlangga.com/images/header-e-ticket-mail.png"
 			emailData := struct {
 				HeaderImage  string
 				TicketID     string
