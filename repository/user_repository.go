@@ -24,9 +24,11 @@ type (
 		GetAllSpeaker(ctx context.Context, tx *gorm.DB) ([]entity.Speaker, error)
 		GetAllMerch(ctx context.Context, tx *gorm.DB) ([]entity.Merch, error)
 		GetAllBundle(ctx context.Context, tx *gorm.DB, bundleType string) ([]entity.Bundle, error)
+		GetAllTransactions(ctx context.Context, tx *gorm.DB, userID string) ([]entity.Transaction, error)
 		GetTicketByID(ctx context.Context, tx *gorm.DB, ticketID string) (entity.Ticket, bool, error)
 		GetMerchByID(ctx context.Context, tx *gorm.DB, merchID string) (entity.Merch, bool, error)
 		GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error)
+		GetTransactionByID(ctx context.Context, tx *gorm.DB, id string) (entity.Transaction, bool, error)
 		GetTransactionByOrderID(ctx context.Context, tx *gorm.DB, orderID string) (entity.Transaction, bool, error)
 		GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, referalCode string) (entity.StudentAmbassador, bool, error)
 
@@ -195,6 +197,30 @@ func (ur *UserRepository) GetAllBundle(ctx context.Context, tx *gorm.DB, bundleT
 
 	return bundles, err
 }
+func (ur *UserRepository) GetAllTransactions(ctx context.Context, tx *gorm.DB, userID string) ([]entity.Transaction, error) {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	var (
+		transactions []entity.Transaction
+		err          error
+	)
+
+	query := tx.WithContext(ctx).
+		Model(&entity.Transaction{}).
+		Preload("User").
+		Preload("Bundle").
+		Preload("Ticket").
+		Preload("TicketForms").
+		Where("user_id = ?", userID)
+
+	if err := query.Order(`"createdAt" DESC`).Find(&transactions).Error; err != nil {
+		return []entity.Transaction{}, err
+	}
+
+	return transactions, err
+}
 func (ur *UserRepository) GetTicketByID(ctx context.Context, tx *gorm.DB, ticketID string) (entity.Ticket, bool, error) {
 	if tx == nil {
 		tx = ur.db
@@ -207,7 +233,6 @@ func (ur *UserRepository) GetTicketByID(ctx context.Context, tx *gorm.DB, ticket
 
 	return ticket, true, nil
 }
-
 func (ur *UserRepository) GetMerchByID(ctx context.Context, tx *gorm.DB, merchID string) (entity.Merch, bool, error) {
 	if tx == nil {
 		tx = ur.db
@@ -232,13 +257,37 @@ func (ur *UserRepository) GetBundleByID(ctx context.Context, tx *gorm.DB, bundle
 
 	return bundle, true, nil
 }
+func (ur *UserRepository) GetTransactionByID(ctx context.Context, tx *gorm.DB, id string) (entity.Transaction, bool, error) {
+	if tx == nil {
+		tx = ur.db
+	}
+
+	var transaction entity.Transaction
+	if err := tx.WithContext(ctx).
+		Preload("User").
+		Preload("Bundle").
+		Preload("Ticket").
+		Preload("TicketForms").
+		Where("id = ?", id).
+		Take(&transaction).Error; err != nil {
+		return entity.Transaction{}, false, err
+	}
+
+	return transaction, true, nil
+}
 func (ur *UserRepository) GetTransactionByOrderID(ctx context.Context, tx *gorm.DB, orderID string) (entity.Transaction, bool, error) {
 	if tx == nil {
 		tx = ur.db
 	}
 
 	var transaction entity.Transaction
-	if err := tx.WithContext(ctx).Preload("TicketForms").Where("order_id = ?", orderID).Take(&transaction).Error; err != nil {
+	if err := tx.WithContext(ctx).
+		Preload("User").
+		Preload("Bundle").
+		Preload("Ticket").
+		Preload("TicketForms").
+		Where("order_id = ?", orderID).
+		Take(&transaction).Error; err != nil {
 		return entity.Transaction{}, false, err
 	}
 
@@ -273,7 +322,7 @@ func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bu
 	result := tx.WithContext(ctx).
 		Model(&entity.Bundle{}).
 		Where("id = ?", bundleID).
-		Update("quota", newQuota)
+		Update("quota_filled", newQuota)
 
 	if result.Error != nil {
 		return result.Error
@@ -293,7 +342,7 @@ func (ur *UserRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ti
 	result := tx.WithContext(ctx).
 		Model(&entity.Ticket{}).
 		Where("id = ?", ticketID).
-		Update("quota", newQuota)
+		Update("quota_filled", newQuota)
 
 	if result.Error != nil {
 		return result.Error

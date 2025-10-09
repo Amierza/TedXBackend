@@ -338,7 +338,7 @@ func (as *AdminService) DeleteUser(ctx context.Context, req dto.DeleteUserReques
 
 // Ticket
 func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRequest) (dto.TicketResponse, error) {
-	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || req.Type == "" || req.EventDate == "" {
+	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || req.Type == "" || req.EventStartDate == "" || req.EventEndDate == "" {
 		return dto.TicketResponse{}, dto.ErrEmptyFields
 	}
 
@@ -395,20 +395,26 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		loc = time.FixedZone("UTC+7", 7*60*60)
 	}
 
-	eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+	eventStartDate, err := time.ParseInLocation("2006-01-02", req.EventStartDate, loc)
+	if err != nil {
+		return dto.TicketResponse{}, dto.ErrParseTime
+	}
+
+	eventEndDate, err := time.ParseInLocation("2006-01-02", req.EventEndDate, loc)
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrParseTime
 	}
 
 	ticket := entity.Ticket{
-		ID:          uuid.New(),
-		Name:        req.Name,
-		Type:        req.Type,
-		Price:       req.Price,
-		Quota:       req.Quota,
-		Image:       req.Image,
-		Description: req.Description,
-		EventDate:   eventDate,
+		ID:             uuid.New(),
+		Name:           req.Name,
+		Type:           req.Type,
+		Price:          req.Price,
+		Quota:          req.Quota,
+		Image:          req.Image,
+		Description:    req.Description,
+		EventStartDate: eventStartDate,
+		EventEndDate:   eventEndDate,
 	}
 
 	err = as.adminRepo.CreateTicket(ctx, nil, ticket)
@@ -417,14 +423,16 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 	}
 
 	return dto.TicketResponse{
-		ID:          ticket.ID.String(),
-		Name:        ticket.Name,
-		Type:        ticket.Type,
-		Price:       ticket.Price,
-		Quota:       ticket.Quota,
-		Image:       ticket.Image,
-		Description: ticket.Description,
-		EventDate:   ticket.EventDate.Format("2006-01-02"),
+		ID:             ticket.ID.String(),
+		Name:           ticket.Name,
+		Type:           ticket.Type,
+		Price:          ticket.Price,
+		Quota:          ticket.Quota,
+		QuotaFilled:    ticket.QuotaFilled,
+		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+		Image:          ticket.Image,
+		Description:    ticket.Description,
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
 	}, nil
 }
 func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, error) {
@@ -435,18 +443,21 @@ func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse,
 
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
-		isAvailable := ticket.Quota > 0 && time.Now().Before(ticket.EventDate)
+		isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
 
 		data := dto.TicketResponse{
-			ID:          ticket.ID.String(),
-			Name:        ticket.Name,
-			Type:        ticket.Type,
-			Price:       ticket.Price,
-			Quota:       ticket.Quota,
-			Image:       ticket.Image,
-			Description: ticket.Description,
-			EventDate:   ticket.EventDate.Format("2006-01-02"),
-			IsAvailable: &isAvailable,
+			ID:             ticket.ID.String(),
+			Name:           ticket.Name,
+			Type:           ticket.Type,
+			Price:          ticket.Price,
+			Quota:          ticket.Quota,
+			QuotaFilled:    ticket.QuotaFilled,
+			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+			Image:          ticket.Image,
+			Description:    ticket.Description,
+			EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+			EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+			IsAvailable:    &isAvailable,
 		}
 
 		datas = append(datas, data)
@@ -462,18 +473,21 @@ func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.
 
 	var datas []dto.TicketResponse
 	for _, ticket := range dataWithPaginate.Tickets {
-		isAvailable := ticket.Quota > 0 && time.Now().Before(ticket.EventDate)
+		isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
 
 		data := dto.TicketResponse{
-			ID:          ticket.ID.String(),
-			Name:        ticket.Name,
-			Type:        ticket.Type,
-			Price:       ticket.Price,
-			Quota:       ticket.Quota,
-			Image:       ticket.Image,
-			Description: ticket.Description,
-			EventDate:   ticket.EventDate.Format("2006-01-02"),
-			IsAvailable: &isAvailable,
+			ID:             ticket.ID.String(),
+			Name:           ticket.Name,
+			Type:           ticket.Type,
+			Price:          ticket.Price,
+			Quota:          ticket.Quota,
+			QuotaFilled:    ticket.QuotaFilled,
+			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+			Image:          ticket.Image,
+			Description:    ticket.Description,
+			EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+			EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+			IsAvailable:    &isAvailable,
 		}
 
 		datas = append(datas, data)
@@ -495,15 +509,21 @@ func (as *AdminService) GetDetailTicket(ctx context.Context, ticketID string) (d
 		return dto.TicketResponse{}, dto.ErrTicketNotFound
 	}
 
+	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
+
 	return dto.TicketResponse{
-		ID:          ticket.ID.String(),
-		Name:        ticket.Name,
-		Type:        ticket.Type,
-		Price:       ticket.Price,
-		Quota:       ticket.Quota,
-		Image:       ticket.Image,
-		Description: ticket.Description,
-		EventDate:   ticket.EventDate.Format("2006-01-02"),
+		ID:             ticket.ID.String(),
+		Name:           ticket.Name,
+		Type:           ticket.Type,
+		Price:          ticket.Price,
+		Quota:          ticket.Quota,
+		QuotaFilled:    ticket.QuotaFilled,
+		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+		Image:          ticket.Image,
+		Description:    ticket.Description,
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+		IsAvailable:    &isAvailable,
 	}, nil
 }
 func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRequest) (dto.TicketResponse, error) {
@@ -541,7 +561,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 	}
 
 	if req.Quota != nil {
-		if *req.Quota < 0 {
+		if *req.Quota < ticket.QuotaFilled {
 			return dto.TicketResponse{}, dto.ErrQuotaOutOfBound
 		}
 
@@ -588,33 +608,51 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		ticket.Description = req.Description
 	}
 
-	if req.EventDate != "" {
+	if req.EventStartDate != "" {
 		loc, err := time.LoadLocation("Asia/Jakarta")
 		if err != nil {
 			loc = time.FixedZone("UTC+7", 7*60*60)
 		}
-		eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+		eventStartDate, err := time.ParseInLocation("2006-01-02", req.EventStartDate, loc)
 		if err != nil {
 			return dto.TicketResponse{}, dto.ErrParseTime
 		}
 
-		ticket.EventDate = eventDate
+		ticket.EventStartDate = eventStartDate
+	}
+
+	if req.EventEndDate != "" {
+		loc, err := time.LoadLocation("Asia/Jakarta")
+		if err != nil {
+			loc = time.FixedZone("UTC+7", 7*60*60)
+		}
+		eventEndDate, err := time.ParseInLocation("2006-01-02", req.EventEndDate, loc)
+		if err != nil {
+			return dto.TicketResponse{}, dto.ErrParseTime
+		}
+
+		ticket.EventEndDate = eventEndDate
 	}
 
 	err = as.adminRepo.UpdateTicket(ctx, nil, ticket)
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrCreateTicket
-	}
 
+	}
+	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
 	return dto.TicketResponse{
-		ID:          ticket.ID.String(),
-		Name:        ticket.Name,
-		Type:        ticket.Type,
-		Price:       ticket.Price,
-		Quota:       ticket.Quota,
-		Image:       ticket.Image,
-		Description: ticket.Description,
-		EventDate:   ticket.EventDate.Format("2006-01-02"),
+		ID:             ticket.ID.String(),
+		Name:           ticket.Name,
+		Type:           ticket.Type,
+		Price:          ticket.Price,
+		Quota:          ticket.Quota,
+		QuotaFilled:    ticket.QuotaFilled,
+		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+		Image:          ticket.Image,
+		Description:    ticket.Description,
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+		IsAvailable:    &isAvailable,
 	}, nil
 }
 func (as *AdminService) DeleteTicket(ctx context.Context, req dto.DeleteTicketRequest) (dto.TicketResponse, error) {
@@ -629,13 +667,14 @@ func (as *AdminService) DeleteTicket(ctx context.Context, req dto.DeleteTicketRe
 	}
 
 	res := dto.TicketResponse{
-		ID:        deletedTicket.ID.String(),
-		Name:      deletedTicket.Name,
-		Type:      deletedTicket.Type,
-		Price:     deletedTicket.Price,
-		Quota:     deletedTicket.Quota,
-		Image:     deletedTicket.Image,
-		EventDate: deletedTicket.EventDate.Format("2006-01-02"),
+		ID:             deletedTicket.ID.String(),
+		Name:           deletedTicket.Name,
+		Type:           deletedTicket.Type,
+		Price:          deletedTicket.Price,
+		Quota:          deletedTicket.Quota,
+		Image:          deletedTicket.Image,
+		EventStartDate: deletedTicket.EventStartDate.Format("2006-01-02"),
+		EventEndDate:   deletedTicket.EventEndDate.Format("2006-01-02"),
 	}
 
 	return res, nil
@@ -1633,7 +1672,7 @@ func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse,
 			Image:       bundle.Image,
 			Type:        bundle.Type,
 			Price:       bundle.Price,
-			Quota:       bundle.Quota,
+			Quota:       bundle.Quota - bundle.QuotaFilled,
 			Description: bundle.Description,
 			EventDate:   bundle.EventDate.Format("2006-01-02"),
 			IsAvailable: &isAvailable,
@@ -1670,7 +1709,7 @@ func (as *AdminService) GetAllBundleWithPagination(ctx context.Context, req dto.
 			Image:       bundle.Image,
 			Type:        bundle.Type,
 			Price:       bundle.Price,
-			Quota:       bundle.Quota,
+			Quota:       bundle.Quota - bundle.QuotaFilled,
 			Description: bundle.Description,
 			EventDate:   bundle.EventDate.Format("2006-01-02"),
 			IsAvailable: &isAvailable,
@@ -1711,7 +1750,7 @@ func (as *AdminService) GetDetailBundle(ctx context.Context, bundleID string) (d
 		Image:       bundle.Image,
 		Type:        bundle.Type,
 		Price:       bundle.Price,
-		Quota:       bundle.Quota,
+		Quota:       bundle.Quota - bundle.QuotaFilled,
 		Description: bundle.Description,
 		EventDate:   bundle.EventDate.Format("2006-01-02"),
 	}
@@ -2226,7 +2265,8 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				return dto.ErrGenerateQRCode
 			}
 
-			headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			// headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			headerImage := "https://tedxuniversitasairlangga.com/images/header-e-ticket-mail.png"
 			emailData := struct {
 				HeaderImage  string
 				TicketID     string

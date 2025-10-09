@@ -271,7 +271,8 @@ func (ah *AdminHandler) CreateTicket(ctx *gin.Context) {
 	}
 
 	payload.Description = ctx.PostForm("ticket_description")
-	payload.EventDate = ctx.PostForm("ticket_event_date")
+	payload.EventStartDate = ctx.PostForm("ticket_event_start_date")
+	payload.EventEndDate = ctx.PostForm("ticket_event_end_date")
 
 	result, err := ah.adminService.CreateTicket(ctx, payload)
 	if err != nil {
@@ -383,7 +384,8 @@ func (ah *AdminHandler) UpdateTicket(ctx *gin.Context) {
 	}
 
 	payload.Description = ctx.PostForm("ticket_description")
-	payload.EventDate = ctx.PostForm("ticket_event_date")
+	payload.EventStartDate = ctx.PostForm("ticket_event_start_date")
+	payload.EventEndDate = ctx.PostForm("ticket_event_end_date")
 
 	result, err := ah.adminService.UpdateTicket(ctx, payload)
 	if err != nil {

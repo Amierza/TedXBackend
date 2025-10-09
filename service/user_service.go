@@ -6,7 +6,6 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
-	"os"
 	"strconv"
 	"time"
 
@@ -58,6 +57,10 @@ type (
 
 		// Webhook for Midtrans
 		UpdateTransactionTicket(ctx context.Context, req dto.UpdateMidtransTransactionTicketRequest) error
+
+		// Hisoty Transactions
+		GetAllTransactions(ctx context.Context) ([]dto.TransactionResponse, error)
+		GetDetailTransactions(ctx context.Context, id string) (dto.TransactionResponse, error)
 	}
 
 	UserService struct {
@@ -205,18 +208,20 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 
 	var datas []dto.TicketResponse
 	for _, ticket := range tickets {
-		isAvailable := ticket.Quota > 0 && time.Now().Before(ticket.EventDate)
-
+		isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
 		data := dto.TicketResponse{
-			ID:          ticket.ID.String(),
-			Name:        ticket.Name,
-			Type:        ticket.Type,
-			Price:       ticket.Price,
-			Quota:       ticket.Quota,
-			Image:       ticket.Image,
-			Description: ticket.Description,
-			EventDate:   ticket.EventDate.Format("2006-01-02"),
-			IsAvailable: &isAvailable,
+			ID:             ticket.ID.String(),
+			Name:           ticket.Name,
+			Type:           ticket.Type,
+			Price:          ticket.Price,
+			Quota:          ticket.Quota,
+			QuotaFilled:    ticket.QuotaFilled,
+			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+			Image:          ticket.Image,
+			Description:    ticket.Description,
+			EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+			EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+			IsAvailable:    &isAvailable,
 		}
 
 		datas = append(datas, data)
@@ -230,15 +235,21 @@ func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dt
 		return dto.TicketResponse{}, dto.ErrTicketNotFound
 	}
 
+	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
+
 	return dto.TicketResponse{
-		ID:          ticket.ID.String(),
-		Name:        ticket.Name,
-		Type:        ticket.Type,
-		Price:       ticket.Price,
-		Quota:       ticket.Quota,
-		Image:       ticket.Image,
-		Description: ticket.Description,
-		EventDate:   ticket.EventDate.Format("2006-01-02"),
+		ID:             ticket.ID.String(),
+		Name:           ticket.Name,
+		Type:           ticket.Type,
+		Price:          ticket.Price,
+		Quota:          ticket.Quota,
+		QuotaFilled:    ticket.QuotaFilled,
+		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
+		Image:          ticket.Image,
+		Description:    ticket.Description,
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+		IsAvailable:    &isAvailable,
 	}, nil
 }
 
@@ -368,7 +379,7 @@ func (us *UserService) GetAllBundle(ctx context.Context, bundleType string) ([]d
 			Image:       bundle.Image,
 			Type:        bundle.Type,
 			Price:       bundle.Price,
-			Quota:       bundle.Quota,
+			Quota:       bundle.Quota - bundle.QuotaFilled,
 			IsAvailable: &isAvailable,
 			Description: bundle.Description,
 			EventDate:   bundle.EventDate.Format("2006-01-02"),
@@ -409,7 +420,7 @@ func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dt
 		Image:       bundle.Image,
 		Type:        bundle.Type,
 		Price:       bundle.Price,
-		Quota:       bundle.Quota,
+		Quota:       bundle.Quota - bundle.QuotaFilled,
 		Description: bundle.Description,
 		EventDate:   bundle.EventDate.Format("2006-01-02"),
 	}
@@ -515,7 +526,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrTicketNotFound
 			}
 
-			if t.Quota <= 0 {
+			if t.Quota-t.QuotaFilled <= 0 {
 				return dto.ErrTicketSoldOut
 			}
 
@@ -528,7 +539,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrTicketNotFound
 			}
 
-			if b.Quota <= 0 {
+			if b.Quota-b.QuotaFilled <= 0 {
 				return dto.ErrBundleSoldOut
 			}
 
@@ -539,13 +550,14 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		orderID := fmt.Sprintf("TEDX-%s", time.Now().Format("060102150405"))
 
 		transaction := entity.Transaction{
-			ID:          transactionID,
-			OrderID:     orderID,
-			ItemType:    req.ItemType,
-			ReferalCode: req.ReferalCode,
-			UserID:      &userID,
-			TicketID:    req.TicketID,
-			BundleID:    req.BundleID,
+			ID:                transactionID,
+			OrderID:           orderID,
+			ItemType:          req.ItemType,
+			TransactionStatus: "pending",
+			ReferalCode:       req.ReferalCode,
+			UserID:            &userID,
+			TicketID:          req.TicketID,
+			BundleID:          req.BundleID,
 		}
 
 		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
@@ -591,13 +603,13 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			}
 
 			if req.BundleID != nil && *req.BundleID != uuid.Nil {
-				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.Quota-len(req.TicketForms)); err != nil {
+				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.QuotaFilled+len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateBundleQuota
 				}
 			}
 
 			if req.TicketID != nil && *req.TicketID != uuid.Nil {
-				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.Quota-len(req.TicketForms)); err != nil {
+				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateTicketQuota
 				}
 			}
@@ -726,7 +738,8 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 				return dto.ErrGenerateQRCode
 			}
 
-			headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			// headerImage := fmt.Sprintf("%s/assets_static/header-e-ticket-mail.png", os.Getenv("BASE_URL"))
+			headerImage := "https://tedxuniversitasairlangga.com/images/header-e-ticket-mail.png"
 			emailData := struct {
 				HeaderImage  string
 				TicketID     string
@@ -765,18 +778,105 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 	case "pending":
 		transaction.TransactionStatus = "pending"
 
-	case "deny", "failure":
-		transaction.TransactionStatus = "failed"
-
-	case "cancel":
-		transaction.TransactionStatus = "cancelled"
-
-	case "expire":
-		transaction.TransactionStatus = "expired"
+	case "deny", "failure", "cancel", "expire":
+		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled-len(transaction.TicketForms)); err != nil {
+			return dto.ErrUpdateTicketQuota
+		}
+		transaction.TransactionStatus = req.TransactionStatus
 
 	default:
 		return dto.ErrUnknownTransactionStatus
 	}
 
 	return us.userRepo.UpdateTransactionTicket(ctx, nil, transaction)
+}
+
+// History Transactions
+func (us *UserService) GetAllTransactions(ctx context.Context) ([]dto.TransactionResponse, error) {
+	token := ctx.Value("Authorization").(string)
+	userIDStr, err := us.jwtService.GetUserIDByToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	transactions, err := us.userRepo.GetAllTransactions(ctx, nil, userIDStr)
+	if err != nil {
+		return nil, err
+	}
+
+	var datas []dto.TransactionResponse
+	for _, transaction := range transactions {
+		data := dto.TransactionResponse{
+			ID:                transaction.ID,
+			OrderID:           transaction.OrderID,
+			ItemType:          transaction.ItemType,
+			TicketType:        transaction.Ticket.Type,
+			ReferalCode:       transaction.ReferalCode,
+			TransactionStatus: transaction.TransactionStatus,
+			PaymentType:       transaction.PaymentType,
+			SignatureKey:      transaction.SignatureKey,
+			Acquire:           transaction.Acquire,
+			SettlementTime:    transaction.SettlementTime,
+			GrossAmount:       transaction.GrossAmount,
+			UserID:            transaction.UserID,
+			TicketID:          transaction.TicketID,
+			BundleID:          transaction.BundleID,
+		}
+
+		for _, tf := range transaction.TicketForms {
+			transactionItem := dto.TicketFormResponse{
+				ID:           tf.ID,
+				AudienceType: tf.AudienceType,
+				Instansi:     tf.Instansi,
+				Email:        tf.Email,
+				FullName:     tf.FullName,
+				PhoneNumber:  tf.PhoneNumber,
+				LineID:       tf.LineID,
+			}
+
+			data.TicketForms = append(data.TicketForms, transactionItem)
+		}
+
+		datas = append(datas, data)
+	}
+
+	return datas, nil
+}
+func (us *UserService) GetDetailTransactions(ctx context.Context, id string) (dto.TransactionResponse, error) {
+	transaction, _, err := us.userRepo.GetTransactionByID(ctx, nil, id)
+	if err != nil {
+		return dto.TransactionResponse{}, err
+	}
+
+	data := dto.TransactionResponse{
+		ID:                transaction.ID,
+		OrderID:           transaction.OrderID,
+		ItemType:          transaction.ItemType,
+		TicketType:        transaction.Ticket.Type,
+		ReferalCode:       transaction.ReferalCode,
+		TransactionStatus: transaction.TransactionStatus,
+		PaymentType:       transaction.PaymentType,
+		SignatureKey:      transaction.SignatureKey,
+		Acquire:           transaction.Acquire,
+		SettlementTime:    transaction.SettlementTime,
+		GrossAmount:       transaction.GrossAmount,
+		UserID:            transaction.UserID,
+		TicketID:          transaction.TicketID,
+		BundleID:          transaction.BundleID,
+	}
+	for _, tf := range transaction.TicketForms {
+		transactionItem := dto.TicketFormResponse{
+			ID:           tf.ID,
+			AudienceType: tf.AudienceType,
+			Instansi:     tf.Instansi,
+			Email:        tf.Email,
+			FullName:     tf.FullName,
+			PhoneNumber:  tf.PhoneNumber,
+			LineID:       tf.LineID,
+			QRCodeURL:    fmt.Sprintf("assets/qrcodes/%s", tf.ID),
+		}
+		data.TicketForms = append(data.TicketForms, transactionItem)
+	}
+
+	return data, nil
 }
