@@ -670,6 +670,8 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 func makeETicketEmail(data struct {
 	HeaderImage  string
 	TicketID     string
+	TicketName   string
+	TicketType   string
 	Status       string
 	AttendeeName string
 	Email        string
@@ -743,6 +745,8 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			emailData := struct {
 				HeaderImage  string
 				TicketID     string
+				TicketName   string
+				TicketType   string
 				Status       string
 				AttendeeName string
 				Email        string
@@ -752,7 +756,9 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 				QRCode       string
 			}{
 				HeaderImage:  headerImage,
-				TicketID:     transaction.ID.String(),
+				TicketID:     transaction.OrderID,
+				TicketName:   transaction.Ticket.Name,
+				TicketType:   string(transaction.Ticket.Type),
 				Status:       transaction.TransactionStatus,
 				AttendeeName: form.FullName,
 				Email:        form.Email,
