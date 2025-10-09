@@ -2270,6 +2270,8 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			emailData := struct {
 				HeaderImage  string
 				TicketID     string
+				TicketName   string
+				TicketType   string
 				Status       string
 				AttendeeName string
 				Email        string
@@ -2279,7 +2281,9 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				QRCode       string
 			}{
 				HeaderImage:  headerImage,
-				TicketID:     transaction.ID.String(),
+				TicketID:     transaction.OrderID,
+				TicketName:   transaction.Ticket.Name,
+				TicketType:   string(transaction.Ticket.Type),
 				Status:       "settlement",
 				AttendeeName: ticketForm.FullName,
 				Email:        ticketForm.Email,
