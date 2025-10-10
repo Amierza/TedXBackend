@@ -1245,7 +1245,7 @@ func (ar *AdminRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, t
 	result := tx.WithContext(ctx).
 		Model(&entity.Ticket{}).
 		Where("id = ?", ticketID).
-		Update("quota", newQuota)
+		Update("quota_filled", newQuota)
 
 	if result.Error != nil {
 		return result.Error
