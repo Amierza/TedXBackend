@@ -953,7 +953,7 @@ func (ar *AdminRepository) GetAllTicketForm(ctx context.Context, tx *gorm.DB, fi
 		Model(&entity.TicketForm{}).
 		Joins("JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
 		Preload("GuestAttendances").
-		Preload("Transaction.Ticket").Where("transactions.transaction_status = ?", "settlement")
+		Preload("Transaction.Ticket")
 
 	// --- Apply Filter ---
 	if filter.Search != "" {
@@ -1007,7 +1007,7 @@ func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, t
 		Model(&entity.TicketForm{}).
 		Joins("LEFT JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
 		Preload("GuestAttendances.CheckedByUser").
-		Preload("Transaction.Ticket").Where("transactions.transaction_status = ?", "settlement")
+		Preload("Transaction.Ticket")
 
 	// --- Apply Filters (CheckInFilterQuery) ---
 	if filter.Search != "" {
