@@ -12,6 +12,7 @@ type Ticket struct {
 	Type           TicketType `gorm:"default:'main-event'" json:"type"`
 	Price          float64    `gorm:"not null;default:0" json:"price"`
 	Image          string     `gorm:"not null" json:"image"`
+	Bundle_Quota   float64    `json:"bundle_quota"`
 	Quota          int        `gorm:"not null;default:0" json:"quota"`
 	QuotaFilled    int        `gorm:"not null;default:0" json:"quota_filled"`
 	Description    string     `json:"description"`
