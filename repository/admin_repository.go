@@ -1007,6 +1007,8 @@ func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, t
 		Model(&entity.TicketForm{}).
 		Joins("LEFT JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
 		Preload("GuestAttendances.CheckedByUser").
+		Joins("LEFT JOIN transactions ON transactions.id = ticket_forms.transaction_id").
+		Where("transactions.transaction_status = ?", "settlement").
 		Preload("Transaction.Ticket")
 
 	// --- Apply Filters (CheckInFilterQuery) ---
@@ -1020,7 +1022,6 @@ func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, t
 
 	if filter.TicketType != "" {
 		query = query.
-			Joins("JOIN transactions ON transactions.id = ticket_forms.transaction_id").
 			Joins("JOIN tickets ON tickets.id = transactions.ticket_id").
 			Where("tickets.type = ?", filter.TicketType)
 	}
