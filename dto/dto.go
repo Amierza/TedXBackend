@@ -647,9 +647,10 @@ type (
 // Check in
 type (
 	CheckInFilterQuery struct {
-		Search     string `form:"search"`
-		TicketType string `form:"ticket_type"`
-		Status     string `form:"status"`
+		Search       string `form:"search"`
+		TicketType   string `form:"ticket_type"`
+		Status       string `form:"status"`
+		AudienceType string `form:"audience_type"`
 	}
 	TicketCheckInResponse struct {
 		TicketFormID  uuid.UUID           `json:"ticket_form_id"`

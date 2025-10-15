@@ -953,6 +953,8 @@ func (ar *AdminRepository) GetAllTicketForm(ctx context.Context, tx *gorm.DB, fi
 		Model(&entity.TicketForm{}).
 		Joins("JOIN guest_attendances ON guest_attendances.ticket_form_id = ticket_forms.id").
 		Preload("GuestAttendances").
+		Joins("JOIN transactions ON transactions.id = ticket_forms.transaction_id").
+		Where("transactions.transaction_status = ?", "settlement").
 		Preload("Transaction.Ticket")
 
 	// --- Apply Filter ---
@@ -963,9 +965,13 @@ func (ar *AdminRepository) GetAllTicketForm(ctx context.Context, tx *gorm.DB, fi
 
 	if filter.TicketType != "" {
 		// diasumsikan TicketType ada di Transaction.Ticket
-		query = query.Joins("JOIN transactions ON transactions.id = ticket_forms.transaction_id").
+		query = query.
 			Joins("JOIN tickets ON tickets.id = transactions.ticket_id").
 			Where("tickets.type = ?", filter.TicketType)
+	}
+	if filter.AudienceType != "" {
+		query = query.
+			Where("ticket_forms.audience_type = ?", filter.AudienceType)
 	}
 
 	if filter.Status != "" {
@@ -1024,6 +1030,11 @@ func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, t
 		query = query.
 			Joins("JOIN tickets ON tickets.id = transactions.ticket_id").
 			Where("tickets.type = ?", filter.TicketType)
+	}
+
+	if filter.AudienceType != "" {
+		query = query.
+			Where("ticket_forms.audience_type = ?", filter.AudienceType)
 	}
 
 	if filter.Status != "" {
