@@ -256,6 +256,16 @@ func (ah *AdminHandler) CreateTicket(ctx *gin.Context) {
 		}
 	}
 
+	if quotaBundleStr := ctx.PostForm("ticket_bundle_quota"); quotaBundleStr != "" {
+		if quota, err := strconv.Atoi(quotaBundleStr); err == nil {
+			payload.BundleQuota = &quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
 	fileHeader, err := ctx.FormFile("ticket_image")
 	if err == nil {
 		file, err := fileHeader.Open()
@@ -354,6 +364,15 @@ func (ah *AdminHandler) UpdateTicket(ctx *gin.Context) {
 			payload.Price = &price
 		} else {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+	if quotaBundleStr := ctx.PostForm("ticket_bundle_quota"); quotaBundleStr != "" {
+		if quota, err := strconv.Atoi(quotaBundleStr); err == nil {
+			payload.BundleQuota = &quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 			return
 		}

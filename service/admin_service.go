@@ -404,6 +404,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrParseTime
 	}
+	bundleQuota := req.BundleQuota
 
 	ticket := entity.Ticket{
 		ID:             uuid.New(),
@@ -412,6 +413,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		Price:          req.Price,
 		Quota:          req.Quota,
 		Image:          req.Image,
+		Bundle_Quota:   bundleQuota,
 		Description:    req.Description,
 		EventStartDate: eventStartDate,
 		EventEndDate:   eventEndDate,
@@ -427,6 +429,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		Name:           ticket.Name,
 		Type:           ticket.Type,
 		Price:          ticket.Price,
+		BundleQuota:    ticket.Bundle_Quota,
 		Quota:          ticket.Quota,
 		QuotaFilled:    ticket.QuotaFilled,
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
@@ -451,6 +454,7 @@ func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse,
 			Type:           ticket.Type,
 			Price:          ticket.Price,
 			Quota:          ticket.Quota,
+			BundleQuota:    ticket.Bundle_Quota,
 			QuotaFilled:    ticket.QuotaFilled,
 			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 			Image:          ticket.Image,
@@ -481,6 +485,7 @@ func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.
 			Type:           ticket.Type,
 			Price:          ticket.Price,
 			Quota:          ticket.Quota,
+			BundleQuota:    ticket.Bundle_Quota,
 			QuotaFilled:    ticket.QuotaFilled,
 			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 			Image:          ticket.Image,
