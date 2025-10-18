@@ -558,13 +558,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		ticket.Type = req.Type
 	}
 
-	if req.BundleQuota != nil {
-		ticket.Bundle_Quota = nil
-	}
-
-	if req.BundleQuota != nil {
-		ticket.Bundle_Quota = req.BundleQuota
-	}
+	ticket.Bundle_Quota = req.BundleQuota
 
 	if req.Quota != nil {
 		if *req.Quota < ticket.QuotaFilled {
@@ -642,7 +636,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 
 	err = as.adminRepo.UpdateTicket(ctx, nil, ticket)
 	if err != nil {
-		return dto.TicketResponse{}, dto.ErrCreateTicket
+		return dto.TicketResponse{}, dto.ErrUpdateTicket
 
 	}
 	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)

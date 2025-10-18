@@ -368,7 +368,8 @@ func (ah *AdminHandler) UpdateTicket(ctx *gin.Context) {
 			return
 		}
 	}
-	if quotaBundleStr := ctx.PostForm("ticket_bundle_quota"); quotaBundleStr != "" {
+	quotaBundleStr := ctx.PostForm("ticket_bundle_quota")
+	if quotaBundleStr != "" && quotaBundleStr != "null" {
 		if quota, err := strconv.Atoi(quotaBundleStr); err == nil {
 			payload.BundleQuota = &quota
 		} else {

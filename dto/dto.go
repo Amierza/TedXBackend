@@ -412,7 +412,7 @@ type (
 		Name           string            `json:"ticket_name,omitempty" form:"ticket_name"`
 		Type           entity.TicketType `json:"ticket_type" form:"ticket_type"`
 		Price          *float64          `json:"ticket_price,omitempty" form:"ticket_price"`
-		BundleQuota    *int              `json:"bundle_quota,omitempty" form:"ticket_bundle_quota"`
+		BundleQuota    *int              `json:"bundle_quota" form:"ticket_bundle_quota"`
 		Image          string            `json:"ticket_image,omitempty" form:"ticket_image"`
 		Quota          *int              `json:"ticket_quota,omitempty" form:"ticket_quota"`
 		Description    string            `json:"ticket_description" form:"ticket_description"`

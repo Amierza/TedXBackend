@@ -1223,7 +1223,7 @@ func (ar *AdminRepository) UpdateTicket(ctx context.Context, tx *gorm.DB, ticket
 		tx = ar.db
 	}
 
-	return tx.WithContext(ctx).Where("id = ?", ticket.ID).Updates(&ticket).Error
+	return tx.WithContext(ctx).Where("id = ?", ticket.ID).Select("bundle_quota").Updates(&ticket).Error
 }
 func (ar *AdminRepository) UpdateSponsorship(ctx context.Context, tx *gorm.DB, sponsorship entity.Sponsorship) error {
 	if tx == nil {
