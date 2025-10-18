@@ -387,6 +387,7 @@ type (
 		Price          float64           `json:"ticket_price"`
 		Image          string            `json:"ticket_image"`
 		Quota          int               `json:"ticket_quota"`
+		BundleQuota    *int              `json:"ticket_bundle_quota"`
 		QuotaFilled    int               `json:"ticket_quota_filled"`
 		QuotaAvailable int               `json:"ticket_quota_available"`
 		Description    string            `json:"ticket_description"`
@@ -399,6 +400,7 @@ type (
 		Type           entity.TicketType `json:"ticket_type" form:"ticket_type"`
 		Price          float64           `json:"ticket_price" form:"ticket_price"`
 		Image          string            `json:"ticket_image" form:"ticket_image"`
+		BundleQuota    *int              `json:"bundle_quota,omitempty" form:"ticket_bundle_quota"`
 		Quota          int               `json:"ticket_quota" form:"ticket_quota"`
 		Description    string            `json:"ticket_description" form:"ticket_description"`
 		EventStartDate string            `json:"ticket_event_start_date" form:"ticket_event_start_date"`
@@ -410,6 +412,7 @@ type (
 		Name           string            `json:"ticket_name,omitempty" form:"ticket_name"`
 		Type           entity.TicketType `json:"ticket_type" form:"ticket_type"`
 		Price          *float64          `json:"ticket_price,omitempty" form:"ticket_price"`
+		BundleQuota    *int              `json:"bundle_quota,omitempty" form:"ticket_bundle_quota"`
 		Image          string            `json:"ticket_image,omitempty" form:"ticket_image"`
 		Quota          *int              `json:"ticket_quota,omitempty" form:"ticket_quota"`
 		Description    string            `json:"ticket_description" form:"ticket_description"`
