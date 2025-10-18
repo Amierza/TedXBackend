@@ -70,7 +70,7 @@ type (
 		GetAllTicketStats(ctx context.Context, tx *gorm.DB, ticketType string) (*dto.TicketTypeStatResponse, error)
 		GetTotalBundle(ctx context.Context, tx *gorm.DB, bundleType string) (int64, error)
 		GetTotalAdmin(ctx context.Context, tx *gorm.DB) (int64, error)
-		GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*dto.GuestStatResponse, error)
+		GetAllGuestStats(ctx context.Context, tx *gorm.DB, guestType string) (*dto.GuestStatResponse, error)
 		GetTotalSponsor(ctx context.Context, tx *gorm.DB, sponsorType string) (int64, error)
 
 		// UPDATE / PATCH
@@ -1154,42 +1154,78 @@ func (ar *AdminRepository) GetTotalAdmin(ctx context.Context, tx *gorm.DB) (int6
 
 	return total, nil
 }
-func (ar *AdminRepository) GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*dto.GuestStatResponse, error) {
+func (ar *AdminRepository) GetAllGuestStats(ctx context.Context, tx *gorm.DB, guestType string) (*dto.GuestStatResponse, error) {
 	if tx == nil {
 		tx = ar.db
 	}
 
 	stat := &dto.GuestStatResponse{}
 
-	// total guest (quota)
+	// ==== Total Guest (semua tiket settlement) ====
 	if err := tx.WithContext(ctx).
 		Model(&entity.TicketForm{}).
 		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
 		Where("transactions.transaction_status = ?", "settlement").
-		Count(&stat.Total).Error; err != nil {
+		Where("ticket_forms.audience_type = ?", guestType).
+		Count(&stat.TotalGuest).Error; err != nil {
 		return stat, err
 	}
 
-	// total check-in guest (unique guest yang sudah pernah check-in)
+	// ==== Total PE3 Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "pre-event-3").
+		Count(&stat.TotalPE3Guest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total ME Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "main-event").
+		Count(&stat.TotalMEGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total PE3 Check-In Guest ====
 	if err := tx.WithContext(ctx).
 		Model(&entity.GuestAttendance{}).
-		Select("COUNT(DISTINCT id)").
-		Scan(&stat.TotalCheckInGuest).Error; err != nil {
-		return stat, err
-	}
-
-	// total not check-in guest
-	stat.TotalNotCheckInGuest = stat.Total - stat.TotalCheckInGuest
-
-	// total invited guest
-	if err := tx.WithContext(ctx).
-		Model(&entity.TicketForm{}).
+		Joins("JOIN ticket_forms ON guest_attendances.ticket_form_id = ticket_forms.id").
 		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
 		Where("transactions.transaction_status = ?", "settlement").
-		Where("audience_type = ?", "invited").
-		Count(&stat.TotalInvitedGuest).Error; err != nil {
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "pre-event-3").
+		Select("COUNT(DISTINCT guest_attendances.ticket_form_id)").
+		Scan(&stat.TotalPE3CheckInGuest).Error; err != nil {
 		return stat, err
 	}
+
+	// ==== Total ME Check-In Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.GuestAttendance{}).
+		Joins("JOIN ticket_forms ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "main-event").
+		Select("COUNT(DISTINCT guest_attendances.ticket_form_id)").
+		Scan(&stat.TotalMECheckInGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Hitung Not Check-In ====
+	stat.TotalPE3NotCheckInGuest = stat.TotalPE3Guest - stat.TotalPE3CheckInGuest
+	stat.TotalMENotCheckInGuest = stat.TotalMEGuest - stat.TotalMECheckInGuest
 
 	return stat, nil
 }

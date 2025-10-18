@@ -319,7 +319,8 @@ var (
 	ErrGetTotalBundleMerch       = errors.New("failed get total bundle merch")
 	ErrGetTotalBundleMerchTicket = errors.New("failed get total bundle merch ticket")
 	ErrGetTotalAdmin             = errors.New("failed get total admin")
-	ErrGetAllGuestStats          = errors.New("failed get all guest stats")
+	ErrGetAllRegularGuestStats   = errors.New("failed get all regular guest stats")
+	ErrGetAllInvitedGuestStats   = errors.New("failed get all invited guest stats")
 	ErrGetTotalSponsor           = errors.New("failed get total sponsor")
 	ErrGetTotalPartner           = errors.New("failed get total partner")
 	ErrGetTotalMediaPartner      = errors.New("failed get total media partner")
@@ -770,19 +771,24 @@ type (
 	}
 	// Guest Stat Response
 	GuestStatResponse struct {
-		Total                int64 `json:"total"`
-		TotalCheckInGuest    int64 `json:"total_check_in_guest"`
-		TotalNotCheckInGuest int64 `json:"total_not_check_in_guest"`
-		TotalInvitedGuest    int64 `json:"total_invited_guest"`
+		TotalGuest              int64 `json:"total_guest"`
+		TotalPE3Guest           int64 `json:"total_pe3_guest"`
+		TotalPE3CheckInGuest    int64 `json:"total_pe3_check_in_guest"`
+		TotalPE3NotCheckInGuest int64 `json:"total_pe3_not_check_in_guest"`
+		TotalMEGuest            int64 `json:"total_me_guest"`
+		TotalMECheckInGuest     int64 `json:"total_me_check_in_guest"`
+		TotalMENotCheckInGuest  int64 `json:"total_me_not_check_in_guest"`
 	}
 	// Response
 	DashboardStatResponse struct {
 		PreEvent3              TicketTypeStatResponse `json:"pre-event-3"`
 		MainEvent              TicketTypeStatResponse `json:"main-event"`
+		TotalGuest             int64                  `json:"total_guest"`
+		RegularGuest           GuestStatResponse      `json:"regular_guest"`
+		InvitedGuest           GuestStatResponse      `json:"invited_guest"`
 		TotalBundleMerch       int64                  `json:"total_bundle_merch"`
 		TotalBundleMerchTicket int64                  `json:"total_bundle_merch_ticket"`
 		TotalAdmin             int64                  `json:"total_admin"`
-		Guest                  GuestStatResponse      `json:"guest"`
 		Sponsor                int64                  `json:"sponsor"`
 		Partner                int64                  `json:"partner"`
 		MediaPartner           int64                  `json:"media partner"`

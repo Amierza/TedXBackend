@@ -2662,11 +2662,18 @@ func (as *AdminService) GetAllStats(ctx context.Context) (dto.DashboardStatRespo
 		return dto.DashboardStatResponse{}, dto.ErrGetTotalAdmin
 	}
 
-	// Guest Stats
-	guest, err := as.adminRepo.GetAllGuestStats(ctx, nil)
+	// Regular Guest Stats
+	regularGuest, err := as.adminRepo.GetAllGuestStats(ctx, nil, "regular")
 	if err != nil {
-		return dto.DashboardStatResponse{}, dto.ErrGetAllGuestStats
+		return dto.DashboardStatResponse{}, dto.ErrGetAllRegularGuestStats
 	}
+	// Invited Guest Stats
+	invitedGuest, err := as.adminRepo.GetAllGuestStats(ctx, nil, "invited")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetAllInvitedGuestStats
+	}
+	// Total Guest
+	totalGuest := regularGuest.TotalGuest + invitedGuest.TotalGuest
 
 	// Sponsor Stats
 	sponsor, err := as.adminRepo.GetTotalSponsor(ctx, nil, "sponsor")
@@ -2686,10 +2693,12 @@ func (as *AdminService) GetAllStats(ctx context.Context) (dto.DashboardStatRespo
 	res := dto.DashboardStatResponse{
 		PreEvent3:              *preEvent3,
 		MainEvent:              *mainEvent,
+		TotalGuest:             totalGuest,
+		RegularGuest:           *regularGuest,
+		InvitedGuest:           *invitedGuest,
 		TotalBundleMerch:       totalBundleMerch,
 		TotalBundleMerchTicket: totalBundleMerchTicket,
 		TotalAdmin:             totalAdmin,
-		Guest:                  *guest,
 		Sponsor:                sponsor,
 		Partner:                partner,
 		MediaPartner:           mediaPartner,
