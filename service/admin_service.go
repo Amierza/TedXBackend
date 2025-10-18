@@ -522,6 +522,7 @@ func (as *AdminService) GetDetailTicket(ctx context.Context, ticketID string) (d
 		Type:           ticket.Type,
 		Price:          ticket.Price,
 		Quota:          ticket.Quota,
+		BundleQuota:    ticket.Bundle_Quota,
 		QuotaFilled:    ticket.QuotaFilled,
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 		Image:          ticket.Image,
@@ -557,12 +558,12 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		ticket.Type = req.Type
 	}
 
-	if req.Price != nil {
-		if *req.Price < 0 {
-			return dto.TicketResponse{}, dto.ErrPriceOutOfBound
-		}
+	if req.BundleQuota != nil {
+		ticket.Bundle_Quota = nil
+	}
 
-		ticket.Price = *req.Price
+	if req.BundleQuota != nil {
+		ticket.Bundle_Quota = req.BundleQuota
 	}
 
 	if req.Quota != nil {
@@ -650,6 +651,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		Name:           ticket.Name,
 		Type:           ticket.Type,
 		Price:          ticket.Price,
+		BundleQuota:    ticket.Bundle_Quota,
 		Quota:          ticket.Quota,
 		QuotaFilled:    ticket.QuotaFilled,
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,

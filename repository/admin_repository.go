@@ -1163,6 +1163,8 @@ func (ar *AdminRepository) GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*
 	// total guest (quota)
 	if err := tx.WithContext(ctx).
 		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Where("transactions.transaction_status = ?", "settlement").
 		Count(&stat.Total).Error; err != nil {
 		return stat, err
 	}
