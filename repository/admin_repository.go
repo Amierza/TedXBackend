@@ -1183,6 +1183,8 @@ func (ar *AdminRepository) GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*
 	// total invited guest
 	if err := tx.WithContext(ctx).
 		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Where("transactions.transaction_status = ?", "settlement").
 		Where("audience_type = ?", "invited").
 		Count(&stat.TotalInvitedGuest).Error; err != nil {
 		return stat, err
