@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/Amierza/TedXBackend/dto"
 	"github.com/Amierza/TedXBackend/entity"
@@ -1223,7 +1224,23 @@ func (ar *AdminRepository) UpdateTicket(ctx context.Context, tx *gorm.DB, ticket
 		tx = ar.db
 	}
 
-	return tx.WithContext(ctx).Where("id = ?", ticket.ID).Select("bundle_quota").Updates(&ticket).Error
+	updateData := map[string]interface{}{
+		"name":             ticket.Name,
+		"type":             ticket.Type,
+		"price":            ticket.Price,
+		"image":            ticket.Image,
+		"bundle_quota":     ticket.Bundle_Quota, // bisa nil -> jadi NULL
+		"quota":            ticket.Quota,
+		"description":      ticket.Description,
+		"event_start_date": ticket.EventStartDate,
+		"event_end_date":   ticket.EventEndDate,
+		"updatedAt":        time.Now(),
+	}
+
+	return tx.WithContext(ctx).
+		Model(&entity.Ticket{}).
+		Where("id = ?", ticket.ID).
+		Updates(updateData).Error
 }
 func (ar *AdminRepository) UpdateSponsorship(ctx context.Context, tx *gorm.DB, sponsorship entity.Sponsorship) error {
 	if tx == nil {

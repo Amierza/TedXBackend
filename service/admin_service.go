@@ -547,15 +547,19 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 	}
 
 	if req.Type != "" {
-		if req.Type == ticket.Type {
-			return dto.TicketResponse{}, dto.ErrSameTicketType
-		}
-
 		if !entity.IsValidTicketType(req.Type) {
 			return dto.TicketResponse{}, dto.ErrInvalidTicketType
 		}
 
 		ticket.Type = req.Type
+	}
+
+	if req.Price != nil {
+		if *req.Price < 0 {
+			return dto.TicketResponse{}, dto.ErrPriceOutOfBound
+		}
+
+		ticket.Price = *req.Price
 	}
 
 	ticket.Bundle_Quota = req.BundleQuota
