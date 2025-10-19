@@ -732,9 +732,9 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 
 		sentEmails := make(map[string]bool)
 		for _, form := range transaction.TicketForms {
-			if sentEmails[form.Email] {
-				continue
-			}
+			// if sentEmails[form.Email] {
+			// 	continue
+			// }
 			sentEmails[form.Email] = true
 
 			qrURL, err := helpers.GenerateQRCodeFile(form.ID.String(), form.ID.String()+".png")
