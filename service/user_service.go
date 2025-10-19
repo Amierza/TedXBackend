@@ -214,6 +214,7 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 			Name:           ticket.Name,
 			Type:           ticket.Type,
 			Price:          ticket.Price,
+			BundleQuota:    ticket.Bundle_Quota,
 			Quota:          ticket.Quota,
 			QuotaFilled:    ticket.QuotaFilled,
 			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
@@ -243,6 +244,7 @@ func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dt
 		Type:           ticket.Type,
 		Price:          ticket.Price,
 		Quota:          ticket.Quota,
+		BundleQuota:    ticket.Bundle_Quota,
 		QuotaFilled:    ticket.QuotaFilled,
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 		Image:          ticket.Image,
@@ -730,9 +732,9 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 
 		sentEmails := make(map[string]bool)
 		for _, form := range transaction.TicketForms {
-			if sentEmails[form.Email] {
-				continue
-			}
+			// if sentEmails[form.Email] {
+			// 	continue
+			// }
 			sentEmails[form.Email] = true
 
 			qrURL, err := helpers.GenerateQRCodeFile(form.ID.String(), form.ID.String()+".png")

@@ -78,6 +78,7 @@ type (
 
 		// Dashboard Stats
 		GetAllStats(ctx *gin.Context)
+		GetAllGuestStatsByEvent(ctx *gin.Context)
 	}
 
 	AdminHandler struct {
@@ -256,6 +257,16 @@ func (ah *AdminHandler) CreateTicket(ctx *gin.Context) {
 		}
 	}
 
+	if quotaBundleStr := ctx.PostForm("ticket_bundle_quota"); quotaBundleStr != "" {
+		if quota, err := strconv.Atoi(quotaBundleStr); err == nil {
+			payload.BundleQuota = &quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+
 	fileHeader, err := ctx.FormFile("ticket_image")
 	if err == nil {
 		file, err := fileHeader.Open()
@@ -354,6 +365,16 @@ func (ah *AdminHandler) UpdateTicket(ctx *gin.Context) {
 			payload.Price = &price
 		} else {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_PRICE, err.Error(), nil)
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+			return
+		}
+	}
+	quotaBundleStr := ctx.PostForm("ticket_bundle_quota")
+	if quotaBundleStr != "" && quotaBundleStr != "null" {
+		if quota, err := strconv.Atoi(quotaBundleStr); err == nil {
+			payload.BundleQuota = &quota
+		} else {
+			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_PARSE_QUOTA, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 			return
 		}
@@ -1399,5 +1420,23 @@ func (ah *AdminHandler) GetAllStats(ctx *gin.Context) {
 	}
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_ALL_STATS, result)
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (ah *AdminHandler) GetAllGuestStatsByEvent(ctx *gin.Context) {
+	eventType := ctx.DefaultQuery("event_type", "main-event")
+	if eventType != "main-event" && eventType != "pre-event-3" {
+		res := utils.BuildResponseFailed("event type doesnt match", "event_type must be 'main-event' or 'pre-event-3'", nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+	result, err := ah.adminService.GetAllGuestStatsByEvent(ctx, eventType)
+	if err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_ALL_GUEST_STATS_BY_EVENT, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
+	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_GET_ALL_GUEST_STATS_BY_EVENT, result)
 	ctx.JSON(http.StatusOK, res)
 }

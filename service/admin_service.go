@@ -93,6 +93,7 @@ type (
 
 		// Dashboard Stats
 		GetAllStats(ctx context.Context) (dto.DashboardStatResponse, error)
+		GetAllGuestStatsByEvent(ctx context.Context, eventType string) (dto.GuestStatByEventResponse, error)
 	}
 
 	AdminService struct {
@@ -404,6 +405,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrParseTime
 	}
+	bundleQuota := req.BundleQuota
 
 	ticket := entity.Ticket{
 		ID:             uuid.New(),
@@ -412,6 +414,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		Price:          req.Price,
 		Quota:          req.Quota,
 		Image:          req.Image,
+		Bundle_Quota:   bundleQuota,
 		Description:    req.Description,
 		EventStartDate: eventStartDate,
 		EventEndDate:   eventEndDate,
@@ -427,6 +430,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		Name:           ticket.Name,
 		Type:           ticket.Type,
 		Price:          ticket.Price,
+		BundleQuota:    ticket.Bundle_Quota,
 		Quota:          ticket.Quota,
 		QuotaFilled:    ticket.QuotaFilled,
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
@@ -451,6 +455,7 @@ func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse,
 			Type:           ticket.Type,
 			Price:          ticket.Price,
 			Quota:          ticket.Quota,
+			BundleQuota:    ticket.Bundle_Quota,
 			QuotaFilled:    ticket.QuotaFilled,
 			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 			Image:          ticket.Image,
@@ -481,6 +486,7 @@ func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.
 			Type:           ticket.Type,
 			Price:          ticket.Price,
 			Quota:          ticket.Quota,
+			BundleQuota:    ticket.Bundle_Quota,
 			QuotaFilled:    ticket.QuotaFilled,
 			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 			Image:          ticket.Image,
@@ -517,6 +523,7 @@ func (as *AdminService) GetDetailTicket(ctx context.Context, ticketID string) (d
 		Type:           ticket.Type,
 		Price:          ticket.Price,
 		Quota:          ticket.Quota,
+		BundleQuota:    ticket.Bundle_Quota,
 		QuotaFilled:    ticket.QuotaFilled,
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 		Image:          ticket.Image,
@@ -541,10 +548,6 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 	}
 
 	if req.Type != "" {
-		if req.Type == ticket.Type {
-			return dto.TicketResponse{}, dto.ErrSameTicketType
-		}
-
 		if !entity.IsValidTicketType(req.Type) {
 			return dto.TicketResponse{}, dto.ErrInvalidTicketType
 		}
@@ -559,6 +562,8 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 
 		ticket.Price = *req.Price
 	}
+
+	ticket.Bundle_Quota = req.BundleQuota
 
 	if req.Quota != nil {
 		if *req.Quota < ticket.QuotaFilled {
@@ -636,7 +641,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 
 	err = as.adminRepo.UpdateTicket(ctx, nil, ticket)
 	if err != nil {
-		return dto.TicketResponse{}, dto.ErrCreateTicket
+		return dto.TicketResponse{}, dto.ErrUpdateTicket
 
 	}
 	isAvailable := ticket.Quota-ticket.QuotaFilled > 0 && time.Now().After(ticket.EventStartDate) && time.Now().Before(ticket.EventEndDate)
@@ -645,6 +650,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		Name:           ticket.Name,
 		Type:           ticket.Type,
 		Price:          ticket.Price,
+		BundleQuota:    ticket.Bundle_Quota,
 		Quota:          ticket.Quota,
 		QuotaFilled:    ticket.QuotaFilled,
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
@@ -2629,6 +2635,14 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 	}, nil
 }
 
+func (as *AdminService) GetAllGuestStatsByEvent(ctx context.Context, eventType string) (dto.GuestStatByEventResponse, error) {
+	guestStats, err := as.adminRepo.GetAllGuestStatsByEvent(ctx, nil, eventType)
+	if err != nil {
+		return dto.GuestStatByEventResponse{}, dto.ErrGetAllGuestStatsByEvent
+	}
+	return *guestStats, nil
+}
+
 // Dashboard Stats
 func (as *AdminService) GetAllStats(ctx context.Context) (dto.DashboardStatResponse, error) {
 	// Ticket Type Stats
@@ -2657,11 +2671,18 @@ func (as *AdminService) GetAllStats(ctx context.Context) (dto.DashboardStatRespo
 		return dto.DashboardStatResponse{}, dto.ErrGetTotalAdmin
 	}
 
-	// Guest Stats
-	guest, err := as.adminRepo.GetAllGuestStats(ctx, nil)
+	// Regular Guest Stats
+	regularGuest, err := as.adminRepo.GetAllGuestStats(ctx, nil, "regular")
 	if err != nil {
-		return dto.DashboardStatResponse{}, dto.ErrGetAllGuestStats
+		return dto.DashboardStatResponse{}, dto.ErrGetAllRegularGuestStats
 	}
+	// Invited Guest Stats
+	invitedGuest, err := as.adminRepo.GetAllGuestStats(ctx, nil, "invited")
+	if err != nil {
+		return dto.DashboardStatResponse{}, dto.ErrGetAllInvitedGuestStats
+	}
+	// Total Guest
+	totalGuest := regularGuest.TotalGuest + invitedGuest.TotalGuest
 
 	// Sponsor Stats
 	sponsor, err := as.adminRepo.GetTotalSponsor(ctx, nil, "sponsor")
@@ -2681,10 +2702,12 @@ func (as *AdminService) GetAllStats(ctx context.Context) (dto.DashboardStatRespo
 	res := dto.DashboardStatResponse{
 		PreEvent3:              *preEvent3,
 		MainEvent:              *mainEvent,
+		TotalGuest:             totalGuest,
+		RegularGuest:           *regularGuest,
+		InvitedGuest:           *invitedGuest,
 		TotalBundleMerch:       totalBundleMerch,
 		TotalBundleMerchTicket: totalBundleMerchTicket,
 		TotalAdmin:             totalAdmin,
-		Guest:                  *guest,
 		Sponsor:                sponsor,
 		Partner:                partner,
 		MediaPartner:           mediaPartner,

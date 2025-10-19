@@ -90,7 +90,8 @@ const (
 	MESSAGE_FAILED_CHECK_IN                 = "failed create check-in"
 	MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN = "failed get list ticket check-in"
 	// Dashboard Stats
-	MESSAGE_FAILED_GET_ALL_STATS = "failed get all stats"
+	MESSAGE_FAILED_GET_ALL_STATS                = "failed get all stats"
+	MESSAGE_FAILED_GET_ALL_GUEST_STATS_BY_EVENT = "failed get all guest stats by event"
 	// History Transactions
 	MESSAGE_FAILED_GET_LIST_HISTORY_TRANSACTIONS   = "failed get list history transactions"
 	MESSAGE_FAILED_GET_DETAIL_HISTORY_TRANSACTIONS = "failed get detail history transactions"
@@ -153,7 +154,8 @@ const (
 	MESSAGE_SUCCESS_CHECK_IN                 = "success create check-in"
 	MESSAGE_SUCCESS_GET_LIST_TICKET_CHECK_IN = "success get list ticket check-in"
 	// Dashboard Stats
-	MESSAGE_SUCCESS_GET_ALL_STATS = "success get all stats"
+	MESSAGE_SUCCESS_GET_ALL_STATS                = "success get all stats"
+	MESSAGE_SUCCESS_GET_ALL_GUEST_STATS_BY_EVENT = "success get all guest stats by event"
 	// History Transactions
 	MESSAGE_SUCCESS_GET_LIST_HISTORY_TRANSACTIONS   = "success get list history transactions"
 	MESSAGE_SUCCESS_GET_DETAIL_HISTORY_TRANSACTIONS = "success get detail history transactions"
@@ -319,7 +321,9 @@ var (
 	ErrGetTotalBundleMerch       = errors.New("failed get total bundle merch")
 	ErrGetTotalBundleMerchTicket = errors.New("failed get total bundle merch ticket")
 	ErrGetTotalAdmin             = errors.New("failed get total admin")
-	ErrGetAllGuestStats          = errors.New("failed get all guest stats")
+	ErrGetAllRegularGuestStats   = errors.New("failed get all regular guest stats")
+	ErrGetAllGuestStatsByEvent   = errors.New("failed get all guest stats by event")
+	ErrGetAllInvitedGuestStats   = errors.New("failed get all invited guest stats")
 	ErrGetTotalSponsor           = errors.New("failed get total sponsor")
 	ErrGetTotalPartner           = errors.New("failed get total partner")
 	ErrGetTotalMediaPartner      = errors.New("failed get total media partner")
@@ -387,6 +391,7 @@ type (
 		Price          float64           `json:"ticket_price"`
 		Image          string            `json:"ticket_image"`
 		Quota          int               `json:"ticket_quota"`
+		BundleQuota    *int              `json:"ticket_bundle_quota"`
 		QuotaFilled    int               `json:"ticket_quota_filled"`
 		QuotaAvailable int               `json:"ticket_quota_available"`
 		Description    string            `json:"ticket_description"`
@@ -399,6 +404,7 @@ type (
 		Type           entity.TicketType `json:"ticket_type" form:"ticket_type"`
 		Price          float64           `json:"ticket_price" form:"ticket_price"`
 		Image          string            `json:"ticket_image" form:"ticket_image"`
+		BundleQuota    *int              `json:"bundle_quota,omitempty" form:"ticket_bundle_quota"`
 		Quota          int               `json:"ticket_quota" form:"ticket_quota"`
 		Description    string            `json:"ticket_description" form:"ticket_description"`
 		EventStartDate string            `json:"ticket_event_start_date" form:"ticket_event_start_date"`
@@ -410,6 +416,7 @@ type (
 		Name           string            `json:"ticket_name,omitempty" form:"ticket_name"`
 		Type           entity.TicketType `json:"ticket_type" form:"ticket_type"`
 		Price          *float64          `json:"ticket_price,omitempty" form:"ticket_price"`
+		BundleQuota    *int              `json:"bundle_quota" form:"ticket_bundle_quota"`
 		Image          string            `json:"ticket_image,omitempty" form:"ticket_image"`
 		Quota          *int              `json:"ticket_quota,omitempty" form:"ticket_quota"`
 		Description    string            `json:"ticket_description" form:"ticket_description"`
@@ -767,19 +774,36 @@ type (
 	}
 	// Guest Stat Response
 	GuestStatResponse struct {
-		Total                int64 `json:"total"`
-		TotalCheckInGuest    int64 `json:"total_check_in_guest"`
-		TotalNotCheckInGuest int64 `json:"total_not_check_in_guest"`
-		TotalInvitedGuest    int64 `json:"total_invited_guest"`
+		TotalGuest              int64 `json:"total_guest"`
+		TotalPE3Guest           int64 `json:"total_pe3_guest"`
+		TotalPE3CheckInGuest    int64 `json:"total_pe3_check_in_guest"`
+		TotalPE3NotCheckInGuest int64 `json:"total_pe3_not_check_in_guest"`
+		TotalMEGuest            int64 `json:"total_me_guest"`
+		TotalMECheckInGuest     int64 `json:"total_me_check_in_guest"`
+		TotalMENotCheckInGuest  int64 `json:"total_me_not_check_in_guest"`
 	}
+
+	GuestStatByEventResponse struct {
+		EventType                   string `json:"event_type"`
+		TotalGuest                  int64  `json:"total_guest"`
+		TotalRegularGuest           int64  `json:"total_regular_guest"`
+		TotalInvitedGuest           int64  `json:"total_invited_guest"`
+		TotalCheckInRegularGuest    int64  `json:"total_check_in_regular_guest"`
+		TotalNotCheckInRegularGuest int64  `json:"total_not_check_in_regular_guest"`
+		TotalCheckInInvitedGuest    int64  `json:"total_check_in_invited_guest"`
+		TotalNotCheckInInvitedGuest int64  `json:"total_not_check_in_invited_guest"`
+	}
+
 	// Response
 	DashboardStatResponse struct {
 		PreEvent3              TicketTypeStatResponse `json:"pre-event-3"`
 		MainEvent              TicketTypeStatResponse `json:"main-event"`
+		TotalGuest             int64                  `json:"total_guest"`
+		RegularGuest           GuestStatResponse      `json:"regular_guest"`
+		InvitedGuest           GuestStatResponse      `json:"invited_guest"`
 		TotalBundleMerch       int64                  `json:"total_bundle_merch"`
 		TotalBundleMerchTicket int64                  `json:"total_bundle_merch_ticket"`
 		TotalAdmin             int64                  `json:"total_admin"`
-		Guest                  GuestStatResponse      `json:"guest"`
 		Sponsor                int64                  `json:"sponsor"`
 		Partner                int64                  `json:"partner"`
 		MediaPartner           int64                  `json:"media partner"`

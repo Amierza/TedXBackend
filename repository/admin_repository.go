@@ -5,6 +5,7 @@ import (
 	"errors"
 	"math"
 	"strings"
+	"time"
 
 	"github.com/Amierza/TedXBackend/dto"
 	"github.com/Amierza/TedXBackend/entity"
@@ -69,7 +70,8 @@ type (
 		GetAllTicketStats(ctx context.Context, tx *gorm.DB, ticketType string) (*dto.TicketTypeStatResponse, error)
 		GetTotalBundle(ctx context.Context, tx *gorm.DB, bundleType string) (int64, error)
 		GetTotalAdmin(ctx context.Context, tx *gorm.DB) (int64, error)
-		GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*dto.GuestStatResponse, error)
+		GetAllGuestStats(ctx context.Context, tx *gorm.DB, guestType string) (*dto.GuestStatResponse, error)
+		GetAllGuestStatsByEvent(ctx context.Context, tx *gorm.DB, eventType string) (*dto.GuestStatByEventResponse, error)
 		GetTotalSponsor(ctx context.Context, tx *gorm.DB, sponsorType string) (int64, error)
 
 		// UPDATE / PATCH
@@ -1153,38 +1155,157 @@ func (ar *AdminRepository) GetTotalAdmin(ctx context.Context, tx *gorm.DB) (int6
 
 	return total, nil
 }
-func (ar *AdminRepository) GetAllGuestStats(ctx context.Context, tx *gorm.DB) (*dto.GuestStatResponse, error) {
+
+func (ar *AdminRepository) GetAllGuestStatsByEvent(ctx context.Context, tx *gorm.DB, eventType string) (*dto.GuestStatByEventResponse, error) {
+	if tx == nil {
+		tx = ar.db
+	}
+
+	stat := &dto.GuestStatByEventResponse{}
+
+	stat.EventType = eventType
+
+	// ==== Total Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("tickets.type = ?", eventType).
+		Count(&stat.TotalGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total Guest Regular ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("ticket_forms.audience_type = ?", "regular").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("tickets.type = ?", eventType).
+		Count(&stat.TotalRegularGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total Guest Invited ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("ticket_forms.audience_type = ?", "invited").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("tickets.type = ?", eventType).
+		Count(&stat.TotalInvitedGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total Check-In Regular Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.GuestAttendance{}).
+		Joins("JOIN ticket_forms ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("ticket_forms.audience_type = ?", "regular").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("tickets.type = ?", eventType).
+		Select("COUNT(DISTINCT guest_attendances.ticket_form_id)").
+		Scan(&stat.TotalCheckInRegularGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total Check-In Invited Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.GuestAttendance{}).
+		Joins("JOIN ticket_forms ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("ticket_forms.audience_type = ?", "invited").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("tickets.type = ?", eventType).
+		Select("COUNT(DISTINCT guest_attendances.ticket_form_id)").
+		Scan(&stat.TotalCheckInInvitedGuest).Error; err != nil {
+		return stat, err
+	}
+
+	stat.TotalNotCheckInRegularGuest = stat.TotalRegularGuest - stat.TotalCheckInRegularGuest
+	stat.TotalNotCheckInInvitedGuest = stat.TotalInvitedGuest - stat.TotalCheckInInvitedGuest
+
+	return stat, nil
+
+}
+func (ar *AdminRepository) GetAllGuestStats(ctx context.Context, tx *gorm.DB, guestType string) (*dto.GuestStatResponse, error) {
 	if tx == nil {
 		tx = ar.db
 	}
 
 	stat := &dto.GuestStatResponse{}
 
-	// total guest (quota)
+	// ==== Total Guest (semua tiket settlement) ====
 	if err := tx.WithContext(ctx).
 		Model(&entity.TicketForm{}).
-		Count(&stat.Total).Error; err != nil {
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Count(&stat.TotalGuest).Error; err != nil {
 		return stat, err
 	}
 
-	// total check-in guest (unique guest yang sudah pernah check-in)
+	// ==== Total PE3 Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "pre-event-3").
+		Count(&stat.TotalPE3Guest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total ME Guest ====
+	if err := tx.WithContext(ctx).
+		Model(&entity.TicketForm{}).
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "main-event").
+		Count(&stat.TotalMEGuest).Error; err != nil {
+		return stat, err
+	}
+
+	// ==== Total PE3 Check-In Guest ====
 	if err := tx.WithContext(ctx).
 		Model(&entity.GuestAttendance{}).
-		Select("COUNT(DISTINCT id)").
-		Scan(&stat.TotalCheckInGuest).Error; err != nil {
+		Joins("JOIN ticket_forms ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "pre-event-3").
+		Select("COUNT(DISTINCT guest_attendances.ticket_form_id)").
+		Scan(&stat.TotalPE3CheckInGuest).Error; err != nil {
 		return stat, err
 	}
 
-	// total not check-in guest
-	stat.TotalNotCheckInGuest = stat.Total - stat.TotalCheckInGuest
-
-	// total invited guest
+	// ==== Total ME Check-In Guest ====
 	if err := tx.WithContext(ctx).
-		Model(&entity.TicketForm{}).
-		Where("audience_type = ?", "invited").
-		Count(&stat.TotalInvitedGuest).Error; err != nil {
+		Model(&entity.GuestAttendance{}).
+		Joins("JOIN ticket_forms ON guest_attendances.ticket_form_id = ticket_forms.id").
+		Joins("JOIN transactions ON ticket_forms.transaction_id = transactions.id").
+		Joins("JOIN tickets ON transactions.ticket_id = tickets.id").
+		Where("transactions.transaction_status = ?", "settlement").
+		Where("ticket_forms.audience_type = ?", guestType).
+		Where("tickets.type = ?", "main-event").
+		Select("COUNT(DISTINCT guest_attendances.ticket_form_id)").
+		Scan(&stat.TotalMECheckInGuest).Error; err != nil {
 		return stat, err
 	}
+
+	// ==== Hitung Not Check-In ====
+	stat.TotalPE3NotCheckInGuest = stat.TotalPE3Guest - stat.TotalPE3CheckInGuest
+	stat.TotalMENotCheckInGuest = stat.TotalMEGuest - stat.TotalMECheckInGuest
 
 	return stat, nil
 }
@@ -1219,7 +1340,23 @@ func (ar *AdminRepository) UpdateTicket(ctx context.Context, tx *gorm.DB, ticket
 		tx = ar.db
 	}
 
-	return tx.WithContext(ctx).Where("id = ?", ticket.ID).Updates(&ticket).Error
+	updateData := map[string]interface{}{
+		"name":             ticket.Name,
+		"type":             ticket.Type,
+		"price":            ticket.Price,
+		"image":            ticket.Image,
+		"bundle_quota":     ticket.Bundle_Quota, // bisa nil -> jadi NULL
+		"quota":            ticket.Quota,
+		"description":      ticket.Description,
+		"event_start_date": ticket.EventStartDate,
+		"event_end_date":   ticket.EventEndDate,
+		"updatedAt":        time.Now(),
+	}
+
+	return tx.WithContext(ctx).
+		Model(&entity.Ticket{}).
+		Where("id = ?", ticket.ID).
+		Updates(updateData).Error
 }
 func (ar *AdminRepository) UpdateSponsorship(ctx context.Context, tx *gorm.DB, sponsorship entity.Sponsorship) error {
 	if tx == nil {
