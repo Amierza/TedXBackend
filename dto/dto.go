@@ -90,7 +90,8 @@ const (
 	MESSAGE_FAILED_CHECK_IN                 = "failed create check-in"
 	MESSAGE_FAILED_GET_LIST_TICKET_CHECK_IN = "failed get list ticket check-in"
 	// Dashboard Stats
-	MESSAGE_FAILED_GET_ALL_STATS = "failed get all stats"
+	MESSAGE_FAILED_GET_ALL_STATS                = "failed get all stats"
+	MESSAGE_FAILED_GET_ALL_GUEST_STATS_BY_EVENT = "failed get all guest stats by event"
 	// History Transactions
 	MESSAGE_FAILED_GET_LIST_HISTORY_TRANSACTIONS   = "failed get list history transactions"
 	MESSAGE_FAILED_GET_DETAIL_HISTORY_TRANSACTIONS = "failed get detail history transactions"
@@ -153,7 +154,8 @@ const (
 	MESSAGE_SUCCESS_CHECK_IN                 = "success create check-in"
 	MESSAGE_SUCCESS_GET_LIST_TICKET_CHECK_IN = "success get list ticket check-in"
 	// Dashboard Stats
-	MESSAGE_SUCCESS_GET_ALL_STATS = "success get all stats"
+	MESSAGE_SUCCESS_GET_ALL_STATS                = "success get all stats"
+	MESSAGE_SUCCESS_GET_ALL_GUEST_STATS_BY_EVENT = "success get all guest stats by event"
 	// History Transactions
 	MESSAGE_SUCCESS_GET_LIST_HISTORY_TRANSACTIONS   = "success get list history transactions"
 	MESSAGE_SUCCESS_GET_DETAIL_HISTORY_TRANSACTIONS = "success get detail history transactions"
@@ -320,6 +322,7 @@ var (
 	ErrGetTotalBundleMerchTicket = errors.New("failed get total bundle merch ticket")
 	ErrGetTotalAdmin             = errors.New("failed get total admin")
 	ErrGetAllRegularGuestStats   = errors.New("failed get all regular guest stats")
+	ErrGetAllGuestStatsByEvent   = errors.New("failed get all guest stats by event")
 	ErrGetAllInvitedGuestStats   = errors.New("failed get all invited guest stats")
 	ErrGetTotalSponsor           = errors.New("failed get total sponsor")
 	ErrGetTotalPartner           = errors.New("failed get total partner")
@@ -779,6 +782,18 @@ type (
 		TotalMECheckInGuest     int64 `json:"total_me_check_in_guest"`
 		TotalMENotCheckInGuest  int64 `json:"total_me_not_check_in_guest"`
 	}
+
+	GuestStatByEventResponse struct {
+		EventType                   string `json:"event_type"`
+		TotalGuest                  int64  `json:"total_guest"`
+		TotalRegularGuest           int64  `json:"total_regular_guest"`
+		TotalInvitedGuest           int64  `json:"total_invited_guest"`
+		TotalCheckInRegularGuest    int64  `json:"total_check_in_regular_guest"`
+		TotalNotCheckInRegularGuest int64  `json:"total_not_check_in_regular_guest"`
+		TotalCheckInInvitedGuest    int64  `json:"total_check_in_invited_guest"`
+		TotalNotCheckInInvitedGuest int64  `json:"total_not_check_in_invited_guest"`
+	}
+
 	// Response
 	DashboardStatResponse struct {
 		PreEvent3              TicketTypeStatResponse `json:"pre-event-3"`
