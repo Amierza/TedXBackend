@@ -76,6 +76,7 @@ func Admin(route *gin.Engine, adminHandler handler.IAdminHandler, jwtService ser
 
 			// Dashboard Stats
 			routes.GET("/get-all-stats", adminHandler.GetAllStats)
+			routes.GET("/get-all-guest-stats", adminHandler.GetAllGuestStatsByEvent)
 		}
 	}
 }

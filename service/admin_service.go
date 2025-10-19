@@ -93,6 +93,7 @@ type (
 
 		// Dashboard Stats
 		GetAllStats(ctx context.Context) (dto.DashboardStatResponse, error)
+		GetAllGuestStatsByEvent(ctx context.Context, eventType string) (dto.GuestStatByEventResponse, error)
 	}
 
 	AdminService struct {
@@ -2632,6 +2633,14 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 			Count:   dataWithPaginate.Count,
 		},
 	}, nil
+}
+
+func (as *AdminService) GetAllGuestStatsByEvent(ctx context.Context, eventType string) (dto.GuestStatByEventResponse, error) {
+	guestStats, err := as.adminRepo.GetAllGuestStatsByEvent(ctx, nil, eventType)
+	if err != nil {
+		return dto.GuestStatByEventResponse{}, dto.ErrGetAllGuestStatsByEvent
+	}
+	return *guestStats, nil
 }
 
 // Dashboard Stats
