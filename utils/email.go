@@ -2,6 +2,7 @@ package utils
 
 import (
 	"log"
+	"path/filepath"
 
 	"github.com/Amierza/TedXBackend/config"
 	"gopkg.in/gomail.v2"
@@ -19,7 +20,16 @@ func SendEmail(toEmail string, subject string, body string) error {
 	mailer.SetHeader("To", toEmail)
 	mailer.SetHeader("Subject", subject)
 	mailer.SetBody("text/html", body)
-	mailer.Embed("assets_static/header-e-ticket-mail.png")
+
+	// 🔹 Buat path absolut agar aman dijalankan dari mana pun
+	assetPath, err := filepath.Abs("assets_static/header-e-ticket-mail.png")
+	if err != nil {
+		log.Printf("failed to get absolute path: %v", err)
+		return err
+	}
+
+	// Embed gambar tanpa menangkap nilai return (karena tidak ada)
+	mailer.Embed(assetPath)
 
 	dialer := gomail.NewDialer(
 		emailConfig.Host,
