@@ -14,21 +14,13 @@ func SendEmail(toEmail string, subject string, body string) error {
 		log.Printf("failed to load email config: %v", err)
 		return err
 	}
+	assetPath := filepath.Join("assets_static", "header-e-ticket-mail.png")
 
 	mailer := gomail.NewMessage()
 	mailer.SetHeader("From", emailConfig.AuthEmail)
 	mailer.SetHeader("To", toEmail)
 	mailer.SetHeader("Subject", subject)
 	mailer.SetBody("text/html", body)
-
-	// 🔹 Buat path absolut agar aman dijalankan dari mana pun
-	assetPath, err := filepath.Abs("assets_static/header-e-ticket-mail.png")
-	if err != nil {
-		log.Printf("failed to get absolute path: %v", err)
-		return err
-	}
-
-	// Embed gambar tanpa menangkap nilai return (karena tidak ada)
 	mailer.Embed(assetPath)
 
 	dialer := gomail.NewDialer(
