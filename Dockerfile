@@ -21,6 +21,8 @@ WORKDIR /app
 # Copy compiled binary from builder
 COPY --from=builder /app/app .
 
+COPY --from=builder /app/assets_static ./assets_static
+
 # Install CA certs for HTTPS
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
