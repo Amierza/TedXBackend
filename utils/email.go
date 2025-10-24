@@ -18,7 +18,7 @@ func SendEmail(toEmail string, subject string, body string) error {
 	mailer.SetHeader("From", emailConfig.AuthEmail)
 	mailer.SetHeader("To", toEmail)
 	mailer.SetHeader("Subject", subject)
-	mailer.Embed("/assets_static/header-e-ticket-mail.png")
+	mailer.Embed("app/assets_static/header-e-ticket-mail.png")
 	mailer.SetBody("text/html", body)
 
 	dialer := gomail.NewDialer(
