@@ -692,6 +692,7 @@ type (
 		ID                uuid.UUID            `json:"transaction_id"`
 		OrderID           string               `json:"order_id"`
 		ItemType          entity.ItemType      `json:"item_type"`
+		TicketName        string               `json:"ticket_name"`
 		TicketType        entity.TicketType    `json:"ticket_type"`
 		ReferalCode       string               `json:"referal_code"`
 		TransactionStatus string               `json:"transaction_status"`
