@@ -12,4 +12,4 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - /srv/backend/assets:/app/assets
+      - /srv/tedx_backend_prod:/app/assets
