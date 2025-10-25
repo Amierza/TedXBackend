@@ -37,8 +37,8 @@ type (
 		GetAllUserWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, roleName string) (dto.UserPaginationRepositoryResponse, error)
 		GetTicketByID(ctx context.Context, tx *gorm.DB, ticketID string) (entity.Ticket, bool, error)
 		GetTicketByName(ctx context.Context, tx *gorm.DB, ticketName string) (entity.Ticket, bool, error)
-		GetAllTicket(ctx context.Context, tx *gorm.DB) ([]entity.Ticket, error)
-		GetAllTicketWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.TicketPaginationRepositoryResponse, error)
+		GetAllTicket(ctx context.Context, tx *gorm.DB, filter dto.TicketFilter) ([]entity.Ticket, error)
+		GetAllTicketWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, filter dto.TicketFilter) (dto.TicketPaginationRepositoryResponse, error)
 		GetAllSponsorship(ctx context.Context, tx *gorm.DB) ([]entity.Sponsorship, error)
 		GetAllSponsorshipWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.SponsorshipPaginationRepositoryResponse, error)
 		GetSponsorshipByID(ctx context.Context, tx *gorm.DB, sponsorshipID string) (entity.Sponsorship, bool, error)
@@ -320,7 +320,7 @@ func (ar *AdminRepository) GetTicketByName(ctx context.Context, tx *gorm.DB, tic
 
 	return ticket, true, nil
 }
-func (ar *AdminRepository) GetAllTicket(ctx context.Context, tx *gorm.DB) ([]entity.Ticket, error) {
+func (ar *AdminRepository) GetAllTicket(ctx context.Context, tx *gorm.DB, filter dto.TicketFilter) ([]entity.Ticket, error) {
 	if tx == nil {
 		tx = ar.db
 	}
@@ -332,13 +332,17 @@ func (ar *AdminRepository) GetAllTicket(ctx context.Context, tx *gorm.DB) ([]ent
 
 	query := tx.WithContext(ctx).Model(&entity.Ticket{})
 
+	if filter.TicketType != "" {
+		query = query.Where("type = ?", filter.TicketType)
+	}
+
 	if err := query.Order(`"createdAt" DESC`).Find(&tickets).Error; err != nil {
 		return []entity.Ticket{}, err
 	}
 
 	return tickets, err
 }
-func (ar *AdminRepository) GetAllTicketWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.TicketPaginationRepositoryResponse, error) {
+func (ar *AdminRepository) GetAllTicketWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, filter dto.TicketFilter) (dto.TicketPaginationRepositoryResponse, error) {
 	if tx == nil {
 		tx = ar.db
 	}
@@ -356,6 +360,10 @@ func (ar *AdminRepository) GetAllTicketWithPagination(ctx context.Context, tx *g
 	}
 
 	query := tx.WithContext(ctx).Model(&entity.Ticket{})
+
+	if filter.TicketType != "" {
+		query = query.Where("type = ?", filter.TicketType)
+	}
 
 	if req.Search != "" {
 		searchValue := "%" + strings.ToLower(req.Search) + "%"
