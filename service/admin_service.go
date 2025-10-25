@@ -33,8 +33,8 @@ type (
 
 		// Ticket
 		CreateTicket(ctx context.Context, req dto.CreateTicketRequest) (dto.TicketResponse, error)
-		GetAllTicket(ctx context.Context) ([]dto.TicketResponse, error)
-		GetAllTicketWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.TicketPaginationResponse, error)
+		GetAllTicket(ctx context.Context, filter dto.TicketFilter) ([]dto.TicketResponse, error)
+		GetAllTicketWithPagination(ctx context.Context, req dto.PaginationRequest, filter dto.TicketFilter) (dto.TicketPaginationResponse, error)
 		GetDetailTicket(ctx context.Context, ticketID string) (dto.TicketResponse, error)
 		UpdateTicket(ctx context.Context, req dto.UpdateTicketRequest) (dto.TicketResponse, error)
 		DeleteTicket(ctx context.Context, req dto.DeleteTicketRequest) (dto.TicketResponse, error)
@@ -439,8 +439,8 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
 	}, nil
 }
-func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, error) {
-	tickets, err := as.adminRepo.GetAllTicket(ctx, nil)
+func (as *AdminService) GetAllTicket(ctx context.Context, filter dto.TicketFilter) ([]dto.TicketResponse, error) {
+	tickets, err := as.adminRepo.GetAllTicket(ctx, nil, filter)
 	if err != nil {
 		return nil, dto.ErrGetAllTicketNoPagination
 	}
@@ -470,8 +470,8 @@ func (as *AdminService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse,
 
 	return datas, nil
 }
-func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.PaginationRequest) (dto.TicketPaginationResponse, error) {
-	dataWithPaginate, err := as.adminRepo.GetAllTicketWithPagination(ctx, nil, req)
+func (as *AdminService) GetAllTicketWithPagination(ctx context.Context, req dto.PaginationRequest, filter dto.TicketFilter) (dto.TicketPaginationResponse, error) {
+	dataWithPaginate, err := as.adminRepo.GetAllTicketWithPagination(ctx, nil, req, filter)
 	if err != nil {
 		return dto.TicketPaginationResponse{}, dto.ErrGetAllTicketWithPagination
 	}
@@ -2215,6 +2215,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			SettlementTime:    &now,
 			UserID:            &userID,
 			TicketID:          req.TicketID,
+			Ticket:            ticket,
 		}
 
 		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
@@ -2259,9 +2260,9 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				TransactionID: &transactionID,
 			}
 
-			if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
-				return dto.ErrUpdateTicket
-			}
+			// if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
+			// 	return dto.ErrUpdateTicket
+			// }
 			if err := txRepo.CreateTicketForm(ctx, nil, ticketForm); err != nil {
 				return dto.ErrCreateTicketForm
 			}
