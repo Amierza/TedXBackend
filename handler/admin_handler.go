@@ -299,9 +299,16 @@ func (ah *AdminHandler) GetAllTicket(ctx *gin.Context) {
 	paginationParam := ctx.DefaultQuery("pagination", "true")
 	usePagination := paginationParam != "false"
 
+	var filter dto.TicketFilter
+	if err := ctx.ShouldBindQuery(&filter); err != nil {
+		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_DATA_FROM_BODY, err.Error(), nil)
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
+		return
+	}
+
 	if !usePagination {
 		// Tanpa pagination
-		result, err := ah.adminService.GetAllTicket(ctx)
+		result, err := ah.adminService.GetAllTicket(ctx, filter)
 		if err != nil {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -320,7 +327,7 @@ func (ah *AdminHandler) GetAllTicket(ctx *gin.Context) {
 		return
 	}
 
-	result, err := ah.adminService.GetAllTicketWithPagination(ctx, payload)
+	result, err := ah.adminService.GetAllTicketWithPagination(ctx, payload, filter)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TICKET, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)

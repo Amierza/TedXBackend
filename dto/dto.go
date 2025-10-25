@@ -384,6 +384,9 @@ type (
 
 // Ticket
 type (
+	TicketFilter struct {
+		TicketType string `form:"type"`
+	}
 	TicketResponse struct {
 		ID             string            `json:"ticket_id"`
 		Name           string            `json:"ticket_name"`
