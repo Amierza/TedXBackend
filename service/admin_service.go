@@ -2259,9 +2259,9 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 				TransactionID: &transactionID,
 			}
 
-			if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
-				return dto.ErrUpdateTicket
-			}
+			// if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
+			// 	return dto.ErrUpdateTicket
+			// }
 			if err := txRepo.CreateTicketForm(ctx, nil, ticketForm); err != nil {
 				return dto.ErrCreateTicketForm
 			}
