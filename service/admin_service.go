@@ -2215,6 +2215,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 			SettlementTime:    &now,
 			UserID:            &userID,
 			TicketID:          req.TicketID,
+			Ticket:            ticket,
 		}
 
 		if err := txRepo.CreateTransaction(ctx, nil, transaction); err != nil {
