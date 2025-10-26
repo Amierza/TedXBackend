@@ -220,8 +220,8 @@ func (us *UserService) GetAllTicket(ctx context.Context) ([]dto.TicketResponse, 
 			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 			Image:          ticket.Image,
 			Description:    ticket.Description,
-			EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
-			EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+			EventStartDate: ticket.EventStartDate.Format("2006-01-02 15:04:05"),
+			EventEndDate:   ticket.EventEndDate.Format("2006-01-02 15:04:05"),
 			IsAvailable:    &isAvailable,
 		}
 
@@ -249,8 +249,8 @@ func (us *UserService) GetDetailTicket(ctx context.Context, ticketID string) (dt
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 		Image:          ticket.Image,
 		Description:    ticket.Description,
-		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
-		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02 15:04:05"),
 		IsAvailable:    &isAvailable,
 	}, nil
 }

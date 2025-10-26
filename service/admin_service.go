@@ -396,12 +396,12 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		loc = time.FixedZone("UTC+7", 7*60*60)
 	}
 
-	eventStartDate, err := time.ParseInLocation("2006-01-02", req.EventStartDate, loc)
+	eventStartDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventStartDate, loc)
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrParseTime
 	}
 
-	eventEndDate, err := time.ParseInLocation("2006-01-02", req.EventEndDate, loc)
+	eventEndDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventEndDate, loc)
 	if err != nil {
 		return dto.TicketResponse{}, dto.ErrParseTime
 	}
@@ -460,8 +460,8 @@ func (as *AdminService) GetAllTicket(ctx context.Context, filter dto.TicketFilte
 			QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 			Image:          ticket.Image,
 			Description:    ticket.Description,
-			EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
-			EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+			EventStartDate: ticket.EventStartDate.Format("2006-01-02 15:04:05"),
+			EventEndDate:   ticket.EventEndDate.Format("2006-01-02 15:04:05"),
 			IsAvailable:    &isAvailable,
 		}
 
@@ -528,8 +528,8 @@ func (as *AdminService) GetDetailTicket(ctx context.Context, ticketID string) (d
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 		Image:          ticket.Image,
 		Description:    ticket.Description,
-		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
-		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02 15:04:05"),
 		IsAvailable:    &isAvailable,
 	}, nil
 }
@@ -618,7 +618,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		if err != nil {
 			loc = time.FixedZone("UTC+7", 7*60*60)
 		}
-		eventStartDate, err := time.ParseInLocation("2006-01-02", req.EventStartDate, loc)
+		eventStartDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventStartDate, loc)
 		if err != nil {
 			return dto.TicketResponse{}, dto.ErrParseTime
 		}
@@ -631,7 +631,7 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		if err != nil {
 			loc = time.FixedZone("UTC+7", 7*60*60)
 		}
-		eventEndDate, err := time.ParseInLocation("2006-01-02", req.EventEndDate, loc)
+		eventEndDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventEndDate, loc)
 		if err != nil {
 			return dto.TicketResponse{}, dto.ErrParseTime
 		}
@@ -656,8 +656,8 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 		QuotaAvailable: ticket.Quota - ticket.QuotaFilled,
 		Image:          ticket.Image,
 		Description:    ticket.Description,
-		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
-		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
+		EventStartDate: ticket.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02 15:04:05"),
 		IsAvailable:    &isAvailable,
 	}, nil
 }
@@ -679,8 +679,8 @@ func (as *AdminService) DeleteTicket(ctx context.Context, req dto.DeleteTicketRe
 		Price:          deletedTicket.Price,
 		Quota:          deletedTicket.Quota,
 		Image:          deletedTicket.Image,
-		EventStartDate: deletedTicket.EventStartDate.Format("2006-01-02"),
-		EventEndDate:   deletedTicket.EventEndDate.Format("2006-01-02"),
+		EventStartDate: deletedTicket.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   deletedTicket.EventEndDate.Format("2006-01-02 15:04:05"),
 	}
 
 	return res, nil
