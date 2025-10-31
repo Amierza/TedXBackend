@@ -2619,6 +2619,7 @@ func (as *AdminService) GetAllTicketCheckInWithPagination(ctx context.Context, r
 			TicketName:    ticketForm.Transaction.Ticket.Name,
 			TicketType:    ticketForm.Transaction.Ticket.Type,
 			AudienceType:  ticketForm.AudienceType,
+			Instansi:      ticketForm.Instansi,
 			Email:         ticketForm.Email,
 			FullName:      ticketForm.FullName,
 			PhoneNumber:   ticketForm.PhoneNumber,
