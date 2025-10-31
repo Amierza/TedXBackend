@@ -667,6 +667,7 @@ type (
 		TicketID      uuid.UUID           `json:"ticket_id"`
 		TransactionID uuid.UUID           `json:"transaction_id"`
 		TicketName    string              `json:"ticket_name"`
+		Instansi      entity.Instansi     `json:"instansi"`
 		TicketType    entity.TicketType   `json:"ticket_type"`
 		AudienceType  entity.AudienceType `json:"audience_type"`
 		Email         string              `json:"email"`
