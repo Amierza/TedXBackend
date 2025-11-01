@@ -8,6 +8,7 @@ type StudentAmbassador struct {
 	ReferalCode string    `gorm:"not null" json:"referal_code"`
 	Discount    float64   `gorm:"type:numeric(10,2)" json:"discount"`
 	MaxReferal  int       `json:"max_referal"`
+	QuotaFilled int       `gorm:"not null;default:0" json:"quota_filled"`
 
 	TimeStamp
 }
