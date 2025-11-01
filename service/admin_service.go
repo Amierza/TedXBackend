@@ -2046,6 +2046,13 @@ func (as *AdminService) GetAllStudentAmbassador(ctx context.Context) ([]dto.Stud
 			ReferalCode: studentAmbassador.ReferalCode,
 			Discount:    studentAmbassador.Discount,
 			MaxReferal:  studentAmbassador.MaxReferal,
+			QuotaFilled: studentAmbassador.QuotaFilled,
+		}
+
+		if studentAmbassador.MaxReferal-studentAmbassador.QuotaFilled <= 0 {
+			data.IsAvailable = false
+		} else {
+			data.IsAvailable = true
 		}
 
 		datas = append(datas, data)
@@ -2067,6 +2074,13 @@ func (as *AdminService) GetAllStudentAmbassadorWithPagination(ctx context.Contex
 			ReferalCode: studentAmbassador.ReferalCode,
 			Discount:    studentAmbassador.Discount,
 			MaxReferal:  studentAmbassador.MaxReferal,
+			QuotaFilled: studentAmbassador.QuotaFilled,
+		}
+
+		if studentAmbassador.MaxReferal-studentAmbassador.QuotaFilled <= 0 {
+			data.IsAvailable = false
+		} else {
+			data.IsAvailable = true
 		}
 
 		datas = append(datas, data)
@@ -2088,13 +2102,22 @@ func (as *AdminService) GetDetailStudentAmbassador(ctx context.Context, studentA
 		return dto.StudentAmbassadorResponse{}, dto.ErrStudentAmbassadorNotFound
 	}
 
-	return dto.StudentAmbassadorResponse{
+	res := dto.StudentAmbassadorResponse{
 		ID:          studentAmbassador.ID,
 		Name:        studentAmbassador.Name,
 		ReferalCode: studentAmbassador.ReferalCode,
 		Discount:    studentAmbassador.Discount,
 		MaxReferal:  studentAmbassador.MaxReferal,
-	}, nil
+		QuotaFilled: studentAmbassador.QuotaFilled,
+	}
+
+	if studentAmbassador.MaxReferal-studentAmbassador.QuotaFilled <= 0 {
+		res.IsAvailable = false
+	} else {
+		res.IsAvailable = true
+	}
+
+	return res, nil
 }
 func (as *AdminService) UpdateStudentAmbassador(ctx context.Context, req dto.UpdateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error) {
 	studentAmbassador, flag, err := as.adminRepo.GetStudentAmbassadorByID(ctx, nil, req.ID)
@@ -2127,6 +2150,10 @@ func (as *AdminService) UpdateStudentAmbassador(ctx context.Context, req dto.Upd
 		studentAmbassador.MaxReferal = *req.MaxReferal
 	}
 
+	if req.QuotaFilled != nil {
+		studentAmbassador.QuotaFilled = *req.QuotaFilled
+	}
+
 	err = as.adminRepo.UpdateStudentAmbassador(ctx, nil, studentAmbassador)
 	if err != nil {
 		return dto.StudentAmbassadorResponse{}, dto.ErrUpdateStudentAmbassador
@@ -2138,6 +2165,13 @@ func (as *AdminService) UpdateStudentAmbassador(ctx context.Context, req dto.Upd
 		ReferalCode: studentAmbassador.ReferalCode,
 		Discount:    studentAmbassador.Discount,
 		MaxReferal:  studentAmbassador.MaxReferal,
+		QuotaFilled: studentAmbassador.QuotaFilled,
+	}
+
+	if studentAmbassador.MaxReferal-studentAmbassador.QuotaFilled <= 0 {
+		res.IsAvailable = false
+	} else {
+		res.IsAvailable = true
 	}
 
 	return res, nil
@@ -2159,6 +2193,13 @@ func (as *AdminService) DeleteStudentAmbassador(ctx context.Context, req dto.Del
 		ReferalCode: deletedStudentAmbassador.ReferalCode,
 		Discount:    deletedStudentAmbassador.Discount,
 		MaxReferal:  deletedStudentAmbassador.MaxReferal,
+		QuotaFilled: deletedStudentAmbassador.QuotaFilled,
+	}
+
+	if deletedStudentAmbassador.MaxReferal-deletedStudentAmbassador.QuotaFilled <= 0 {
+		res.IsAvailable = false
+	} else {
+		res.IsAvailable = true
 	}
 
 	return res, nil

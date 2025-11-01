@@ -15,4 +15,5 @@ assets/**
 !assets/ticket/
 !assets/ticket/.gitkeep
 !assets/bundle/
-!assets/bundle/.gitkeep
+!assets/bundle/.gitkeeptmp/
+tmp/

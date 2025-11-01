@@ -308,6 +308,7 @@ var (
 	ErrUpdateTransactionTicket       = errors.New("failed update transaction ticket")
 	ErrUnknownTransactionStatus      = errors.New("failed unknown transaction status")
 	ErrUpdateMaxReferal              = errors.New("failed update max referal")
+	ErrUpdateSAQuotaFilled           = errors.New("failed update student ambassador quota filled")
 	ErrReferalCodeSoldOut            = errors.New("failed referal code sold out")
 	ErrGenerateQRCode                = errors.New("failed generate qr code")
 	// Check-in
@@ -627,6 +628,8 @@ type (
 		ReferalCode string    `json:"student_ambassador_referal_code"`
 		Discount    float64   `json:"student_ambassador_discount"`
 		MaxReferal  int       `json:"student_ambassador_max_referal"`
+		QuotaFilled int       `json:"student_ambassador_quota_filled"`
+		IsAvailable bool      `json:"student_ambassador_is_available"`
 	}
 	CreateStudentAmbassadorRequest struct {
 		Name        string  `json:"name" form:"name"`
@@ -640,6 +643,7 @@ type (
 		ReferalCode string   `json:"referal_code" form:"referal_code"`
 		Discount    *float64 `json:"discount" form:"discount"`
 		MaxReferal  *int     `json:"max_referal" form:"max_referal"`
+		QuotaFilled *int     `json:"quota_filled" form:"quota_filled"`
 	}
 	StudentAmbassadorPaginationResponse struct {
 		PaginationResponse
