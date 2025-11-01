@@ -463,6 +463,7 @@ func (us *UserService) CheckReferalCode(ctx context.Context, req dto.CheckRefera
 		ReferalCode: sa.ReferalCode,
 		Discount:    sa.Discount,
 		MaxReferal:  sa.MaxReferal,
+		QuotaFilled: sa.QuotaFilled,
 	}
 
 	return res, nil
@@ -499,13 +500,13 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrInvalidReferalCode
 			}
 
-			if sa.MaxReferal <= 0 {
+			if sa.MaxReferal-sa.QuotaFilled <= 0 {
 				return dto.ErrReferalCodeSoldOut
 			}
 
-			err = txRepo.UpdateMaxReferal(ctx, nil, sa.ID.String(), sa.MaxReferal-1)
+			err = txRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), sa.QuotaFilled+1)
 			if err != nil {
-				return dto.ErrUpdateMaxReferal
+				return dto.ErrUpdateSAQuotaFilled
 			}
 		}
 

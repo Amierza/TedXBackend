@@ -37,7 +37,7 @@ type (
 		UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error
 		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
 		UpdateTransactionTicket(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
-		UpdateMaxReferal(ctx context.Context, tx *gorm.DB, saID string, maxReferal int) error
+		UpdateSAQuotaFilled(ctx context.Context, tx *gorm.DB, saID string, quotaFilled int) error
 
 		// DELETE / DELETE
 	}
@@ -361,7 +361,7 @@ func (ur *UserRepository) UpdateTransactionTicket(ctx context.Context, tx *gorm.
 
 	return tx.WithContext(ctx).Where("id = ?", transaction.ID).Updates(&transaction).Error
 }
-func (ur *UserRepository) UpdateMaxReferal(ctx context.Context, tx *gorm.DB, saID string, maxReferal int) error {
+func (ur *UserRepository) UpdateSAQuotaFilled(ctx context.Context, tx *gorm.DB, saID string, quotaFilled int) error {
 	if tx == nil {
 		tx = ur.db
 	}
@@ -369,7 +369,7 @@ func (ur *UserRepository) UpdateMaxReferal(ctx context.Context, tx *gorm.DB, saI
 	result := tx.WithContext(ctx).
 		Model(&entity.StudentAmbassador{}).
 		Where("id = ?", saID).
-		Update("max_referal", maxReferal)
+		Update("quota_filled", quotaFilled)
 
 	if result.Error != nil {
 		return result.Error

@@ -2046,6 +2046,7 @@ func (as *AdminService) GetAllStudentAmbassador(ctx context.Context) ([]dto.Stud
 			ReferalCode: studentAmbassador.ReferalCode,
 			Discount:    studentAmbassador.Discount,
 			MaxReferal:  studentAmbassador.MaxReferal,
+			QuotaFilled: studentAmbassador.QuotaFilled,
 		}
 
 		datas = append(datas, data)
@@ -2067,6 +2068,7 @@ func (as *AdminService) GetAllStudentAmbassadorWithPagination(ctx context.Contex
 			ReferalCode: studentAmbassador.ReferalCode,
 			Discount:    studentAmbassador.Discount,
 			MaxReferal:  studentAmbassador.MaxReferal,
+			QuotaFilled: studentAmbassador.QuotaFilled,
 		}
 
 		datas = append(datas, data)
@@ -2094,6 +2096,7 @@ func (as *AdminService) GetDetailStudentAmbassador(ctx context.Context, studentA
 		ReferalCode: studentAmbassador.ReferalCode,
 		Discount:    studentAmbassador.Discount,
 		MaxReferal:  studentAmbassador.MaxReferal,
+		QuotaFilled: studentAmbassador.QuotaFilled,
 	}, nil
 }
 func (as *AdminService) UpdateStudentAmbassador(ctx context.Context, req dto.UpdateStudentAmbassadorRequest) (dto.StudentAmbassadorResponse, error) {
@@ -2127,6 +2130,10 @@ func (as *AdminService) UpdateStudentAmbassador(ctx context.Context, req dto.Upd
 		studentAmbassador.MaxReferal = *req.MaxReferal
 	}
 
+	if req.QuotaFilled != nil {
+		studentAmbassador.QuotaFilled = *req.QuotaFilled
+	}
+
 	err = as.adminRepo.UpdateStudentAmbassador(ctx, nil, studentAmbassador)
 	if err != nil {
 		return dto.StudentAmbassadorResponse{}, dto.ErrUpdateStudentAmbassador
@@ -2138,6 +2145,7 @@ func (as *AdminService) UpdateStudentAmbassador(ctx context.Context, req dto.Upd
 		ReferalCode: studentAmbassador.ReferalCode,
 		Discount:    studentAmbassador.Discount,
 		MaxReferal:  studentAmbassador.MaxReferal,
+		QuotaFilled: studentAmbassador.QuotaFilled,
 	}
 
 	return res, nil
@@ -2159,6 +2167,7 @@ func (as *AdminService) DeleteStudentAmbassador(ctx context.Context, req dto.Del
 		ReferalCode: deletedStudentAmbassador.ReferalCode,
 		Discount:    deletedStudentAmbassador.Discount,
 		MaxReferal:  deletedStudentAmbassador.MaxReferal,
+		QuotaFilled: deletedStudentAmbassador.QuotaFilled,
 	}
 
 	return res, nil
