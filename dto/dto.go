@@ -629,6 +629,7 @@ type (
 		Discount    float64   `json:"student_ambassador_discount"`
 		MaxReferal  int       `json:"student_ambassador_max_referal"`
 		QuotaFilled int       `json:"student_ambassador_quota_filled"`
+		IsAvailable bool      `json:"student_ambassador_is_available"`
 	}
 	CreateStudentAmbassadorRequest struct {
 		Name        string  `json:"name" form:"name"`

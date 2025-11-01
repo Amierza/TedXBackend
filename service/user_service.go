@@ -466,6 +466,12 @@ func (us *UserService) CheckReferalCode(ctx context.Context, req dto.CheckRefera
 		QuotaFilled: sa.QuotaFilled,
 	}
 
+	if sa.MaxReferal-sa.QuotaFilled <= 0 {
+		res.IsAvailable = false
+	} else {
+		res.IsAvailable = true
+	}
+
 	return res, nil
 }
 
