@@ -81,8 +81,8 @@ type (
 
 		// Ticket Form
 		CreateTransactionTicket(ctx context.Context, req dto.CreateTransactionTicketRequest) (dto.TransactionResponse, error)
-		GetAllTransactionTicket(ctx context.Context, transactionStatus, ticketCategory string) ([]dto.TransactionResponse, error)
-		GetAllTransactionTicketWithPagination(ctx context.Context, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationResponse, error)
+		GetAllTransactionTicket(ctx context.Context, transactionStatus string, ticketCategory string, eventType string, ticketID string, instansi string) ([]dto.TransactionResponse, error)
+		GetAllTransactionTicketWithPagination(ctx context.Context, req dto.PaginationRequest, transactionStatus string, ticketCategory string, eventType string, ticketType string, instansi string) (dto.TransactionTicketPaginationResponse, error)
 		GetDetailTransactionTicket(ctx context.Context, transactionTicketID string) (dto.TransactionResponse, error)
 
 		// Check-in
@@ -2379,8 +2379,8 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 
 	return transactionResponse, nil
 }
-func (as *AdminService) GetAllTransactionTicket(ctx context.Context, transactionStatus, ticketCategory string) ([]dto.TransactionResponse, error) {
-	transactions, err := as.adminRepo.GetAllTransaction(ctx, nil, transactionStatus, ticketCategory)
+func (as *AdminService) GetAllTransactionTicket(ctx context.Context, transactionStatus string, ticketCategory string, eventType string, ticketID string, instansi string) ([]dto.TransactionResponse, error) {
+	transactions, err := as.adminRepo.GetAllTransaction(ctx, nil, transactionStatus, ticketCategory, eventType, ticketID, instansi)
 	if err != nil {
 		return nil, dto.ErrGetAllTransactionNoPagination
 	}
@@ -2423,8 +2423,8 @@ func (as *AdminService) GetAllTransactionTicket(ctx context.Context, transaction
 
 	return datas, nil
 }
-func (as *AdminService) GetAllTransactionTicketWithPagination(ctx context.Context, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationResponse, error) {
-	dataWithPaginate, err := as.adminRepo.GetAllTransactionWithPagination(ctx, nil, req, transactionStatus, ticketCategory)
+func (as *AdminService) GetAllTransactionTicketWithPagination(ctx context.Context, req dto.PaginationRequest, transactionStatus string, ticketCategory string, eventType string, ticketID string, instansi string) (dto.TransactionTicketPaginationResponse, error) {
+	dataWithPaginate, err := as.adminRepo.GetAllTransactionWithPagination(ctx, nil, req, transactionStatus, ticketCategory, eventType, ticketID, instansi)
 	if err != nil {
 		return dto.TransactionTicketPaginationResponse{}, dto.ErrGetAllUserWithPagination
 	}

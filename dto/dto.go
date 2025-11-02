@@ -695,6 +695,7 @@ type (
 type (
 	CheckReferalCodeRequest struct {
 		ReferalCode string `json:"referal_code"`
+		TicketID    string `json:"ticket_id"`
 	}
 	TransactionResponse struct {
 		ID                uuid.UUID            `json:"transaction_id"`

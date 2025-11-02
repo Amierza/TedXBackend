@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"strconv"
+	"strings"
 	"time"
 
 	m "github.com/Amierza/TedXBackend/config/midtrans"
@@ -452,6 +453,20 @@ func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dt
 
 // Check Referal Code
 func (us *UserService) CheckReferalCode(ctx context.Context, req dto.CheckReferalCodeRequest) (dto.StudentAmbassadorResponse, error) {
+	ticket, found, err := us.userRepo.GetTicketByID(ctx, nil, req.TicketID)
+	if err != nil || !found {
+		return dto.StudentAmbassadorResponse{}, dto.ErrTicketNotFound
+	}
+
+	if !strings.EqualFold(ticket.Name, "normal") {
+		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
+	}
+
+	if ticket.Type != entity.MainEvent {
+		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
+
+	}
+
 	sa, found, err := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
 	if err != nil || !found {
 		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
