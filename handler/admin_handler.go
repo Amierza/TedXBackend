@@ -1283,10 +1283,13 @@ func (ah *AdminHandler) GetAllTransactionTicket(ctx *gin.Context) {
 	usePagination := paginationParam != "false"
 	transactionStatus := ctx.Query("transaction_status")
 	ticketCategory := ctx.Query("ticket_category")
+	eventType := ctx.Query("event_type")
+	ticketID := ctx.Query("ticket_id")
+	instansi := ctx.Query("instansi")
 
 	if !usePagination {
 		// Tanpa pagination
-		result, err := ah.adminService.GetAllTransactionTicket(ctx, transactionStatus, ticketCategory)
+		result, err := ah.adminService.GetAllTransactionTicket(ctx, transactionStatus, ticketCategory, eventType, ticketID, instansi)
 		if err != nil {
 			res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TRANSACTION_TICKET, err.Error(), nil)
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
@@ -1305,7 +1308,7 @@ func (ah *AdminHandler) GetAllTransactionTicket(ctx *gin.Context) {
 		return
 	}
 
-	result, err := ah.adminService.GetAllTransactionTicketWithPagination(ctx, payload, transactionStatus, ticketCategory)
+	result, err := ah.adminService.GetAllTransactionTicketWithPagination(ctx, payload, transactionStatus, ticketCategory, eventType, ticketID, instansi)
 	if err != nil {
 		res := utils.BuildResponseFailed(dto.MESSAGE_FAILED_GET_LIST_TRANSACTION_TICKET, err.Error(), nil)
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
