@@ -57,8 +57,8 @@ type (
 		GetAllBundleWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest) (dto.BundlePaginationRepositoryResponse, error)
 		GetBundleByID(ctx context.Context, tx *gorm.DB, bundleID string) (entity.Bundle, bool, error)
 		GetBundleItemsByBundleID(ctx context.Context, tx *gorm.DB, bundleID string) ([]entity.BundleItem, error)
-		GetAllTransaction(ctx context.Context, tx *gorm.DB, transactionStatus, ticketCategory string) ([]entity.Transaction, error)
-		GetAllTransactionWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationRepositoryResponse, error)
+		GetAllTransaction(ctx context.Context, tx *gorm.DB, transactionStatus string, ticketCategory string, eventType string, ticketID string, instansi string) ([]entity.Transaction, error)
+		GetAllTransactionWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, transactionStatus string, ticketCategory string, eventType string, ticketID string, instansi string) (dto.TransactionTicketPaginationRepositoryResponse, error)
 		GetTransactionByID(ctx context.Context, tx *gorm.DB, transactionID string) (entity.Transaction, bool, error)
 		GetStudentAmbassadorByReferalCode(ctx context.Context, tx *gorm.DB, studentAmbassadorReferalCode string) (entity.StudentAmbassador, bool, error)
 		GetAllStudentAmbassador(ctx context.Context, tx *gorm.DB) ([]entity.StudentAmbassador, error)
@@ -762,7 +762,7 @@ func (ar *AdminRepository) GetBundleItemsByBundleID(ctx context.Context, tx *gor
 
 	return items, err
 }
-func (ar *AdminRepository) GetAllTransaction(ctx context.Context, tx *gorm.DB, transactionStatus, ticketCategory string) ([]entity.Transaction, error) {
+func (ar *AdminRepository) GetAllTransaction(ctx context.Context, tx *gorm.DB, transactionStatus string, ticketCategory string, eventType string, ticketID string, instansi string) ([]entity.Transaction, error) {
 	if tx == nil {
 		tx = ar.db
 	}
@@ -772,7 +772,7 @@ func (ar *AdminRepository) GetAllTransaction(ctx context.Context, tx *gorm.DB, t
 		err          error
 	)
 
-	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms").Preload("Ticket").Preload("Bundle")
+	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms").Joins("JOIN tickets on transactions.ticket_id = tickets.id").Preload("Ticket").Preload("Bundle")
 
 	if transactionStatus != "" {
 		query = query.Where("transactions.transaction_status = ?", transactionStatus)
@@ -781,6 +781,16 @@ func (ar *AdminRepository) GetAllTransaction(ctx context.Context, tx *gorm.DB, t
 	if ticketCategory != "" {
 		query = query.Where("ticket_forms.audience_type = ?", ticketCategory)
 	}
+	if instansi != "" {
+		query = query.Where("ticket_forms.instansi = ?", instansi)
+	}
+	if eventType != "" {
+		query = query.Where("tickets.type = ?", eventType)
+	}
+
+	if ticketID != "" {
+		query = query.Where("tickets.id = ?", ticketID)
+	}
 
 	if err := query.Order(`"createdAt" DESC`).Find(&transactions).Error; err != nil {
 		return []entity.Transaction{}, err
@@ -788,7 +798,7 @@ func (ar *AdminRepository) GetAllTransaction(ctx context.Context, tx *gorm.DB, t
 
 	return transactions, err
 }
-func (ar *AdminRepository) GetAllTransactionWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, transactionStatus, ticketCategory string) (dto.TransactionTicketPaginationRepositoryResponse, error) {
+func (ar *AdminRepository) GetAllTransactionWithPagination(ctx context.Context, tx *gorm.DB, req dto.PaginationRequest, transactionStatus string, ticketCategory string, eventType string, ticketID string, instansi string) (dto.TransactionTicketPaginationRepositoryResponse, error) {
 	if tx == nil {
 		tx = ar.db
 	}
@@ -807,7 +817,7 @@ func (ar *AdminRepository) GetAllTransactionWithPagination(ctx context.Context, 
 		req.Page = 1
 	}
 
-	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms").Preload("Ticket").Preload("Bundle")
+	query := tx.WithContext(ctx).Model(&entity.Transaction{}).Joins("JOIN ticket_forms ON transactions.id = ticket_forms.transaction_id").Group("transactions.id").Preload("TicketForms").Joins("JOIN tickets on transactions.ticket_id = tickets.id").Preload("Ticket").Preload("Bundle")
 
 	if transactionStatus != "" {
 		query = query.Where("transactions.transaction_status = ?", transactionStatus)
@@ -815,6 +825,17 @@ func (ar *AdminRepository) GetAllTransactionWithPagination(ctx context.Context, 
 
 	if ticketCategory != "" {
 		query = query.Where("ticket_forms.audience_type = ?", ticketCategory)
+	}
+	if instansi != "" {
+		query = query.Where("ticket_forms.instansi = ?", instansi)
+	}
+
+	if eventType != "" {
+		query = query.Where("tickets.type = ?", eventType)
+	}
+
+	if ticketID != "" {
+		query = query.Where("tickets.id = ?", ticketID)
 	}
 
 	if req.Search != "" {
