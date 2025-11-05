@@ -2238,9 +2238,9 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 		// 	return dto.ErrTicketTypeMustBeMainEvent
 		// }
 
-		if ticket.Quota-ticket.QuotaFilled <= 0 {
-			return dto.ErrTicketSoldOut
-		}
+		// if ticket.Quota-ticket.QuotaFilled <= 0 {
+		// 	return dto.ErrTicketSoldOut
+		// }
 
 		transactionID := uuid.New()
 		orderID := fmt.Sprintf("TEDX-%s", time.Now().Format("060102150405"))
