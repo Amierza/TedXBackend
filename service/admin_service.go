@@ -2436,7 +2436,7 @@ func (as *AdminService) GetAllTransactionTicketWithPagination(ctx context.Contex
 			OrderID:           transaction.OrderID,
 			ItemType:          transaction.ItemType,
 			TicketName:        transaction.Ticket.Name,
-			TicketType:        entity.TicketType(transaction.Ticket.Type),
+			TicketType:        transaction.Ticket.Type,
 			ReferalCode:       transaction.ReferalCode,
 			TransactionStatus: transaction.TransactionStatus,
 			PaymentType:       transaction.PaymentType,
