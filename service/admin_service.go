@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -2243,7 +2244,7 @@ func (as *AdminService) CreateTransactionTicket(ctx context.Context, req dto.Cre
 		// }
 
 		transactionID := uuid.New()
-		orderID := fmt.Sprintf("TEDX-%s", time.Now().Format("060102150405"))
+		orderID := fmt.Sprintf("TEDX-%s%03d", time.Now().Format("060102150405"), rand.Intn(1000))
 
 		now := time.Now()
 
