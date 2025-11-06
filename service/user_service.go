@@ -813,14 +813,12 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 			return dto.ErrUpdateTicketQuota
 		}
 		if transaction.ReferalCode != "" {
-			sa, found, err := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, transaction.ReferalCode)
-			if err != nil || !found {
-				return dto.ErrInvalidReferalCode
+			sa, found, _ := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, transaction.ReferalCode)
+			if found {
+				if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), sa.QuotaFilled-1); err != nil {
+					return dto.ErrUpdateSAQuotaFilled
+				}
 			}
-			if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), sa.QuotaFilled-1); err != nil {
-				return dto.ErrUpdateSAQuotaFilled
-			}
-
 		}
 
 		transaction.TransactionStatus = req.TransactionStatus
