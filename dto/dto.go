@@ -712,8 +712,8 @@ type (
 		SettlementTime    *time.Time           `json:"settlement_time"`
 		GrossAmount       float64              `json:"gross_amount"`
 		UserID            *uuid.UUID           `json:"user_id"`
-		TicketID          *uuid.UUID           `json:"ticket_id"`
-		BundleID          *uuid.UUID           `json:"bundle_id"`
+		TicketID          *uuid.UUID           `json:"ticket_id,omitempty"`
+		BundleID          *uuid.UUID           `json:"bundle_id,omitempty"`
 		TicketForms       []TicketFormResponse `json:"ticket_forms"`
 		Token             string               `json:"token"`
 		RedirectURL       string               `json:"redirect_url"`
