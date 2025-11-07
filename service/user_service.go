@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"html/template"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -571,7 +572,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		}
 
 		transactionID := uuid.New()
-		orderID := fmt.Sprintf("TEDX-%s", time.Now().Format("060102150405"))
+		orderID := fmt.Sprintf("TEDX-%s%03d", time.Now().Format("060102150405"), rand.Intn(1000))
 
 		transaction := entity.Transaction{
 			ID:                transactionID,
