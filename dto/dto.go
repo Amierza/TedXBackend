@@ -565,16 +565,17 @@ type (
 // Bundle
 type (
 	BundleResponse struct {
-		ID          uuid.UUID            `json:"bundle_id"`
-		Name        string               `json:"bundle_name"`
-		Image       string               `json:"bundle_image"`
-		Type        entity.BundleType    `json:"bundle_type"`
-		Price       float64              `json:"bundle_price"`
-		Quota       int                  `json:"bundle_quota"`
-		Description string               `json:"bundle_description"`
-		EventDate   string               `json:"bundle_event_date"`
-		IsAvailable *bool                `json:"bundle_is_available,omitempty"`
-		BundleItems []BundleItemResponse `json:"bundle_items"`
+		ID             uuid.UUID            `json:"bundle_id"`
+		Name           string               `json:"bundle_name"`
+		Image          string               `json:"bundle_image"`
+		Type           entity.BundleType    `json:"bundle_type"`
+		Price          float64              `json:"bundle_price"`
+		Quota          int                  `json:"bundle_quota"`
+		Description    string               `json:"bundle_description"`
+		EventStartDate string               `json:"bundle_event_start_date"`
+		EventEndDate   string               `json:"bundle_event_end_date"`
+		IsAvailable    *bool                `json:"bundle_is_available,omitempty"`
+		BundleItems    []BundleItemResponse `json:"bundle_items"`
 	}
 	BundleItemResponse struct {
 		ID               uuid.UUID            `json:"bundle_item_id"`
@@ -585,26 +586,28 @@ type (
 		MerchImages      []MerchImageResponse `json:"merch_images,omitempty"`
 	}
 	CreateBundleRequest struct {
-		Name        string            `json:"bundle_name" form:"bundle_name"`
-		Image       string            `json:"bundle_image" form:"bundle_image"`
-		Type        entity.BundleType `json:"bundle_type" form:"bundle_type"`
-		Price       float64           `json:"bundle_price" form:"bundle_price"`
-		Quota       int               `json:"bundle_quota" form:"bundle_quota"`
-		Description string            `json:"bundle_description" form:"bundle_description"`
-		EventDate   string            `json:"bundle_event_date" form:"bundle_event_date"`
-		BundleItems []*uuid.UUID      `json:"bundle_items"`
+		Name           string            `json:"bundle_name" form:"bundle_name"`
+		Image          string            `json:"bundle_image" form:"bundle_image"`
+		Type           entity.BundleType `json:"bundle_type" form:"bundle_type"`
+		Price          float64           `json:"bundle_price" form:"bundle_price"`
+		Quota          int               `json:"bundle_quota" form:"bundle_quota"`
+		Description    string            `json:"bundle_description" form:"bundle_description"`
+		EventStartDate string            `json:"bundle_event_start_date" form:"bundle_event_start_date"`
+		EventEndDate   string            `json:"bundle_event_end_date" form:"bundle_event_end_date"`
+		BundleItems    []*uuid.UUID      `json:"bundle_items"`
 		ImageUpload
 	}
 	UpdateBundleRequest struct {
-		ID          string            `json:"-"`
-		Name        string            `json:"bundle_name,omitempty" form:"bundle_name"`
-		Image       string            `json:"bundle_image,omitempty" form:"bundle_image"`
-		Type        entity.BundleType `json:"bundle_type,omitempty" form:"bundle_type"`
-		Price       *float64          `json:"bundle_price,omitempty" form:"bundle_price"`
-		Quota       *int              `json:"bundle_quota,omitempty" form:"bundle_quota"`
-		Description string            `json:"bundle_description" form:"bundle_description"`
-		EventDate   string            `json:"bundle_event_date" form:"bundle_event_date"`
-		BundleItems []*uuid.UUID      `json:"bundle_items,omitempty" form:"bundle_items"`
+		ID             string            `json:"-"`
+		Name           string            `json:"bundle_name,omitempty" form:"bundle_name"`
+		Image          string            `json:"bundle_image,omitempty" form:"bundle_image"`
+		Type           entity.BundleType `json:"bundle_type,omitempty" form:"bundle_type"`
+		Price          *float64          `json:"bundle_price,omitempty" form:"bundle_price"`
+		Quota          *int              `json:"bundle_quota,omitempty" form:"bundle_quota"`
+		Description    string            `json:"bundle_description" form:"bundle_description"`
+		EventStartDate string            `json:"bundle_event_start_date" form:"bundle_event_start_date"`
+		EventEndDate   string            `json:"bundle_event_end_date" form:"bundle_event_end_date"`
+		BundleItems    []*uuid.UUID      `json:"bundle_items,omitempty" form:"bundle_items"`
 		ImageUpload
 	}
 	BundlePaginationResponse struct {

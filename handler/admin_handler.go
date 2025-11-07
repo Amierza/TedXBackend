@@ -989,7 +989,8 @@ func (ah *AdminHandler) CreateBundle(ctx *gin.Context) {
 	}
 
 	payload.Description = ctx.PostForm("bundle_description")
-	payload.EventDate = ctx.PostForm("bundle_event_date")
+	payload.EventStartDate = ctx.PostForm("bundle_event_start_date")
+	payload.EventEndDate = ctx.PostForm("bundle_event_end_date")
 
 	result, err := ah.adminService.CreateBundle(ctx, payload)
 	if err != nil {
@@ -1113,7 +1114,8 @@ func (ah *AdminHandler) UpdateBundle(ctx *gin.Context) {
 	}
 
 	payload.Description = ctx.PostForm("bundle_description")
-	payload.EventDate = ctx.PostForm("bundle_event_date")
+	payload.EventStartDate = ctx.PostForm("bundle_event_start_date")
+	payload.EventEndDate = ctx.PostForm("bundle_event_end_date")
 
 	result, err := ah.adminService.UpdateBundle(ctx, payload)
 	if err != nil {
