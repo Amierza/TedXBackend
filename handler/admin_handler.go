@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -998,6 +999,7 @@ func (ah *AdminHandler) CreateBundle(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
+	log.Println("sdfsd")
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_BUNDLE, result)
 	ctx.JSON(http.StatusOK, res)

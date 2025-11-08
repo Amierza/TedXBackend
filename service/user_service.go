@@ -386,8 +386,8 @@ func (us *UserService) GetAllBundle(ctx context.Context, bundleType string) ([]d
 			Quota:          bundle.Quota - bundle.QuotaFilled,
 			Description:    bundle.Description,
 			IsAvailable:    &isAvailable,
-			EventStartDate: bundle.EventStartDate.Format("2006-01-02"),
-			EventEndDate:   bundle.EventEndDate.Format("2006-01-02"),
+			EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+			EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -429,8 +429,8 @@ func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dt
 		Quota:          bundle.Quota - bundle.QuotaFilled,
 		Description:    bundle.Description,
 		IsAvailable:    &isAvailable,
-		EventStartDate: bundle.EventStartDate.Format("2006-01-02"),
-		EventEndDate:   bundle.EventEndDate.Format("2006-01-02"),
+		EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
 	}
 
 	for _, bi := range bundle.BundleItems {
