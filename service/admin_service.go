@@ -438,6 +438,7 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		Image:          ticket.Image,
 		Description:    ticket.Description,
 		EventStartDate: ticket.EventStartDate.Format("2006-01-02"),
+		EventEndDate:   ticket.EventEndDate.Format("2006-01-02"),
 	}, nil
 }
 func (as *AdminService) GetAllTicket(ctx context.Context, filter dto.TicketFilter) ([]dto.TicketResponse, error) {
@@ -1540,7 +1541,7 @@ func (as *AdminService) DeleteMerch(ctx context.Context, req dto.DeleteMerchRequ
 
 // Bundle
 func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRequest) (dto.BundleResponse, error) {
-	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || len(req.BundleItems) == 0 || req.Type == "" || req.EventDate == "" {
+	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || len(req.BundleItems) == 0 || req.Type == "" || req.EventStartDate == "" || req.EventEndDate == "" {
 		return dto.BundleResponse{}, dto.ErrEmptyFields
 	}
 
@@ -1593,21 +1594,26 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 	if err != nil {
 		loc = time.FixedZone("UTC+7", 7*60*60)
 	}
-	eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+	eventStartDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventStartDate, loc)
+	if err != nil {
+		return dto.BundleResponse{}, dto.ErrParseTime
+	}
+	eventEndDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventEndDate, loc)
 	if err != nil {
 		return dto.BundleResponse{}, dto.ErrParseTime
 	}
 
 	bundleID := uuid.New()
 	bundle := entity.Bundle{
-		ID:          bundleID,
-		Name:        req.Name,
-		Type:        req.Type,
-		Price:       req.Price,
-		Quota:       req.Quota,
-		Image:       fileName,
-		Description: req.Description,
-		EventDate:   eventDate,
+		ID:             bundleID,
+		Name:           req.Name,
+		Type:           req.Type,
+		Price:          req.Price,
+		Quota:          req.Quota,
+		Image:          fileName,
+		Description:    req.Description,
+		EventStartDate: eventStartDate,
+		EventEndDate:   eventEndDate,
 	}
 
 	var bundleItems []entity.BundleItem
@@ -1652,15 +1658,16 @@ func (as *AdminService) CreateBundle(ctx context.Context, req dto.CreateBundleRe
 	}
 
 	return dto.BundleResponse{
-		ID:          bundle.ID,
-		Name:        bundle.Name,
-		Image:       bundle.Image,
-		Type:        bundle.Type,
-		Price:       bundle.Price,
-		Quota:       bundle.Quota,
-		Description: bundle.Description,
-		EventDate:   bundle.EventDate.Format("2006-01-02"),
-		BundleItems: itemsResp,
+		ID:             bundle.ID,
+		Name:           bundle.Name,
+		Image:          bundle.Image,
+		Type:           bundle.Type,
+		Price:          bundle.Price,
+		Quota:          bundle.Quota,
+		Description:    bundle.Description,
+		EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
+		BundleItems:    itemsResp,
 	}, nil
 }
 func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse, error) {
@@ -1671,18 +1678,19 @@ func (as *AdminService) GetAllBundle(ctx context.Context) ([]dto.BundleResponse,
 
 	var datas []dto.BundleResponse
 	for _, bundle := range bundles {
-		isAvailable := bundle.Quota > 0 && time.Now().Before(bundle.EventDate)
+		isAvailable := bundle.Quota-bundle.QuotaFilled > 0 && time.Now().After(bundle.EventStartDate) && time.Now().Before(bundle.EventEndDate)
 
 		data := dto.BundleResponse{
-			ID:          bundle.ID,
-			Name:        bundle.Name,
-			Image:       bundle.Image,
-			Type:        bundle.Type,
-			Price:       bundle.Price,
-			Quota:       bundle.Quota - bundle.QuotaFilled,
-			Description: bundle.Description,
-			EventDate:   bundle.EventDate.Format("2006-01-02"),
-			IsAvailable: &isAvailable,
+			ID:             bundle.ID,
+			Name:           bundle.Name,
+			Image:          bundle.Image,
+			Type:           bundle.Type,
+			Price:          bundle.Price,
+			Quota:          bundle.Quota - bundle.QuotaFilled,
+			Description:    bundle.Description,
+			IsAvailable:    &isAvailable,
+			EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+			EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -1708,18 +1716,19 @@ func (as *AdminService) GetAllBundleWithPagination(ctx context.Context, req dto.
 
 	var datas []dto.BundleResponse
 	for _, bundle := range dataWithPaginate.Bundles {
-		isAvailable := bundle.Quota > 0 && time.Now().Before(bundle.EventDate)
+		isAvailable := bundle.Quota-bundle.QuotaFilled > 0 && time.Now().After(bundle.EventStartDate) && time.Now().Before(bundle.EventEndDate)
 
 		data := dto.BundleResponse{
-			ID:          bundle.ID,
-			Name:        bundle.Name,
-			Image:       bundle.Image,
-			Type:        bundle.Type,
-			Price:       bundle.Price,
-			Quota:       bundle.Quota - bundle.QuotaFilled,
-			Description: bundle.Description,
-			EventDate:   bundle.EventDate.Format("2006-01-02"),
-			IsAvailable: &isAvailable,
+			ID:             bundle.ID,
+			Name:           bundle.Name,
+			Image:          bundle.Image,
+			Type:           bundle.Type,
+			Price:          bundle.Price,
+			Quota:          bundle.Quota - bundle.QuotaFilled,
+			Description:    bundle.Description,
+			EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+			EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
+			IsAvailable:    &isAvailable,
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -1751,15 +1760,19 @@ func (as *AdminService) GetDetailBundle(ctx context.Context, bundleID string) (d
 		return dto.BundleResponse{}, dto.ErrBundleNotFound
 	}
 
+	isAvailable := bundle.Quota-bundle.QuotaFilled > 0 && time.Now().After(bundle.EventStartDate) && time.Now().Before(bundle.EventEndDate)
+
 	b := dto.BundleResponse{
-		ID:          bundle.ID,
-		Name:        bundle.Name,
-		Image:       bundle.Image,
-		Type:        bundle.Type,
-		Price:       bundle.Price,
-		Quota:       bundle.Quota - bundle.QuotaFilled,
-		Description: bundle.Description,
-		EventDate:   bundle.EventDate.Format("2006-01-02"),
+		ID:             bundle.ID,
+		Name:           bundle.Name,
+		Image:          bundle.Image,
+		Type:           bundle.Type,
+		Price:          bundle.Price,
+		Quota:          bundle.Quota - bundle.QuotaFilled,
+		Description:    bundle.Description,
+		IsAvailable:    &isAvailable,
+		EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
 	}
 
 	for _, bi := range bundle.BundleItems {
@@ -1859,17 +1872,30 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 		bundle.Description = req.Description
 	}
 
-	if req.EventDate != "" {
+	if req.EventStartDate != "" {
 		loc, err := time.LoadLocation("Asia/Jakarta")
 		if err != nil {
 			loc = time.FixedZone("UTC+7", 7*60*60)
 		}
-		eventDate, err := time.ParseInLocation("2006-01-02", req.EventDate, loc)
+		eventStartDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventStartDate, loc)
 		if err != nil {
 			return dto.BundleResponse{}, dto.ErrParseTime
 		}
 
-		bundle.EventDate = eventDate
+		bundle.EventStartDate = eventStartDate
+	}
+
+	if req.EventEndDate != "" {
+		loc, err := time.LoadLocation("Asia/Jakarta")
+		if err != nil {
+			loc = time.FixedZone("UTC+7", 7*60*60)
+		}
+		eventEndDate, err := time.ParseInLocation("2006-01-02 15:04:05", req.EventEndDate, loc)
+		if err != nil {
+			return dto.BundleResponse{}, dto.ErrParseTime
+		}
+
+		bundle.EventEndDate = eventEndDate
 	}
 
 	updateItems := req.BundleItems != nil
@@ -1942,16 +1968,19 @@ func (as *AdminService) UpdateBundle(ctx context.Context, req dto.UpdateBundleRe
 		}
 	}
 
+	isAvailable := bundle.Quota-bundle.QuotaFilled > 0 && time.Now().After(bundle.EventStartDate) && time.Now().Before(bundle.EventEndDate)
 	return dto.BundleResponse{
-		ID:          bundle.ID,
-		Name:        bundle.Name,
-		Image:       bundle.Image,
-		Type:        bundle.Type,
-		Price:       bundle.Price,
-		Quota:       bundle.Quota,
-		Description: bundle.Description,
-		EventDate:   bundle.EventDate.Format("2006-01-02"),
-		BundleItems: respItems,
+		ID:             bundle.ID,
+		Name:           bundle.Name,
+		Image:          bundle.Image,
+		Type:           bundle.Type,
+		Price:          bundle.Price,
+		Quota:          bundle.Quota,
+		Description:    bundle.Description,
+		IsAvailable:    &isAvailable,
+		EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
+		BundleItems:    respItems,
 	}, nil
 }
 func (as *AdminService) DeleteBundle(ctx context.Context, req dto.DeleteBundleRequest) (dto.BundleResponse, error) {
@@ -1973,15 +2002,18 @@ func (as *AdminService) DeleteBundle(ctx context.Context, req dto.DeleteBundleRe
 		return nil
 	})
 
+	isAvailable := deletedBundle.Quota-deletedBundle.QuotaFilled > 0 && time.Now().After(deletedBundle.EventStartDate) && time.Now().Before(deletedBundle.EventEndDate)
 	b := dto.BundleResponse{
-		ID:          deletedBundle.ID,
-		Name:        deletedBundle.Name,
-		Image:       deletedBundle.Image,
-		Type:        deletedBundle.Type,
-		Price:       deletedBundle.Price,
-		Quota:       deletedBundle.Quota,
-		Description: deletedBundle.Description,
-		EventDate:   deletedBundle.EventDate.Format("2006-01-02"),
+		ID:             deletedBundle.ID,
+		Name:           deletedBundle.Name,
+		Image:          deletedBundle.Image,
+		Type:           deletedBundle.Type,
+		Price:          deletedBundle.Price,
+		Quota:          deletedBundle.Quota,
+		Description:    deletedBundle.Description,
+		IsAvailable:    &isAvailable,
+		EventStartDate: deletedBundle.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   deletedBundle.EventEndDate.Format("2006-01-02 15:04:05"),
 	}
 
 	for _, bi := range deletedBundle.BundleItems {

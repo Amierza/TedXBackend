@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -989,7 +990,8 @@ func (ah *AdminHandler) CreateBundle(ctx *gin.Context) {
 	}
 
 	payload.Description = ctx.PostForm("bundle_description")
-	payload.EventDate = ctx.PostForm("bundle_event_date")
+	payload.EventStartDate = ctx.PostForm("bundle_event_start_date")
+	payload.EventEndDate = ctx.PostForm("bundle_event_end_date")
 
 	result, err := ah.adminService.CreateBundle(ctx, payload)
 	if err != nil {
@@ -997,6 +999,7 @@ func (ah *AdminHandler) CreateBundle(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, res)
 		return
 	}
+	log.Println("sdfsd")
 
 	res := utils.BuildResponseSuccess(dto.MESSAGE_SUCCESS_CREATE_BUNDLE, result)
 	ctx.JSON(http.StatusOK, res)
@@ -1113,7 +1116,8 @@ func (ah *AdminHandler) UpdateBundle(ctx *gin.Context) {
 	}
 
 	payload.Description = ctx.PostForm("bundle_description")
-	payload.EventDate = ctx.PostForm("bundle_event_date")
+	payload.EventStartDate = ctx.PostForm("bundle_event_start_date")
+	payload.EventEndDate = ctx.PostForm("bundle_event_end_date")
 
 	result, err := ah.adminService.UpdateBundle(ctx, payload)
 	if err != nil {

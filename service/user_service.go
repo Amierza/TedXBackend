@@ -376,17 +376,18 @@ func (us *UserService) GetAllBundle(ctx context.Context, bundleType string) ([]d
 
 	var datas []dto.BundleResponse
 	for _, bundle := range bundles {
-		isAvailable := bundle.Quota > 0 && time.Now().Before(bundle.EventDate)
+		isAvailable := bundle.Quota-bundle.QuotaFilled > 0 && time.Now().After(bundle.EventStartDate) && time.Now().Before(bundle.EventEndDate)
 		data := dto.BundleResponse{
-			ID:          bundle.ID,
-			Name:        bundle.Name,
-			Image:       bundle.Image,
-			Type:        bundle.Type,
-			Price:       bundle.Price,
-			Quota:       bundle.Quota - bundle.QuotaFilled,
-			IsAvailable: &isAvailable,
-			Description: bundle.Description,
-			EventDate:   bundle.EventDate.Format("2006-01-02"),
+			ID:             bundle.ID,
+			Name:           bundle.Name,
+			Image:          bundle.Image,
+			Type:           bundle.Type,
+			Price:          bundle.Price,
+			Quota:          bundle.Quota - bundle.QuotaFilled,
+			Description:    bundle.Description,
+			IsAvailable:    &isAvailable,
+			EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+			EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
 		}
 
 		for _, bi := range bundle.BundleItems {
@@ -418,15 +419,18 @@ func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dt
 		return dto.BundleResponse{}, dto.ErrBundleNotFound
 	}
 
+	isAvailable := bundle.Quota-bundle.QuotaFilled > 0 && time.Now().After(bundle.EventStartDate) && time.Now().Before(bundle.EventEndDate)
 	b := dto.BundleResponse{
-		ID:          bundle.ID,
-		Name:        bundle.Name,
-		Image:       bundle.Image,
-		Type:        bundle.Type,
-		Price:       bundle.Price,
-		Quota:       bundle.Quota - bundle.QuotaFilled,
-		Description: bundle.Description,
-		EventDate:   bundle.EventDate.Format("2006-01-02"),
+		ID:             bundle.ID,
+		Name:           bundle.Name,
+		Image:          bundle.Image,
+		Type:           bundle.Type,
+		Price:          bundle.Price,
+		Quota:          bundle.Quota - bundle.QuotaFilled,
+		Description:    bundle.Description,
+		IsAvailable:    &isAvailable,
+		EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
+		EventEndDate:   bundle.EventEndDate.Format("2006-01-02 15:04:05"),
 	}
 
 	for _, bi := range bundle.BundleItems {
@@ -514,6 +518,8 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		return dto.TransactionResponse{}, dto.ErrUserNotFound
 	}
 
+	now := time.Now()
+
 	var transactionResponse dto.TransactionResponse
 	err = us.userRepo.RunInTransaction(ctx, func(txRepo repository.IUserRepository) error {
 		if req.ReferalCode != "" {
@@ -555,6 +561,10 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrTicketSoldOut
 			}
 
+			if now.After(t.EventStartDate) && now.Before(t.EventEndDate) {
+				return fmt.Errorf("failed event ticket not available")
+			}
+
 			ticket = t
 		}
 
@@ -566,6 +576,10 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 
 			if b.Quota-b.QuotaFilled <= 0 {
 				return dto.ErrBundleSoldOut
+			}
+
+			if now.After(b.EventStartDate) && now.Before(b.EventEndDate) {
+				return fmt.Errorf("failed event bundle not available")
 			}
 
 			bundle = b
@@ -810,9 +824,6 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		transaction.TransactionStatus = "pending"
 
 	case "deny", "failure", "cancel", "expire":
-		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled-len(transaction.TicketForms)); err != nil {
-			return dto.ErrUpdateTicketQuota
-		}
 		if transaction.ReferalCode != "" {
 			sa, found, _ := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, transaction.ReferalCode)
 			if found {
@@ -820,6 +831,10 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 					return dto.ErrUpdateSAQuotaFilled
 				}
 			}
+		}
+
+		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled-len(transaction.TicketForms)); err != nil {
+			return dto.ErrUpdateTicketQuota
 		}
 
 		transaction.TransactionStatus = req.TransactionStatus
