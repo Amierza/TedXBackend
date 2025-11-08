@@ -1083,7 +1083,7 @@ func (ar *AdminRepository) GetAllTicketFormWithPagination(ctx context.Context, t
 
 	// --- Apply Order + Pagination ---
 	if err := query.
-		Order(`ticket_forms."createdAt" DESC`).
+		Order(`guest_attendances."createdAt" DESC`).
 		Scopes(Paginate(req.Page, req.PerPage)).
 		Find(&ticketForms).Error; err != nil {
 		return dto.TicketFormPaginationRepositoryResponse{}, err
