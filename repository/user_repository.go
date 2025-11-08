@@ -209,6 +209,7 @@ func (ur *UserRepository) GetAllTransactions(ctx context.Context, tx *gorm.DB, u
 
 	query := tx.WithContext(ctx).
 		Model(&entity.Transaction{}).
+		Where("transaction_status = ?", "settlement").
 		Preload("User").
 		Preload("Bundle").
 		Preload("Ticket").
