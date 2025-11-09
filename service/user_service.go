@@ -646,12 +646,26 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			}
 
 			if req.BundleID != nil && *req.BundleID != uuid.Nil {
+				sisaQuota := bundle.Quota - bundle.QuotaFilled
+				reqQuota := len(req.TicketForms)
+
+				if reqQuota > sisaQuota {
+					return fmt.Errorf("invalid bundle quota")
+				}
+
 				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.QuotaFilled+len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateBundleQuota
 				}
 			}
 
 			if req.TicketID != nil && *req.TicketID != uuid.Nil {
+				sisaQuota := ticket.Quota - ticket.QuotaFilled
+				reqQuota := len(req.TicketForms)
+
+				if reqQuota > sisaQuota {
+					return fmt.Errorf("invalid ticket quota")
+				}
+
 				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
 					return dto.ErrUpdateTicketQuota
 				}
