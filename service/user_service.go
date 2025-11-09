@@ -383,7 +383,9 @@ func (us *UserService) GetAllBundle(ctx context.Context, bundleType string) ([]d
 			Image:          bundle.Image,
 			Type:           bundle.Type,
 			Price:          bundle.Price,
-			Quota:          bundle.Quota - bundle.QuotaFilled,
+			Quota:          bundle.Quota,
+			QuotaAvailable: bundle.Quota - bundle.QuotaFilled,
+			QuotaFilled:    bundle.QuotaFilled,
 			Description:    bundle.Description,
 			IsAvailable:    &isAvailable,
 			EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
@@ -426,7 +428,9 @@ func (us *UserService) GetDetailBundle(ctx context.Context, bundleID string) (dt
 		Image:          bundle.Image,
 		Type:           bundle.Type,
 		Price:          bundle.Price,
-		Quota:          bundle.Quota - bundle.QuotaFilled,
+		Quota:          bundle.Quota,
+		QuotaAvailable: bundle.Quota - bundle.QuotaFilled,
+		QuotaFilled:    bundle.QuotaFilled,
 		Description:    bundle.Description,
 		IsAvailable:    &isAvailable,
 		EventStartDate: bundle.EventStartDate.Format("2006-01-02 15:04:05"),
@@ -561,7 +565,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrTicketSoldOut
 			}
 
-			if now.After(t.EventStartDate) && now.Before(t.EventEndDate) {
+			if now.Before(t.EventStartDate) || now.After(t.EventEndDate) {
 				return fmt.Errorf("failed event ticket not available")
 			}
 
@@ -578,7 +582,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrBundleSoldOut
 			}
 
-			if now.After(b.EventStartDate) && now.Before(b.EventEndDate) {
+			if now.Before(b.EventStartDate) || now.After(b.EventEndDate) {
 				return fmt.Errorf("failed event bundle not available")
 			}
 

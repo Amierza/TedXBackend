@@ -340,10 +340,9 @@ func (as *AdminService) DeleteUser(ctx context.Context, req dto.DeleteUserReques
 
 // Ticket
 func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRequest) (dto.TicketResponse, error) {
-	if req.Name == "" || req.FileHeader == nil || req.FileReader == nil || req.Type == "" || req.EventStartDate == "" || req.EventEndDate == "" {
+	if req.Name == "" || req.Type == "" || req.EventStartDate == "" || req.EventEndDate == "" {
 		return dto.TicketResponse{}, dto.ErrEmptyFields
 	}
-
 	_, flag, err := as.adminRepo.GetTicketByName(ctx, nil, req.Name)
 	if err == nil || flag {
 		return dto.TicketResponse{}, dto.ErrTicketAlreadyExists
@@ -365,32 +364,34 @@ func (as *AdminService) CreateTicket(ctx context.Context, req dto.CreateTicketRe
 		return dto.TicketResponse{}, dto.ErrQuotaOutOfBound
 	}
 
-	ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
-	if ext != "jpg" && ext != "jpeg" && ext != "png" {
-		return dto.TicketResponse{}, dto.ErrInvalidExtensionPhoto
+	if req.FileHeader != nil && req.FileReader != nil {
+		ext := strings.ToLower(strings.TrimPrefix(filepath.Ext(req.FileHeader.Filename), "."))
+		if ext != "jpg" && ext != "jpeg" && ext != "png" {
+			return dto.TicketResponse{}, dto.ErrInvalidExtensionPhoto
+		}
+
+		ticketName := strings.ToLower(req.Name)
+		ticketName = strings.ReplaceAll(ticketName, " ", "_")
+
+		fileName := fmt.Sprintf("ticket_%s_%s.%s", time.Now().Format("060102150405"), ticketName, ext)
+
+		saveDir := "assets/ticket"
+		if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
+			return dto.TicketResponse{}, dto.ErrCreateFile
+		}
+		savePath := filepath.Join(saveDir, fileName)
+
+		out, err := os.Create(savePath)
+		if err != nil {
+			return dto.TicketResponse{}, dto.ErrCreateFile
+		}
+		defer out.Close()
+
+		if _, err := io.Copy(out, req.FileReader); err != nil {
+			return dto.TicketResponse{}, dto.ErrSaveFile
+		}
+		req.Image = fileName
 	}
-
-	ticketName := strings.ToLower(req.Name)
-	ticketName = strings.ReplaceAll(ticketName, " ", "_")
-
-	fileName := fmt.Sprintf("ticket_%s_%s.%s", time.Now().Format("060102150405"), ticketName, ext)
-
-	saveDir := "assets/ticket"
-	if err := os.MkdirAll(saveDir, os.ModePerm); err != nil {
-		return dto.TicketResponse{}, dto.ErrCreateFile
-	}
-	savePath := filepath.Join(saveDir, fileName)
-
-	out, err := os.Create(savePath)
-	if err != nil {
-		return dto.TicketResponse{}, dto.ErrCreateFile
-	}
-	defer out.Close()
-
-	if _, err := io.Copy(out, req.FileReader); err != nil {
-		return dto.TicketResponse{}, dto.ErrSaveFile
-	}
-	req.Image = fileName
 
 	loc, err := time.LoadLocation("Asia/Jakarta")
 	if err != nil {
@@ -609,6 +610,8 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 			return dto.TicketResponse{}, dto.ErrSaveFile
 		}
 		ticket.Image = fileName
+	} else {
+		ticket.Image = ""
 	}
 
 	if req.Description != "" {
