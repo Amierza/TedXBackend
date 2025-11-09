@@ -571,6 +571,8 @@ type (
 		Type           entity.BundleType    `json:"bundle_type"`
 		Price          float64              `json:"bundle_price"`
 		Quota          int                  `json:"bundle_quota"`
+		QuotaAvailable int                  `json:"bundle_quota_available"`
+		QuotaFilled    int                  `json:"bundle_quota_filled"`
 		Description    string               `json:"bundle_description"`
 		EventStartDate string               `json:"bundle_event_start_date"`
 		EventEndDate   string               `json:"bundle_event_end_date"`
