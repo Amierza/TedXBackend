@@ -610,6 +610,8 @@ func (as *AdminService) UpdateTicket(ctx context.Context, req dto.UpdateTicketRe
 			return dto.TicketResponse{}, dto.ErrSaveFile
 		}
 		ticket.Image = fileName
+	} else {
+		ticket.Image = ""
 	}
 
 	if req.Description != "" {
