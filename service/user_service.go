@@ -526,6 +526,12 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 
 	var transactionResponse dto.TransactionResponse
 	err = us.userRepo.RunInTransaction(ctx, func(txRepo repository.IUserRepository) error {
+		var (
+			ticket            entity.Ticket
+			bundle            entity.Bundle
+			studentAmbassador entity.StudentAmbassador
+		)
+
 		if req.ReferalCode != "" {
 			sa, found, err := txRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
 			if err != nil || !found {
@@ -536,10 +542,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrReferalCodeSoldOut
 			}
 
-			err = txRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), sa.QuotaFilled+1)
-			if err != nil {
-				return dto.ErrUpdateSAQuotaFilled
-			}
+			studentAmbassador = sa
 		}
 
 		if req.Total <= 0 {
@@ -549,11 +552,6 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		if !entity.IsValidItemType(req.ItemType) || (req.ItemType != constants.ENUM_TICKET_ITEM_TYPE && req.ItemType != constants.ENUM_BUNDLE_ITEM_TYPE) {
 			return dto.ErrItemTypeMustBeTicketOrBundle
 		}
-
-		var (
-			ticket entity.Ticket
-			bundle entity.Bundle
-		)
 
 		if req.TicketID != nil && *req.TicketID != uuid.Nil {
 			t, found, err := txRepo.GetTicketByID(ctx, nil, req.TicketID.String())
@@ -643,6 +641,13 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				PhoneNumber:   formattedPhone,
 				LineID:        form.LineID,
 				TransactionID: &transactionID,
+			}
+
+			if req.ReferalCode != "" {
+				err = txRepo.UpdateSAQuotaFilled(ctx, nil, studentAmbassador.ID.String(), studentAmbassador.QuotaFilled+1)
+				if err != nil {
+					return dto.ErrUpdateSAQuotaFilled
+				}
 			}
 
 			if req.BundleID != nil && *req.BundleID != uuid.Nil {
