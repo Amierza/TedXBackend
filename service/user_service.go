@@ -473,12 +473,16 @@ func (us *UserService) CheckReferalCode(ctx context.Context, req dto.CheckRefera
 
 	if ticket.Type != entity.MainEvent {
 		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
-
 	}
 
 	sa, found, err := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
 	if err != nil || !found {
 		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
+	}
+
+	sisaQuota := sa.MaxReferal - sa.QuotaFilled
+	if sisaQuota-req.TotalTicketForm < 0 {
+		return dto.StudentAmbassadorResponse{}, fmt.Errorf("referal is limit")
 	}
 
 	res := dto.StudentAmbassadorResponse{
@@ -526,6 +530,12 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 
 	var transactionResponse dto.TransactionResponse
 	err = us.userRepo.RunInTransaction(ctx, func(txRepo repository.IUserRepository) error {
+		var (
+			ticket            entity.Ticket
+			bundle            entity.Bundle
+			studentAmbassador entity.StudentAmbassador
+		)
+
 		if req.ReferalCode != "" {
 			sa, found, err := txRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
 			if err != nil || !found {
@@ -536,10 +546,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				return dto.ErrReferalCodeSoldOut
 			}
 
-			err = txRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), sa.QuotaFilled+1)
-			if err != nil {
-				return dto.ErrUpdateSAQuotaFilled
-			}
+			studentAmbassador = sa
 		}
 
 		if req.Total <= 0 {
@@ -549,11 +556,6 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 		if !entity.IsValidItemType(req.ItemType) || (req.ItemType != constants.ENUM_TICKET_ITEM_TYPE && req.ItemType != constants.ENUM_BUNDLE_ITEM_TYPE) {
 			return dto.ErrItemTypeMustBeTicketOrBundle
 		}
-
-		var (
-			ticket entity.Ticket
-			bundle entity.Bundle
-		)
 
 		if req.TicketID != nil && *req.TicketID != uuid.Nil {
 			t, found, err := txRepo.GetTicketByID(ctx, nil, req.TicketID.String())
@@ -596,7 +598,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			ID:                transactionID,
 			OrderID:           orderID,
 			ItemType:          req.ItemType,
-			TransactionStatus: "pending",
+			TransactionStatus: "failure",
 			ReferalCode:       req.ReferalCode,
 			UserID:            &userID,
 			TicketID:          req.TicketID,
@@ -645,16 +647,21 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 				TransactionID: &transactionID,
 			}
 
+			if req.ReferalCode != "" {
+				sisaQuota := studentAmbassador.MaxReferal - studentAmbassador.QuotaFilled
+				reqQuota := len(req.TicketForms)
+
+				if reqQuota > sisaQuota {
+					return fmt.Errorf("invalid referal quota")
+				}
+			}
+
 			if req.BundleID != nil && *req.BundleID != uuid.Nil {
 				sisaQuota := bundle.Quota - bundle.QuotaFilled
 				reqQuota := len(req.TicketForms)
 
 				if reqQuota > sisaQuota {
 					return fmt.Errorf("invalid bundle quota")
-				}
-
-				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.QuotaFilled+len(req.TicketForms)); err != nil {
-					return dto.ErrUpdateBundleQuota
 				}
 			}
 
@@ -664,10 +671,6 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 
 				if reqQuota > sisaQuota {
 					return fmt.Errorf("invalid ticket quota")
-				}
-
-				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
-					return dto.ErrUpdateTicketQuota
 				}
 			}
 
@@ -840,18 +843,47 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 
 	case "pending":
 		transaction.TransactionStatus = "pending"
+		err = us.userRepo.RunInTransaction(ctx, func(txRepo repository.IUserRepository) error {
+			if transaction.ReferalCode != "" {
+				sa, found, err := txRepo.GetStudentAmbassadorByReferalCode(ctx, nil, transaction.ReferalCode)
+				if err != nil || !found {
+					return dto.ErrInvalidReferalCode
+				}
+				err = txRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), len(transaction.TicketForms))
+				if err != nil {
+					return dto.ErrUpdateSAQuotaFilled
+				}
+			}
+
+			if transaction.TicketID != nil && *transaction.TicketID != uuid.Nil {
+				if err := txRepo.UpdateTicketQuota(ctx, nil, transaction.TicketID.String(), len(transaction.TicketForms)); err != nil {
+					return dto.ErrUpdateTicketQuota
+				}
+			}
+
+			if transaction.BundleID != nil && *transaction.BundleID != uuid.Nil {
+				if err := txRepo.UpdateBundleQuota(ctx, nil, transaction.BundleID.String(), len(transaction.TicketForms)); err != nil {
+					return dto.ErrUpdateTicketQuota
+				}
+			}
+
+			return nil
+		})
+		if err != nil {
+			return err
+		}
 
 	case "deny", "failure", "cancel", "expire":
 		if transaction.ReferalCode != "" {
 			sa, found, _ := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, transaction.ReferalCode)
 			if found {
-				if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), sa.QuotaFilled-1); err != nil {
+				if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), -len(transaction.TicketForms)); err != nil {
 					return dto.ErrUpdateSAQuotaFilled
 				}
 			}
 		}
 
-		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled-len(transaction.TicketForms)); err != nil {
+		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), -len(transaction.TicketForms)); err != nil {
 			return dto.ErrUpdateTicketQuota
 		}
 

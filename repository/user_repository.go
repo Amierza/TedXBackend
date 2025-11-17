@@ -34,10 +34,10 @@ type (
 
 		// UPDATE / PATCH
 		UpdateUser(ctx context.Context, tx *gorm.DB, user entity.User) error
-		UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error
-		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error
+		UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, amount int) error
+		UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, amount int) error
 		UpdateTransactionTicket(ctx context.Context, tx *gorm.DB, transaction entity.Transaction) error
-		UpdateSAQuotaFilled(ctx context.Context, tx *gorm.DB, saID string, quotaFilled int) error
+		UpdateSAQuotaFilled(ctx context.Context, tx *gorm.DB, saID string, amount int) error
 
 		// DELETE / DELETE
 	}
@@ -315,15 +315,16 @@ func (ur *UserRepository) UpdateUser(ctx context.Context, tx *gorm.DB, user enti
 
 	return tx.WithContext(ctx).Where("id = ?", user.ID).Updates(&user).Error
 }
-func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, newQuota int) error {
+func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bundleID string, amount int) error {
 	if tx == nil {
 		tx = ur.db
 	}
 
-	result := tx.WithContext(ctx).
-		Model(&entity.Bundle{}).
-		Where("id = ?", bundleID).
-		Update("quota_filled", newQuota)
+	result := tx.WithContext(ctx).Exec(`
+        UPDATE bundles
+        SET quota_filled = quota_filled + ?
+        WHERE id = ? AND quota_filled + ? <= quota
+    `, amount, bundleID, amount)
 
 	if result.Error != nil {
 		return result.Error
@@ -335,15 +336,16 @@ func (ur *UserRepository) UpdateBundleQuota(ctx context.Context, tx *gorm.DB, bu
 
 	return nil
 }
-func (ur *UserRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, newQuota int) error {
+func (ur *UserRepository) UpdateTicketQuota(ctx context.Context, tx *gorm.DB, ticketID string, amount int) error {
 	if tx == nil {
 		tx = ur.db
 	}
 
-	result := tx.WithContext(ctx).
-		Model(&entity.Ticket{}).
-		Where("id = ?", ticketID).
-		Update("quota_filled", newQuota)
+	result := tx.WithContext(ctx).Exec(`
+        UPDATE tickets
+        SET quota_filled = quota_filled + ?
+        WHERE id = ? AND quota_filled + ? <= quota
+    `, amount, ticketID, amount)
 
 	if result.Error != nil {
 		return result.Error
@@ -362,15 +364,16 @@ func (ur *UserRepository) UpdateTransactionTicket(ctx context.Context, tx *gorm.
 
 	return tx.WithContext(ctx).Where("id = ?", transaction.ID).Updates(&transaction).Error
 }
-func (ur *UserRepository) UpdateSAQuotaFilled(ctx context.Context, tx *gorm.DB, saID string, quotaFilled int) error {
+func (ur *UserRepository) UpdateSAQuotaFilled(ctx context.Context, tx *gorm.DB, saID string, amount int) error {
 	if tx == nil {
 		tx = ur.db
 	}
 
-	result := tx.WithContext(ctx).
-		Model(&entity.StudentAmbassador{}).
-		Where("id = ?", saID).
-		Update("quota_filled", quotaFilled)
+	result := tx.WithContext(ctx).Exec(`
+        UPDATE student_ambassadors
+        SET quota_filled = quota_filled + ?
+        WHERE id = ? AND quota_filled + ? <= max_referal
+    `, amount, saID, amount)
 
 	if result.Error != nil {
 		return result.Error
