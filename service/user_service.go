@@ -849,7 +849,7 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 				if err != nil || !found {
 					return dto.ErrInvalidReferalCode
 				}
-				err = txRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), -len(transaction.TicketForms))
+				err = txRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), len(transaction.TicketForms))
 				if err != nil {
 					return dto.ErrUpdateSAQuotaFilled
 				}
