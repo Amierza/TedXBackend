@@ -861,13 +861,13 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		if transaction.ReferalCode != "" {
 			sa, found, _ := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, transaction.ReferalCode)
 			if found {
-				if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), sa.QuotaFilled-1); err != nil {
+				if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), -len(transaction.TicketForms)); err != nil {
 					return dto.ErrUpdateSAQuotaFilled
 				}
 			}
 		}
 
-		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), transaction.Ticket.QuotaFilled-len(transaction.TicketForms)); err != nil {
+		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), -len(transaction.TicketForms)); err != nil {
 			return dto.ErrUpdateTicketQuota
 		}
 
