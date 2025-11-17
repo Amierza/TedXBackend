@@ -655,7 +655,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 					return fmt.Errorf("invalid referal quota")
 				}
 
-				err = txRepo.UpdateSAQuotaFilled(ctx, nil, studentAmbassador.ID.String(), reqQuota)
+				err = txRepo.UpdateSAQuotaFilled(ctx, nil, studentAmbassador.ID.String(), 1)
 				if err != nil {
 					return dto.ErrUpdateSAQuotaFilled
 				}
@@ -669,7 +669,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 					return fmt.Errorf("invalid bundle quota")
 				}
 
-				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), reqQuota); err != nil {
+				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), 1); err != nil {
 					return dto.ErrUpdateBundleQuota
 				}
 			}
@@ -682,7 +682,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 					return fmt.Errorf("invalid ticket quota")
 				}
 
-				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), reqQuota); err != nil {
+				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), 1); err != nil {
 					return dto.ErrUpdateTicketQuota
 				}
 			}
@@ -861,13 +861,13 @@ func (us *UserService) UpdateTransactionTicket(ctx context.Context, req dto.Upda
 		if transaction.ReferalCode != "" {
 			sa, found, _ := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, transaction.ReferalCode)
 			if found {
-				if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), -len(transaction.TicketForms)); err != nil {
+				if err := us.userRepo.UpdateSAQuotaFilled(ctx, nil, sa.ID.String(), -1); err != nil {
 					return dto.ErrUpdateSAQuotaFilled
 				}
 			}
 		}
 
-		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), -len(transaction.TicketForms)); err != nil {
+		if err := us.userRepo.UpdateTicketQuota(ctx, nil, transaction.Ticket.ID.String(), -1); err != nil {
 			return dto.ErrUpdateTicketQuota
 		}
 
