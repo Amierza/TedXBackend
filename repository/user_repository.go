@@ -372,7 +372,7 @@ func (ur *UserRepository) UpdateSAQuotaFilled(ctx context.Context, tx *gorm.DB, 
 	result := tx.WithContext(ctx).Exec(`
         UPDATE student_ambassadors
         SET quota_filled = quota_filled + ?
-        WHERE id = ? AND quota_filled + ? <= quota
+        WHERE id = ? AND quota_filled + ? <= max_referal
     `, amount, saID, amount)
 
 	if result.Error != nil {

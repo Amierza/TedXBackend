@@ -473,12 +473,16 @@ func (us *UserService) CheckReferalCode(ctx context.Context, req dto.CheckRefera
 
 	if ticket.Type != entity.MainEvent {
 		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
-
 	}
 
 	sa, found, err := us.userRepo.GetStudentAmbassadorByReferalCode(ctx, nil, req.ReferalCode)
 	if err != nil || !found {
 		return dto.StudentAmbassadorResponse{}, dto.ErrInvalidReferalCode
+	}
+
+	sisaQuota := sa.MaxReferal - sa.QuotaFilled
+	if sisaQuota-req.TotalTicketForm < 0 {
+		return dto.StudentAmbassadorResponse{}, fmt.Errorf("referal is limit")
 	}
 
 	res := dto.StudentAmbassadorResponse{
@@ -644,7 +648,14 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 			}
 
 			if req.ReferalCode != "" {
-				err = txRepo.UpdateSAQuotaFilled(ctx, nil, studentAmbassador.ID.String(), studentAmbassador.QuotaFilled+1)
+				sisaQuota := studentAmbassador.MaxReferal - studentAmbassador.QuotaFilled
+				reqQuota := len(req.TicketForms)
+
+				if reqQuota > sisaQuota {
+					return fmt.Errorf("invalid referal quota")
+				}
+
+				err = txRepo.UpdateSAQuotaFilled(ctx, nil, studentAmbassador.ID.String(), reqQuota)
 				if err != nil {
 					return dto.ErrUpdateSAQuotaFilled
 				}
@@ -658,7 +669,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 					return fmt.Errorf("invalid bundle quota")
 				}
 
-				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), bundle.QuotaFilled+len(req.TicketForms)); err != nil {
+				if err := txRepo.UpdateBundleQuota(ctx, nil, bundle.ID.String(), reqQuota); err != nil {
 					return dto.ErrUpdateBundleQuota
 				}
 			}
@@ -671,7 +682,7 @@ func (us *UserService) CreateTransactionTicket(ctx context.Context, req dto.Crea
 					return fmt.Errorf("invalid ticket quota")
 				}
 
-				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), ticket.QuotaFilled+len(req.TicketForms)); err != nil {
+				if err := txRepo.UpdateTicketQuota(ctx, nil, ticket.ID.String(), reqQuota); err != nil {
 					return dto.ErrUpdateTicketQuota
 				}
 			}

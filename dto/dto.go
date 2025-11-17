@@ -699,8 +699,9 @@ type (
 // Transaction & Ticket Form
 type (
 	CheckReferalCodeRequest struct {
-		ReferalCode string `json:"referal_code"`
-		TicketID    string `json:"ticket_id"`
+		ReferalCode     string `json:"referal_code"`
+		TicketID        string `json:"ticket_id"`
+		TotalTicketForm int    `json:"total_ticket_form"`
 	}
 	TransactionResponse struct {
 		ID                uuid.UUID            `json:"transaction_id"`
